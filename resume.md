@@ -1,7 +1,9 @@
 # Resume — 법무법인 진주 오케스트레이터
 
-**최종 업데이트:** 2026-04-10 (세션 4)
-**상태:** ✅ Phase 1 E2E 통과 + git initial commit 완료. Phase 2 (나머지 7 에이전트 라우팅 + 멀티라운드 토론) 진입 준비.
+**최종 업데이트:** 2026-04-10 (세션 4 종료)
+**상태:** ✅ Phase 1 E2E 통과 + ✅ Phase 2 (2.1 전문가 라우팅 + 2.2 Pattern 1 병렬) 구현 및 3건 mini E2E 검증 완료. ⏸️ PIPA-expert library/grade-b/ 보강 작업이 다음 세션으로 이관됨.
+
+**세션 4 요약:** 3 commit (`f4a5582`, `6d8a9a7`, `1a71b9d`), plan-eng-review 13 issue 전면 수용 + 4 FM critical gap 해결, T1/Regression/T2 3건 모두 PASS. 자세한 내용은 [docs/session-log-20260410.md](docs/session-log-20260410.md) 참조.
 
 ---
 
@@ -56,16 +58,27 @@ Claude Code 시작 후:
 | **git initial commit** | ✅ `f4a5582` | 15 files, 3016 insertions |
 | 10개 에이전트 GitHub public | 확인됨 | setup.sh로 자동 클론 가능 |
 
-### ⏸️ 대기 중 (Phase 2 — 지금 시작 가능)
+### ✅ 세션 4 추가 완료
 
-| 항목 | 선행 조건 |
-|------|-----------|
-| **route-case.md 확장** (7 에이전트 라우팅 트리) | ★ Phase 2 진입점 — 없음 |
-| manage-debate.md 실제 로직 | route-case 확장 |
-| 멀티라운드 토론 E2E 테스트 (킬러 피처 증명) | 위 두 개 완료 |
-| Case Replay MVP (Next.js 뷰어) | 독립 트랙, 지금도 가능 (샘플 데이터: case `20260410-012238-391f`) |
-| README 작성 | 독립 트랙, docs/notes/architecture-defense.md 원재료 |
-| 퀄리티 비교 (오케스트레이터 vs 직접) | 비교 기준 정의 필요 |
+| Phase | 상태 | 내용 |
+|-------|------|------|
+| **route-case.md v2 확장** | ✅ `1a71b9d` | 153→637줄. Phase 2 2.1 + 2.2 활성화. 8 에이전트 로스터, multi_domain 3-way 매트릭스, Pattern 1 병렬 디스패치 10단계 절차, 공통 주입 블록, Events 스키마 부록, 토큰 예산표. |
+| **plan-eng-review** | ✅ CLEAR | 13 issues + 4 critical FM 전면 수용(A). Architecture 6 / Code 3 / Performance 3 / FM4 모두 해결. |
+| **Mini E2E T1: PIPA-expert 단독** | ✅ PASS | 전문가 라우팅 sanity. 9 sources (8A + 1B via MCP). `library/grade-b/` 빈 상태 발견 (후속 과제). |
+| **Mini E2E Regression: game-legal-research** | ✅ PASS | Option b 검증. 32 sources (25A + 7C), v1 대비 -3% comparable, 11/11 coverage. library cache + domain 프레임 특장점 입증. |
+| **Mini E2E T2: PIPA ∥ GDPR 병렬** | ✅ PASS | Pattern 1 실전 검증. 2 branch 독립 실행, 26 Grade A sources, dimension 태깅 성공. |
+
+### ⏸️ 대기 중 (우선순위)
+
+| 항목 | 상태 | 문서 |
+|------|------|------|
+| **PIPA-expert library/grade-b/ 보강** (Option B, 30건) | ⭐ 다음 세션 즉시 시작 가능 | [docs/todo/pipa-expert-grade-b-collection.md](docs/todo/pipa-expert-grade-b-collection.md) |
+| **Case Replay MVP** (Next.js 뷰어) | 독립 트랙, 지금 가능. 샘플 데이터 풍부: case `20260410-012238-391f` + 3 test cases | — |
+| **README 작성** | 독립 트랙. 세션 4 결과가 주요 원재료 | [docs/notes/architecture-defense.md](docs/notes/architecture-defense.md) + [docs/session-log-20260410.md](docs/session-log-20260410.md) |
+| **manage-debate.md 실제 로직** (Pattern 3) | 세션 4에서 skip 결정 — 재검토 시 | [skills/manage-debate.md](skills/manage-debate.md) (skeleton) |
+| **route-case.md v3: 국제 비교 병렬** | game-legal-research 자체 제안 — `[game-legal-research ∥ general-legal-research]` | [docs/session-log-20260410.md](docs/session-log-20260410.md) Phase 6 regression 참조 |
+| **퀄리티 비교 (v1 general vs v2 specialist)** | 비교 기준 정의 필요. regression case가 A/B 대조 데이터 제공 | — |
+| **Classification regression 테스트 하네스** | 16 few-shot 예시 자동 검증 | — |
 
 ---
 
@@ -177,17 +190,48 @@ legal-agent-orchestrator/
 - 개발자 친구에게 설명하는 법 논의
 - resume.md v1 작성
 
-### 세션 4 (2026-04-10, 현재 세션)
-- MCP 연결 확인 (`mcp__korean-law__*` deferred tools 가용)
-- **Phase 1 E2E 테스트 실행 및 통과**:
-  - 질문: "한국 게임산업법의 확률형 아이템(가챠) 규제에 대한 법률 의견서"
-  - 파이프라인: general-legal-research → legal-writing-agent → second-review-agent → revision cycle 1
-  - 산출물: [opinion.docx](output/20260410-012238-391f/opinion.docx), [opinion.md](output/20260410-012238-391f/opinion.md), [events.jsonl](output/20260410-012238-391f/events.jsonl) (47 events), [sources.json](output/20260410-012238-391f/sources.json) (33 sources 29A/4B)
-- **새 패턴 발견**: legal-writing-agent rate_limit → 오케스트레이터 meta-verification (evt_045, [verbatim-verification.md](output/20260410-012238-391f/verbatim-verification.md))
-- **scripts/md-to-docx.py 작성**: 스타일 가이드 §11 구현 (Times New Roman + 맑은 고딕 이중 폰트, A4, 인용 블록 테이블)
-- **git initial commit**: `f4a5582` (15 files, 3016 insertions)
-- resume.md v2 업데이트 (이 버전)
-- 다음: Phase 2 진입 — route-case.md 확장부터
+### 세션 4 (2026-04-10)
+
+**Part 1 — 하우스키핑:**
+- 세션 시작 시 Phase 1 E2E가 이미 완료된 상태임 확인 (case `20260410-012238-391f`, 47 events, 33 sources)
+- 메타-verification fallback 패턴 발견 (evt_045): rate_limit 시 오케스트레이터가 korean-law MCP로 직접 verbatim 대조
+- `scripts/md-to-docx.py` 존재 확인 (스타일 가이드 §11 구현, opinion.docx 생성용)
+- Commit `f4a5582`: 초기 커밋 (15 files, 3016 insertions)
+- Commit `6d8a9a7`: resume.md 세션 4 반영 (v2)
+
+**Part 2 — route-case.md v2 확장 (Phase 2 2.1 + 2.2):**
+- 스코프 결정 2건:
+  - D1: briefing 2 에이전트(game-legal-briefing/game-policy-briefing) 제외 (독립 Python 앱)
+  - D2: 2.3 Pattern 3 토론 skip, skeleton 유지
+  - D3: KR 게임법 → game-legal-research (Option b, 도메인 특화 일관성)
+- Phase 2 가치 분석: 2.1/2.2/2.3 세 개의 다른 메커니즘 (단일 "토론 피처" 아님). 실질 퀄리티 개선은 2.1+2.2, 토큰 녹는 2.3은 show-off.
+- route-case.md 초안 작성 (Write) — 153→369줄, Pattern 1 포함 초안
+
+**Part 3 — plan-eng-review + 전면 수정:**
+- `/plan-eng-review` 실행: 13 issues + 4 critical FM 발견
+- 사용자 결정: Option A (전면 수용)
+- Architecture 6 / Code Quality 3 / Performance 3 / FM4 전부 수정
+- route-case.md 최종 (Edit 다단계) — 369→637줄 (+268 추가)
+- 새 섹션: Multi_domain 매트릭스, 공통 주입 블록, Events 스키마 부록, 토큰 예산표
+
+**Part 4 — 3 Mini E2E 검증:**
+- **T1** PIPA-expert 단독: ✅ PASS, 9 sources (8A+1B), 60k tokens, 582s. **KB gap 발견** (grade-b 비어있음)
+- **Regression** game-legal-research KR 게임법: ✅ PASS, 32 sources (25A+7C), v1 대비 -3% comparable, 11/11 coverage, library cache 특장점 입증. 170k tokens, 797s.
+- **T2** PIPA ∥ GDPR 병렬: ✅ PASS, 각 13 sources (13A), 양 브랜치 독립 병렬 실행 확인, 5 dimension 태깅. 124k tokens, 334s.
+- Commit `1a71b9d`: route-case.md v2 최종
+
+**Part 5 — PIPA-expert grade-b 계획 수립 + 이관:**
+- T1에서 발견한 KB gap에 대해 Option B 스코프 결정 (30건, 6 topics, PIPC 20 + 판례 10)
+- 사용자: 이 세션에서 X로 계속 vs Y로 별도 세션 → Y 선택 (fresh context, 토큰 부담 분리)
+- 핸드오프 문서 작성: [docs/todo/pipa-expert-grade-b-collection.md](docs/todo/pipa-expert-grade-b-collection.md)
+- 세션 4 로그 작성: [docs/session-log-20260410.md](docs/session-log-20260410.md)
+- resume.md v3 업데이트 (이 버전)
+
+**세션 4 커밋 총계 (예정 포함):**
+- `f4a5582` 초기 커밋
+- `6d8a9a7` resume.md v2
+- `1a71b9d` route-case.md v2 (Phase 2 2.1+2.2)
+- `(다음)` 세션 4 종료 핸드오프 (session-log + todo + resume v3)
 
 ---
 

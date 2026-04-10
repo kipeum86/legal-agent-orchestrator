@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod +x setup.sh)",
+      "Bash(./setup.sh link:*)",
+      "Skill(checkpoint)",
+      "Skill(checkpoint:*)",
+      "Bash(git -C '/Users/kpsfamily/코딩 프로젝트/__TRACKED_VAR__' remote get-url origin)"
+    ]
+  }
+}

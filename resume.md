@@ -1,14 +1,14 @@
 # Resume — 법무법인 진주 오케스트레이터
 
-**최종 업데이트:** 2026-04-10
-**상태:** Phase 1 파일 작성 완료, E2E 테스트 대기 (세션 재시작 필요)
+**최종 업데이트:** 2026-04-10 (세션 4)
+**상태:** ✅ Phase 1 E2E 통과 + git initial commit 완료. Phase 2 (나머지 7 에이전트 라우팅 + 멀티라운드 토론) 진입 준비.
 
 ---
 
 ## 0. 빠른 재개 (다음 세션에서)
 
 ```bash
-# 1. 환경변수 설정
+# 1. 환경변수 설정 (매 쉘 세션마다 필요 — .env 자동 로드 X)
 export LAW_OC=kipeum86
 
 # 2. 프로젝트 디렉토리로
@@ -22,9 +22,9 @@ claude
 ```
 
 Claude Code 시작 후:
-1. **MCP 확인**: "korean-law MCP tools 사용 가능?" → search_law 같은 tool이 보이면 성공
-2. **체크포인트 복구**: `/checkpoint resume`
-3. **첫 E2E 테스트**: 아래 "다음 할 일" 섹션 참조
+1. **MCP 확인**: `mcp__korean-law__*` tools 보이면 성공
+2. **git 상태 확인**: `git log --oneline` (초기 커밋 `f4a5582` 이후 작업)
+3. **다음 작업**: 아래 "다음 할 일" 섹션 — Phase 2 route-case.md 확장부터
 
 ---
 
@@ -51,17 +51,21 @@ Claude Code 시작 후:
 | Phase 0 기술 스파이크 | 6/8 통과 | Agent tool 검증 |
 | Phase 1 파일 작성 | 완료 | CLAUDE.md, 3 skills, setup.sh, .mcp.json |
 | 스타일 가이드 정본 | 완료 | docs/ko-legal-opinion-style-guide.md |
+| scripts/md-to-docx.py | 완료 | 스타일 가이드 §11 구현, opinion.docx 생성 |
+| **Phase 1 E2E 테스트** | ✅ **PASSED** | 확률형 아이템 의견서, 47 events, 33 sources (29A/4B), revision cycle 1 완료 |
+| **git initial commit** | ✅ `f4a5582` | 15 files, 3016 insertions |
 | 10개 에이전트 GitHub public | 확인됨 | setup.sh로 자동 클론 가능 |
 
-### ⏸️ 대기 중
+### ⏸️ 대기 중 (Phase 2 — 지금 시작 가능)
 
-| 항목 | 블로커 |
-|------|--------|
-| Phase 1 E2E 테스트 | 세션 재시작 필요 (MCP 연결) |
-| git initial commit | E2E 테스트 성공 후 |
-| Phase 2 (풀 에이전트 + 토론) | Phase 1 완료 후 |
-| Phase 3 (Case Replay Next.js) | 이벤트 스키마 확정됨, 지금 시작 가능 |
-| README | 지금 시작 가능 |
+| 항목 | 선행 조건 |
+|------|-----------|
+| **route-case.md 확장** (7 에이전트 라우팅 트리) | ★ Phase 2 진입점 — 없음 |
+| manage-debate.md 실제 로직 | route-case 확장 |
+| 멀티라운드 토론 E2E 테스트 (킬러 피처 증명) | 위 두 개 완료 |
+| Case Replay MVP (Next.js 뷰어) | 독립 트랙, 지금도 가능 (샘플 데이터: case `20260410-012238-391f`) |
+| README 작성 | 독립 트랙, docs/notes/architecture-defense.md 원재료 |
+| 퀄리티 비교 (오케스트레이터 vs 직접) | 비교 기준 정의 필요 |
 
 ---
 
@@ -138,6 +142,7 @@ legal-agent-orchestrator/
 6. **MCP 해결**: 오케스트레이터 루트 .mcp.json (korean-law + kordoc). 서브에이전트는 부모 세션 MCP 상속.
 7. **스타일 가이드 강제**: CLAUDE.md + route-case.md에서 한국어 에이전트 호출 시 정본 절대 경로 주입
 8. **Claude Code Max 구독**: 추가 API 비용 없음
+9. **Meta-verification fallback (E2E에서 발견)**: 서브에이전트가 토큰 한도 도달해 재호출 불가할 때, 오케스트레이터가 직접 MCP (`mcp__korean-law__get_law_text`)로 verbatim 대조. `evt_045` type=`verbatim_verified`, data.verifier=`orchestrator_meta`. revision cycle이 살아남게 해준 핵심 패턴. Phase 2 manage-debate.md 설계에 반영 필요 (토론 중 한쪽 에이전트 실패 시 fallback 경로).
 
 ### 에이전트 협업 패턴
 
@@ -164,71 +169,80 @@ legal-agent-orchestrator/
 - Phase 0 기술 스파이크 실행 (6/8 통과)
 - Phase 1 파일 전부 작성
 
-### 세션 3 (2026-04-07 ~ 04-10, 현재 세션)
+### 세션 3 (2026-04-07 ~ 04-10)
 - 체크포인트 저장 → 세션 재시작 → MCP 여전히 미연결 발견
 - 아키텍처 정당성 논의 → `docs/notes/architecture-defense.md` 기록
 - 스타일 가이드 정본 복사 + 강제 주입 로직 추가
 - 심볼릭 링크 vs GitHub 배포 설명
 - 개발자 친구에게 설명하는 법 논의
-- 이 resume.md 작성
+- resume.md v1 작성
+
+### 세션 4 (2026-04-10, 현재 세션)
+- MCP 연결 확인 (`mcp__korean-law__*` deferred tools 가용)
+- **Phase 1 E2E 테스트 실행 및 통과**:
+  - 질문: "한국 게임산업법의 확률형 아이템(가챠) 규제에 대한 법률 의견서"
+  - 파이프라인: general-legal-research → legal-writing-agent → second-review-agent → revision cycle 1
+  - 산출물: [opinion.docx](output/20260410-012238-391f/opinion.docx), [opinion.md](output/20260410-012238-391f/opinion.md), [events.jsonl](output/20260410-012238-391f/events.jsonl) (47 events), [sources.json](output/20260410-012238-391f/sources.json) (33 sources 29A/4B)
+- **새 패턴 발견**: legal-writing-agent rate_limit → 오케스트레이터 meta-verification (evt_045, [verbatim-verification.md](output/20260410-012238-391f/verbatim-verification.md))
+- **scripts/md-to-docx.py 작성**: 스타일 가이드 §11 구현 (Times New Roman + 맑은 고딕 이중 폰트, A4, 인용 블록 테이블)
+- **git initial commit**: `f4a5582` (15 files, 3016 insertions)
+- resume.md v2 업데이트 (이 버전)
+- 다음: Phase 2 진입 — route-case.md 확장부터
 
 ---
 
 ## 7. 다음 할 일 (우선순위)
 
-### 즉시 (세션 재시작 후)
+### ★ Phase 2 진입점 — route-case.md 확장
 
-**A. Phase 1 E2E 테스트** (가장 중요)
+현재 `skills/route-case.md`는 Phase 1 파이프라인(research → writing → review)만 처리. 나머지 7 에이전트와 **언제 어떤 조합으로** 호출할지 결정 트리/분류 로직 필요.
 
-테스트 질문:
-```
-법무법인 진주 오케스트레이터로 다음 질문을 처리해줘:
-"한국 게임산업법의 확률형 아이템(가챠) 규제에 대한 법률 의견서를 작성해줘"
+**설계 필요 사항:**
+1. **분류 차원** — 관할권(KR/EU/US/국제), 도메인(개인정보/게임/계약/번역/뉴스), 작업 유형(리서치/드래프팅/검토/번역/브리핑), 복잡도(단순/복합/다관할권 토론)
+2. **트리거 조건** — 언제 Pattern 1(병렬) vs Pattern 2(순차) vs Pattern 3(토론)?
+3. **에이전트 매핑 표** — 10 에이전트의 (관할권 × 도메인 × 작업) 커버리지 매트릭스
+4. **Compound 질문 처리** — 1개 질문이 여러 전문가 필요한 경우 분해 로직 (예: "EU 게임사가 한국 이용자 데이터 처리" → GDPR + PIPA + game-legal-research 병렬/토론)
+5. **토론 트리거 명시** — 어떤 조합이 Pattern 3 토론으로 가야 하는가 (의견 충돌 가능성 있는 다관할권 질문 예시)
 
-CLAUDE.md의 워크플로우를 따라 case-id를 생성하고,
-route-case.md로 파이프라인을 결정하고,
-Agent tool로 research → writing → review 순서로 호출해줘.
-```
+**접근 방법 브레인스토밍 필요:**
+- 결정 트리 (하드코딩 if/else)
+- 키워드 매칭 (JSON 매핑)
+- LLM intent classification (오케스트레이터가 자체 판단)
+- 하이브리드 (키워드로 후보 추림 → LLM로 최종 결정)
 
-검증 포인트:
-- [ ] case-id 생성됨
-- [ ] output/{case-id}/events.jsonl 생성됨
-- [ ] research-result.md + research-meta.json 생성됨
-- [ ] opinion.md + writing-meta.json 생성됨 (한국어 스타일 가이드 준수)
-- [ ] review-result.md + review-meta.json 생성됨
-- [ ] sources.json 통합 생성됨
-- [ ] 최종 events.jsonl에 전체 파이프라인 기록
+→ `/brainstorming` 스킬로 설계 세션 권장.
 
-### E2E 성공 후
+### Phase 2 후속 (route-case 확장 완료 후)
 
-1. **git initial commit** — 최초 커밋
-2. **퀄리티 비교** — 오케스트레이터 경유 vs 에이전트 직접 실행
+1. **`skills/manage-debate.md` 실제 로직** — skeleton에서 실제 구현으로.
+   - 토론 라운드 스케줄링 (의견 → 반론 → 재반론 → verdict)
+   - 각 라운드 이벤트 로깅 (`debate_round_start`, `debate_opinion`, `debate_rebuttal`, `debate_verdict`)
+   - **Meta-verification fallback 통합** (세션 4 발견 패턴) — 토론 중 한쪽이 토큰 한도 도달 시 오케스트레이터가 MCP로 직접 증거 대조해 해당 라운드 대체
+   - writing-agent가 verdict 드래프트, second-review가 최종 승인
+2. **멀티라운드 토론 E2E** — 실제 킬러 피처 증명. 후보 시나리오: "EU에 서버 둔 한국 게임사가 한국 이용자 개인정보를 EU로 국외이전할 때 법적 쟁점" (GDPR-expert ↔ PIPA-expert ↔ game-legal-research 3자 토론)
+3. **3개 프리로드 데모 케이스 녹화** — 리플레이 뷰어용
 
-### 병렬 가능 (MCP 재시작 없이도 가능)
+### Phase 3 — Case Replay (Next.js 정적 뷰어)
 
-- **Case Replay MVP** (Next.js 정적 뷰어) — 이벤트 스키마 확정됨, 샘플 데이터로 진행 가능
-- **README 작성** — docs/notes/architecture-defense.md의 킬러 포인트 4개 활용
-
-### Phase 2 (Phase 1 E2E 성공 후)
-
-- 나머지 7개 에이전트 라우팅 활성화
-- `skills/manage-debate.md` skeleton → 실제 토론 로직
-- 3개 프리로드 케이스 녹화
-
-### Phase 3
-
-- Next.js 리플레이 뷰어 MVP (타임라인 + 이벤트 카드 + 소스 그레이딩 컬러)
+- 이벤트 스키마 확정됨 (47 events 샘플 존재: case `20260410-012238-391f`)
+- 타임라인 + 이벤트 카드 + 소스 Grade A/B/C/D 컬러 코딩
 - 다크 테마 워룸 UI
 - GitHub Pages/Vercel 배포
-- README + 데모 GIF
+- 독립 트랙 — Phase 2와 병렬 진행 가능
+
+### 독립 트랙 (언제든 가능)
+
+- **README 작성** — [docs/notes/architecture-defense.md](docs/notes/architecture-defense.md)의 킬러 포인트 4개 활용
+- **퀄리티 비교 테스트** — 오케스트레이터 경유 vs 에이전트 직접 실행 (평가 기준 정의 필요)
 
 ---
 
 ## 8. 알려진 이슈 / 확인 필요
 
-- [ ] **scripts/md-to-docx.py** — 언제, 왜 추가됐는지 확인 필요
-- [ ] **LAW_OC 환경변수** — Claude Code가 .env를 자동 로드하는지 불확실. 쉘에서 export로 해결.
-- [ ] **중첩 서브에이전트 비활성**: general-legal-research의 deep-researcher, second-review-agent의 citation-verifier가 오케스트레이터 경유 시 동작 안 함. E2E 테스트 시 퀄리티 영향 체크.
+- [x] ~~**scripts/md-to-docx.py** — 언제, 왜 추가됐는지 확인 필요~~ → 세션 4에서 확인: 스타일 가이드 §11 구현, E2E 중 opinion.docx 생성용. 정당한 추가.
+- [ ] **LAW_OC 환경변수** — Claude Code가 .env를 자동 로드하지 않음 확정. 쉘에서 매번 `export LAW_OC=kipeum86` 필요. 해결안: direnv 도입 또는 Claude Code 세션 시작 스크립트.
+- [ ] **중첩 서브에이전트 비활성**: general-legal-research의 deep-researcher, second-review-agent의 citation-verifier가 오케스트레이터 경유 시 동작 안 함. E2E에서 영향 정도 측정 필요 (쇠약화 여부). 영향이 크면 Phase 2에서 우회 로직 설계.
+- [ ] **Rate limit 견고성**: 세션 4 E2E에서 legal-writing-agent가 revision cycle 1 중 `Anthropic usage limit hit`. 오케스트레이터 meta-verification fallback이 구해줬지만, 이건 임시방편. Phase 2에서 rate_limit에 대한 공식 재시도/대기/fallback 정책 설계 필요.
 - [ ] **10개 에이전트 GitHub public 재확인** — 배포 직전
 - [ ] **각 에이전트 라이선스** — knowledge/ 디렉토리 재배포 가능 여부
 

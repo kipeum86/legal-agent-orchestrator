@@ -5,6 +5,8 @@
 
 **세션 4 요약:** 3 commit (`f4a5582`, `6d8a9a7`, `1a71b9d`), plan-eng-review 13 issue 전면 수용 + 4 FM critical gap 해결, T1/Regression/T2 3건 모두 PASS. 자세한 내용은 [docs/session-log-20260410.md](docs/session-log-20260410.md) 참조.
 
+**🔗 다음 세션 시작:** [docs/todo/_next-session-start-prompt.md](docs/todo/_next-session-start-prompt.md) — 복사·붙여넣기용 프롬프트 (PIPA-expert grade-b 작업) + 대체 프롬프트 4개 (Case Replay / README / Pattern 3 / route-case v3).
+
 ---
 
 ## 0. 빠른 재개 (다음 세션에서)

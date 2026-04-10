@@ -1,9 +1,11 @@
 # Resume — 법무법인 진주 오케스트레이터
 
-**최종 업데이트:** 2026-04-10 (세션 4 종료)
-**상태:** ✅ Phase 1 E2E 통과 + ✅ Phase 2 (2.1 전문가 라우팅 + 2.2 Pattern 1 병렬) 구현 및 3건 mini E2E 검증 완료. ⏸️ PIPA-expert library/grade-b/ 보강 작업이 다음 세션으로 이관됨.
+**최종 업데이트:** 2026-04-10 (세션 5 wrap-up 완료)
+**상태:** ✅ Phase 1 E2E 통과 + ✅ Phase 2 2.1/2.2 검증 완료 + ✅ 세션 5 포트폴리오 공개 준비 (README 영/한 + LICENSE Apache 2.0 + CLAUDE.md 8-에이전트 동기화) + ✅ PIPA-expert grade-b 보강 완료 (해석례 20 + 판례 10) + ✅ 룰루랩 .docx 보안 조치 완료 (PIPA-expert `.gitignore` `*.docx` 차단).
 
-**세션 4 요약:** 3 commit (`f4a5582`, `6d8a9a7`, `1a71b9d`), plan-eng-review 13 issue 전면 수용 + 4 FM critical gap 해결, T1/Regression/T2 3건 모두 PASS. 자세한 내용은 [docs/session-log-20260410.md](docs/session-log-20260410.md) 참조.
+**세션 4 요약:** 5 commits (`f4a5582`, `6d8a9a7`, `1a71b9d`, `0f1248f`, `b69891f`), plan-eng-review 13 issue 전면 수용 + 4 FM critical gap 해결, T1/Regression/T2 3건 모두 PASS. 자세한 내용은 [docs/session-log-20260410.md](docs/session-log-20260410.md) 참조.
+
+**세션 5 요약 (2026-04-10 오후):** 포트폴리오 공개 준비. [README.md](README.md) 250줄 (영어 우선, 4 killer points + §5 "Yes, It Burns a Lot of Tokens — On Purpose") + [README.ko.md](README.ko.md) (자연스러운 한국어판) + [LICENSE](LICENSE) (Apache 2.0) 신규 생성. [CLAUDE.md](CLAUDE.md) 에이전트 10→8 동기화 (briefing 2개 스코프 외). PIPA-expert 레포에 grade-b 핸드오프 문서 복사. **룰루랩 .docx 3개 발견 및 차단 조치 완료** (PIPA-expert에 `*.docx` gitignore 패턴 추가 + commit/push `e163dd7`). **원 세션 5 시점 git commit: 0**. 자세한 내용은 [docs/session-log-20260410-pt2.md](docs/session-log-20260410-pt2.md) 참조.
 
 **🔗 다음 세션 시작:** [docs/todo/_next-session-start-prompt.md](docs/todo/_next-session-start-prompt.md) — 복사·붙여넣기용 프롬프트 (PIPA-expert grade-b 작업) + 대체 프롬프트 4개 (Case Replay / README / Pattern 3 / route-case v3).
 
@@ -34,7 +36,7 @@ Claude Code 시작 후:
 
 ## 1. 프로젝트 개요
 
-**한 줄 정의**: Claude Code 위에 돌아가는 멀티 에이전트 로펌 오케스트레이터. 10명의 전문 법률 AI 에이전트가 실제 로펌처럼 협업해서 법률 의견서를 생성.
+**한 줄 정의**: Claude Code 위에 돌아가는 멀티 에이전트 로펌 오케스트레이터. 8개 법률 AI 에이전트가 실제 로펌처럼 협업해서 법률 의견서를 생성.
 
 **핵심 원칙**: 기존 에이전트를 100% 그대로 재활용. 웹 프레임워크로 감싸면 기능이 50-60%로 깎이므로, 반대로 Claude Code를 런타임으로 사용하고 Agent tool로 서브에이전트를 디스패치.
 
@@ -70,13 +72,17 @@ Claude Code 시작 후:
 | **Mini E2E Regression: game-legal-research** | ✅ PASS | Option b 검증. 32 sources (25A + 7C), v1 대비 -3% comparable, 11/11 coverage. library cache + domain 프레임 특장점 입증. |
 | **Mini E2E T2: PIPA ∥ GDPR 병렬** | ✅ PASS | Pattern 1 실전 검증. 2 branch 독립 실행, 26 Grade A sources, dimension 태깅 성공. |
 
+### ✅ 세션 5 wrap-up 완료
+
+| Phase | 상태 | 내용 |
+|-------|------|------|
+| **PIPA-expert library/grade-b/ 보강** | ✅ 완료 (별도 세션, 커밋 `6b8137c`) | 해석례 20 + 판례 10 = 30건. 원안 PIPC 결정은 endpoint 장애로 해석례 대체. pipc-decisions 재개는 endpoint 복구 대기. |
+
 ### ⏸️ 대기 중 (우선순위)
 
 | 항목 | 상태 | 문서 |
 |------|------|------|
-| **PIPA-expert library/grade-b/ 보강** (Option B, 30건) | ⭐ 다음 세션 즉시 시작 가능 | [docs/todo/pipa-expert-grade-b-collection.md](docs/todo/pipa-expert-grade-b-collection.md) |
 | **Case Replay MVP** (Next.js 뷰어) | 독립 트랙, 지금 가능. 샘플 데이터 풍부: case `20260410-012238-391f` + 3 test cases | — |
-| **README 작성** | 독립 트랙. 세션 4 결과가 주요 원재료 | [docs/notes/architecture-defense.md](docs/notes/architecture-defense.md) + [docs/session-log-20260410.md](docs/session-log-20260410.md) |
 | **manage-debate.md 실제 로직** (Pattern 3) | 세션 4에서 skip 결정 — 재검토 시 | [skills/manage-debate.md](skills/manage-debate.md) (skeleton) |
 | **route-case.md v3: 국제 비교 병렬** | game-legal-research 자체 제안 — `[game-legal-research ∥ general-legal-research]` | [docs/session-log-20260410.md](docs/session-log-20260410.md) Phase 6 regression 참조 |
 | **퀄리티 비교 (v1 general vs v2 specialist)** | 비교 기준 정의 필요. regression case가 A/B 대조 데이터 제공 | — |
@@ -229,15 +235,50 @@ legal-agent-orchestrator/
 - 세션 4 로그 작성: [docs/session-log-20260410.md](docs/session-log-20260410.md)
 - resume.md v3 업데이트 (이 버전)
 
-**세션 4 커밋 총계 (예정 포함):**
+**세션 4 커밋 총계:**
 - `f4a5582` 초기 커밋
 - `6d8a9a7` resume.md v2
 - `1a71b9d` route-case.md v2 (Phase 2 2.1+2.2)
-- `(다음)` 세션 4 종료 핸드오프 (session-log + todo + resume v3)
+- `0f1248f` 세션 4 종료 핸드오프 (session-log + todo)
+- `b69891f` 다음 세션 시작 프롬프트
+
+### 세션 5 (2026-04-10 오후) — 포트폴리오 공개 준비
+
+**Part 1 — README.md (영어 우선 방향 전환):**
+- 초기 한국어 초안 작성 → 사용자 피드백 "영어 우선, 한국어 보조" → 전체 재작성
+- 4 killer points 영문화 (architecture-defense.md 영문 드래프트 polish)
+- 사용자 피드백 2건 반영:
+  - "10명 맞아? briefing은 빼야 함" → 8 에이전트로 수정
+  - "토큰 소모량이 방대한데 퀄리티를 위한 의도된 설계" → §5 "Yes, It Burns a Lot of Tokens — On Purpose" 섹션 추가 (Phase 2.2 실제 수치 60K~170K 인용)
+
+**Part 2 — LICENSE + 한국어판 + CLAUDE.md 동기화:**
+- LICENSE: Apache 2.0 공식 본문 + Copyright 2026 kipeum86
+- README.ko.md: "직역 말고 자연스럽게" 요구, 입말체 반말, 기술 용어는 영문 유지, 영어판과 1:1 섹션 대응
+- README.md 상단에 `**한국어:** [README.ko.md](README.ko.md)` 링크 추가
+- CLAUDE.md: briefing 2개 테이블 행 삭제, "10명/7개" → "8명/5개"
+
+**Part 3 — PIPA-expert 핸드오프 복사 + 민감 파일 이슈:**
+- `docs/todo/pipa-expert-grade-b-collection.md`를 `/Users/kpsfamily/코딩 프로젝트/PIPA-expert/docs/todo/`에 복사 (9,989 bytes, 같은 맥이므로 push 불요)
+- git status 점검 중 **룰루랩 .docx 3개 untracked 발견**: `(환자용) [룰루랩] 개인정보 처리방침_...docx`, `개인정보수집동의서_...docx`, `개인정보_AI학습_검토의견.docx` (당초 세션 중 인코딩 깨짐으로 잘못 읽어 기록했으나 실제 회사명은 "룰루랩", LuskinX는 영문 브랜드)
+- **3중 확인으로 GitHub 미공개 확정**: `git ls-files` 없음, `git log --all` 없음, `origin/main` 없음
+- 리스크: 향후 `git add .` 실수 시 공개 리포(`kipeum86/PIPA-expert.git`)에 노출
+- 처리 옵션 제시: (A) 레포 밖 이동, (B) `.gitignore` 추가, (C) 현상 유지 + specific-path staging만 사용 → **별도 세션에서 Option B 완료** (`*.docx` 전역 차단, `e163dd7` + push)
+
+**Part 4 — 세션 중단점 (원기록):**
+- 사용자: "찾았어. PIPA-expert 작업 끝나고 이어서 할게. 일단 현재까지 내용 잘 기록해줘"
+- resume.md 업데이트 + [docs/session-log-20260410-pt2.md](docs/session-log-20260410-pt2.md) 신규 작성 + memory/project_status.md 갱신
+
+**원 세션 5 시점 커밋 총계:** **0** (모든 변경사항 미커밋). 이후 wrap-up에서 local commit 1건으로 정리.
 
 ---
 
 ## 7. 다음 할 일 (우선순위)
+
+### ⭐⭐ 세션 5 wrap-up 완료 항목
+
+1. ~~**세션 5 변경사항 commit**~~ ✅ 완료 — `README.md`, `README.ko.md`, `LICENSE`, `CLAUDE.md`, `resume.md`, `docs/session-log-20260410-pt2.md`, `docs/todo/pipa-expert-grade-b-collection.md`, `docs/todo/codex-plan-session5-wrap.md`를 로컬 커밋으로 정리.
+2. ~~**룰루랩 .docx 3개 처리**~~ ✅ 완료 (별도 세션에서 Option B 채택: PIPA-expert `.gitignore`에 `*.docx` 전역 차단 패턴 추가, commit `e163dd7` + push 완료).
+3. ~~**PIPA-expert library/grade-b/ 보강**~~ ✅ 완료 — 별도 세션에서 30건 수집 및 push 완료 (`6b8137c`). 해석례 20 + 판례 10, PIPC 결정문 재수집은 endpoint 복구 대기.
 
 ### ★ Phase 2 진입점 — route-case.md 확장
 
@@ -246,7 +287,7 @@ legal-agent-orchestrator/
 **설계 필요 사항:**
 1. **분류 차원** — 관할권(KR/EU/US/국제), 도메인(개인정보/게임/계약/번역/뉴스), 작업 유형(리서치/드래프팅/검토/번역/브리핑), 복잡도(단순/복합/다관할권 토론)
 2. **트리거 조건** — 언제 Pattern 1(병렬) vs Pattern 2(순차) vs Pattern 3(토론)?
-3. **에이전트 매핑 표** — 10 에이전트의 (관할권 × 도메인 × 작업) 커버리지 매트릭스
+3. **에이전트 매핑 표** — 8 에이전트의 (관할권 × 도메인 × 작업) 커버리지 매트릭스
 4. **Compound 질문 처리** — 1개 질문이 여러 전문가 필요한 경우 분해 로직 (예: "EU 게임사가 한국 이용자 데이터 처리" → GDPR + PIPA + game-legal-research 병렬/토론)
 5. **토론 트리거 명시** — 어떤 조합이 Pattern 3 토론으로 가야 하는가 (의견 충돌 가능성 있는 다관할권 질문 예시)
 
@@ -278,7 +319,6 @@ legal-agent-orchestrator/
 
 ### 독립 트랙 (언제든 가능)
 
-- **README 작성** — [docs/notes/architecture-defense.md](docs/notes/architecture-defense.md)의 킬러 포인트 4개 활용
 - **퀄리티 비교 테스트** — 오케스트레이터 경유 vs 에이전트 직접 실행 (평가 기준 정의 필요)
 
 ---
@@ -289,7 +329,7 @@ legal-agent-orchestrator/
 - [ ] **LAW_OC 환경변수** — Claude Code가 .env를 자동 로드하지 않음 확정. 쉘에서 매번 `export LAW_OC=kipeum86` 필요. 해결안: direnv 도입 또는 Claude Code 세션 시작 스크립트.
 - [ ] **중첩 서브에이전트 비활성**: general-legal-research의 deep-researcher, second-review-agent의 citation-verifier가 오케스트레이터 경유 시 동작 안 함. E2E에서 영향 정도 측정 필요 (쇠약화 여부). 영향이 크면 Phase 2에서 우회 로직 설계.
 - [ ] **Rate limit 견고성**: 세션 4 E2E에서 legal-writing-agent가 revision cycle 1 중 `Anthropic usage limit hit`. 오케스트레이터 meta-verification fallback이 구해줬지만, 이건 임시방편. Phase 2에서 rate_limit에 대한 공식 재시도/대기/fallback 정책 설계 필요.
-- [ ] **10개 에이전트 GitHub public 재확인** — 배포 직전
+- [ ] **8개 오케스트레이터 에이전트 GitHub public 재확인** — 배포 직전
 - [ ] **각 에이전트 라이선스** — knowledge/ 디렉토리 재배포 가능 여부
 
 ---

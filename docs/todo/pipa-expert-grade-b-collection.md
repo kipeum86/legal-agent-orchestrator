@@ -1,5 +1,7 @@
 # TODO: PIPA-expert library/grade-b/ 보강 (Option B, 30건)
 
+> ✅ **완료됨** — 2026-04-10 별도 세션에서 실행. 커밋 [kipeum86/PIPA-expert@6b8137c](https://github.com/kipeum86/PIPA-expert/commit/6b8137c). 단, **원안 변경**: `get_pipc_decision_text` MCP endpoint 장애로 PIPC 결정 20건이 법제처 법령해석례 20건으로 대체됨. `library/grade-b/pipc-decisions/`는 endpoint 복구 시 재개 대상으로 남음. 자세한 내용은 `PIPA-expert/index/source-registry.json` 참조.
+
 **작성일**: 2026-04-10 (세션 4 종료 시)
 **배경**: 세션 4 T1 테스트에서 KB gap 발견 — PIPA-expert의 `library/grade-b/pipc-decisions/` 및 `library/grade-b/court-precedents/` 두 디렉토리가 완전히 빈 상태. `source-registry.json`에 `"pending — 추후 수집"`으로 기록된 planned work.
 

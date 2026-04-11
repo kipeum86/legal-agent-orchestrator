@@ -11,3 +11,6 @@ node_modules/
 docs/*
 docs/**/*
 !docs/ko-legal-opinion-style-guide.md
+
+# Dev handoff doc (session state, next-steps, internal breadcrumbs) — not public.
+resume.md

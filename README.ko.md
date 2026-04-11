@@ -27,16 +27,16 @@
 
 이 오케스트레이터는 가상의 한국 로펌 **법무법인 진주**의 **본점**이다. 아래 8명의 변호사는 각자 독립된 GitHub 리포지토리에 standalone Claude Code 에이전트로 존재한다. `./setup.sh`를 실행하면 이들 전부가 `agents/` 아래로 clone되어 바로 디스패치될 수 있는 상태가 된다.
 
-| 담당 변호사 | Agent 리포지토리 | 전문 분야 | Phase |
-|------------|------------------|----------|-------|
-| **김재식 (Kim Jaesik)** | [general-legal-research](https://github.com/kipeum86/general-legal-research) | 한국법 범용 리서치 — 어느 도메인이든 | Phase 1 ✓ |
-| **한석봉 (Han Seokbong)** | [legal-writing-agent](https://github.com/kipeum86/legal-writing-agent) | 한국 로펌 MEMORANDUM 형식으로 법률 의견서 작성 | Phase 1 ✓ |
-| **반성문 (Ban Seong-mun)** · *파트너* | [second-review-agent](https://github.com/kipeum86/second-review-agent) | 품질 검토 — MCP로 verbatim 대조, Critical/Major/Minor 코멘트, 최종 승인 | Phase 1 ✓ |
-| **정보호 (Jeong Bo-ho)** | [PIPA-expert](https://github.com/kipeum86/PIPA-expert) | 한국 개인정보보호법 전문가. 전용 PIPA/PIPC 지식 베이스 보유 | Phase 2 ✓ |
-| **김덕배 (Kim De Bruyne)** | [GDPR-expert](https://github.com/kipeum86/GDPR-expert) | EU 데이터보호법 전문가 (Chapter V 국외이전, Schrems II, EDPB guidance) | Phase 2 ✓ |
-| **심진주 (Sim Jinju)** | [game-legal-research](https://github.com/kipeum86/game-legal-research) | 국제 게임법 전문가 — 확률형 아이템, 라이브 서비스 규제, 국경 간 콘텐츠 규제 | Phase 2 ✓ |
-| **고덕수 (Ko Duksoo)** | [contract-review-agent](https://github.com/kipeum86/contract-review-agent) | 한국법 하에서 상사계약서 검토 (SaaS, NDA, 고용, 라이선스) | Phase 2 |
-| **변혁기 (Byeon Hyeok-gi)** | [legal-translation-agent](https://github.com/kipeum86/legal-translation-agent) | 법률문서 번역 (KR ↔ EN). 어조와 인용 형식 보존 | Phase 2 |
+| 담당 변호사 | Agent 리포지토리 | 실제로 하는 일 | Phase |
+|------------|------------------|---------------|-------|
+| **김재식 (Kim Jaesik)** | [general-legal-research](https://github.com/kipeum86/general-legal-research) | **17+ 관할권**을 커버하는 증거 기반 국제 법률 리서치. 한국법뿐 아니라 어느 관할권의 어떤 법률 질문이든 받는 제너럴리스트 리서치 어소시엇. Grade A 1차 소스 우선 워크플로우. | Phase 1 ✓ |
+| **한석봉 (Han Seokbong)** | [legal-writing-agent](https://github.com/kipeum86/legal-writing-agent) | **한/영 이중 언어** 비계약 법률 문서 드래프터. 신규 작성 D1–D6 파이프라인, 리비전 R1–R7 tracked-change 파이프라인. 한국어 문서는 쟁점→결론→분석 관행, 영어 문서는 IRAC/CRAC + Bluebook/OSCOLA 관행 적용. | Phase 1 ✓ |
+| **반성문 (Ban Seong-mun)** · *파트너* | [second-review-agent](https://github.com/kipeum86/second-review-agent) | AI 생성 법률 문서 최종 품질 게이트. 인용을 **여러 primary legal database**(law.go.kr, congress.gov, eur-lex 등)에 대해 verbatim 대조하고, 법적 논리와 작성 품질을 점검하고, tracked change가 들어간 redlined DOCX를 낸다. 독립 release 게이트(Pass / Pass with Warnings / Manual Review Required / Not Recommended). 환각 인용 zero tolerance. | Phase 1 ✓ |
+| **정보호 (Jeong Bo-ho)** | [PIPA-expert](https://github.com/kipeum86/PIPA-expert) | 한국 개인정보보호법 전문가. 구조화 RAG 기반: **법조문 929건, PIPC 공식 가이드라인 46건, landmark 판례·해석례 30건, cross-reference 엣지 2,369개**. 로펌 수준의 DOCX 의견서 산출. | Phase 2 ✓ |
+| **김덕배 (Kim De Bruyne)** | [GDPR-expert](https://github.com/kipeum86/GDPR-expert) | EU 데이터보호법 전문가. 구조화 RAG 기반: **EU 법률 5개(조문 321 + recital 535), EDPB 문서 120건, CJEU 판결 51건, enforcement 결정 33건** — 인덱스 아이템 1,060+. | Phase 2 ✓ |
+| **심진주 (Sim Jinju)** | [game-legal-research](https://github.com/kipeum86/game-legal-research) | 국제 게임 산업 법률 리서치. 게임 클라이언트 자문을 위한 다관할권 규제 비교. 증거 기반, 1차 소스 우선, deliverable 수준 결과물 로컬 출력 파이프라인 보유. | Phase 2 ✓ |
+| **고덕수 (Ko Duksoo)** | [contract-review-agent](https://github.com/kipeum86/contract-review-agent) | 계약서 검토 파이프라인 — 계약서를 drop하면 **tracked-change redline이 들어간 DOCX, 여백 코멘트(internal strategy + external-facing), 전체 분석 리포트, 협상 권고**가 돌아온다. Node.js + Python 스택. 최종 법률 판단은 사람이 한다. | Phase 2 |
+| **변혁기 (Byeon Hyeok-gi)** | [legal-translation-agent](https://github.com/kipeum86/legal-translation-agent) | **5개 언어** 법률 문서 번역. zero-omission 보장, dual-pass 번역을 comparative synthesis로 병합. 관할권 인식 용어(BGB, UCC, PRC, Taiwan, APPI) 준수, 매 작업마다 성장하는 firm-wide 번역 메모리. | Phase 2 |
 
 **오케스트레이터는 하위 에이전트의 `CLAUDE.md`, skills, 지식 베이스를 절대 수정하지 않는다.** 이것이 "100% 재활용"의 실천이다. 어느 변호사가 자기 리포에 버그 픽스를 올리면 다음 `./setup.sh update` 한 번으로 자동으로 반영된다.
 

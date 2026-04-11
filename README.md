@@ -27,16 +27,16 @@ Every step is logged to `events.jsonl`, producing a replayable artifact. Which l
 
 This orchestrator is the **main office** of a fictional Korean law firm, 법무법인 진주 (Jinju Law Firm). Each of the eight attorneys below lives in its own independent GitHub repository as a standalone Claude Code agent. When you run `./setup.sh` they are all cloned into `agents/` and ready to be dispatched.
 
-| Attorney | Agent repository | Specialty | Phase |
-|----------|------------------|-----------|-------|
-| **김재식 (Kim Jaesik)** | [general-legal-research](https://github.com/kipeum86/general-legal-research) | Generalist legal research across any Korean law domain | Phase 1 ✓ |
-| **한석봉 (Han Seokbong)** | [legal-writing-agent](https://github.com/kipeum86/legal-writing-agent) | Legal drafting in Korean law-firm memorandum format | Phase 1 ✓ |
-| **반성문 (Ban Seong-mun)** · *Partner* | [second-review-agent](https://github.com/kipeum86/second-review-agent) | Quality review — verbatim MCP checks, Critical/Major/Minor comments, final sign-off | Phase 1 ✓ |
-| **정보호 (Jeong Bo-ho)** | [PIPA-expert](https://github.com/kipeum86/PIPA-expert) | Korean Personal Information Protection Act (개인정보보호법) specialist with dedicated PIPA/PIPC knowledge base | Phase 2 ✓ |
-| **김덕배 (Kim De Bruyne)** | [GDPR-expert](https://github.com/kipeum86/GDPR-expert) | EU General Data Protection Regulation specialist (Chapter V transfers, Schrems II, EDPB guidance) | Phase 2 ✓ |
-| **심진주 (Sim Jinju)** | [game-legal-research](https://github.com/kipeum86/game-legal-research) | International gaming law — loot boxes, live-service regulation, cross-border content rules | Phase 2 ✓ |
-| **고덕수 (Ko Duksoo)** | [contract-review-agent](https://github.com/kipeum86/contract-review-agent) | Commercial contract review under Korean law (SaaS, NDA, employment, license) | Phase 2 |
-| **변혁기 (Byeon Hyeok-gi)** | [legal-translation-agent](https://github.com/kipeum86/legal-translation-agent) | Legal document translation (KR ↔ EN), tone and citation format preserved | Phase 2 |
+| Attorney | Agent repository | What they actually do | Phase |
+|----------|------------------|-----------------------|-------|
+| **김재식 (Kim Jaesik)** | [general-legal-research](https://github.com/kipeum86/general-legal-research) | Evidence-based international legal research across **17+ jurisdictions**. The generalist research associate — any legal question, any jurisdiction, grade-A source-first workflow. | Phase 1 ✓ |
+| **한석봉 (Han Seokbong)** | [legal-writing-agent](https://github.com/kipeum86/legal-writing-agent) | Bilingual (KR/EN) drafter for **non-contract** legal documents. Drafts via a D1–D6 pipeline, revises via an R1–R7 tracked-change pipeline. Korean drafts follow 쟁점→결론→분석 conventions; English drafts follow IRAC/CRAC with Bluebook/OSCOLA. | Phase 1 ✓ |
+| **반성문 (Ban Seong-mun)** · *Partner* | [second-review-agent](https://github.com/kipeum86/second-review-agent) | Final quality gate for AI-generated legal documents. Verifies citations against primary legal databases (law.go.kr, congress.gov, eur-lex, and more), checks legal logic, and ships redlined DOCX with tracked changes. Independent release gate (Pass / Pass with Warnings / Manual Review Required / Not Recommended). Zero tolerance for hallucinated citations. | Phase 1 ✓ |
+| **정보호 (Jeong Bo-ho)** | [PIPA-expert](https://github.com/kipeum86/PIPA-expert) | Korean data privacy law specialist built on structured RAG: **929 statute files, 46 PIPC official guidelines, 30 landmark cases and interpretations, 2,369 cross-reference edges**. Produces law firm-grade DOCX opinions. | Phase 2 ✓ |
+| **김덕배 (Kim De Bruyne)** | [GDPR-expert](https://github.com/kipeum86/GDPR-expert) | EU data protection law specialist built on structured RAG: **5 EU laws (321 articles + 535 recitals), 120 EDPB documents, 51 CJEU judgments, 33 enforcement decisions** — 1,060+ indexed items. | Phase 2 ✓ |
+| **심진주 (Sim Jinju)** | [game-legal-research](https://github.com/kipeum86/game-legal-research) | International game-industry legal research — cross-jurisdiction regulatory comparison for game clients. Evidence-based, primary-source-first, with real local output pipeline for deliverable-grade work product. | Phase 2 ✓ |
+| **고덕수 (Ko Duksoo)** | [contract-review-agent](https://github.com/kipeum86/contract-review-agent) | Contract review pipeline — drop a contract in, get back a **DOCX with tracked-change redlines, margin comments (internal strategy + external-facing), a full analysis report, and negotiation recommendations**. Node.js + Python stack. Final legal judgment stays with the human. | Phase 2 |
+| **변혁기 (Byeon Hyeok-gi)** | [legal-translation-agent](https://github.com/kipeum86/legal-translation-agent) | Legal document translation across **5 languages** with zero-omission guarantee and dual-pass translation merged via comparative synthesis. Jurisdiction-aware terminology (BGB, UCC, PRC, Taiwan, APPI) and a persistent firm-wide translation memory that grows with every job. | Phase 2 |
 
 **The orchestrator never modifies a subordinate agent's `CLAUDE.md`, skills, or knowledge base.** That's what "100% reuse" means in practice. If an attorney ships a bug fix to their own repo, it flows through here on the next `./setup.sh update`.
 

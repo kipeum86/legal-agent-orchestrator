@@ -9,7 +9,9 @@ GITHUB_USER="kipeum86"
 AGENTS_DIR="agents"
 LOCAL_BASE="$HOME/코딩 프로젝트"
 
-# 에이전트 목록 — 새 에이전트 추가 시 여기에 한 줄 추가
+# 법무법인 진주 소속 에이전트 8명 — 오케스트레이터가 실제로 호출하는 대상.
+# briefing 계열(game-legal-briefing, game-policy-briefing)은 독립 Python
+# 앱이라 이 오케스트레이터가 호출하지 않으므로 클론 대상에서 제외.
 REPOS=(
   "general-legal-research"
   "legal-writing-agent"
@@ -19,8 +21,6 @@ REPOS=(
   "game-legal-research"
   "contract-review-agent"
   "legal-translation-agent"
-  "game-legal-briefing"
-  "game-policy-briefing"
 )
 
 mkdir -p "$AGENTS_DIR"

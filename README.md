@@ -93,16 +93,18 @@ No. This is a misconception about how Claude Code's `Agent` tool works.
 
 Each subagent is a **completely independent new Claude instance** with its own fresh 200K context window. The orchestrator doesn't carry their weight — it just coordinates.
 
-```
-Orchestrator (200K context, actual usage ~25-40K)
-   │
-   ├── Agent tool call ──▶ New Claude instance (200K, full CLAUDE.md + skills + MCP)
-   │                        └── runs independently → returns result via file
-   │
-   ├── Agent tool call ──▶ Another new Claude instance (200K)
-   │                        └── runs independently → returns result via file
-   │
-   └── ...
+```mermaid
+flowchart LR
+    O["Orchestrator<br/>200K context<br/><i>actual usage ~25-40K</i>"]
+    A["Subagent A<br/><i>fresh 200K</i><br/>CLAUDE.md + skills + MCP"]
+    B["Subagent B<br/><i>fresh 200K</i><br/>CLAUDE.md + skills + MCP"]
+    C["Subagent C<br/><i>fresh 200K</i><br/>CLAUDE.md + skills + MCP"]
+    O -->|Agent tool call| A
+    O -->|Agent tool call| B
+    O -->|Agent tool call| C
+    A -.->|result via file| O
+    B -.->|result via file| O
+    C -.->|result via file| O
 ```
 
 The orchestrator itself only spends tokens on classification (~2K), dispatch prompts (~1K), and reading result summaries (~2K). Each specialist runs at full capacity with its complete CLAUDE.md, skills, knowledge base, and MCP tools. **This is the opposite of "stuffing" — it's the most context-efficient multi-agent architecture possible.**
@@ -130,27 +132,7 @@ Jinju Law Firm is the opposite:
 - How did the revision cycle play out? → visible (`revision_requested`, `verbatim_verified`)
 - What did the partner comment on? → stored in `review-result.md`, one row per comment with line references
 
-Here are 15 events selected from an actual 47-event case file ([`samples/20260410-012238-391f/events.jsonl`](samples/20260410-012238-391f/events.jsonl)):
-
-```jsonl
-{"id":"evt_001","type":"case_received","data":{"query":"한국 게임산업법의 확률형 아이템(가챠) 규제에 대한 법률 의견서를 작성해줘"}}
-{"id":"evt_002","type":"case_classified","data":{"jurisdiction":["KR"],"domain":"game_regulation","task":"drafting","pipeline":["general-legal-research","legal-writing-agent","second-review-agent"]}}
-{"id":"evt_003","type":"agent_assigned","agent":"general-legal-research","data":{"name":"김재식","role":"범용 법률 리서치"}}
-{"id":"evt_014","type":"source_graded","agent":"general-legal-research","data":{"source":"공정위 2024.1.5. 전원회의 의결 ㈜넥슨코리아... 과징금 116억 4,200만원","grade":"A","citation":"사건번호 2021전자1052"}}
-{"id":"evt_018","type":"research_completed","data":{"sources_count":14,"key_findings_count":11}}
-{"id":"evt_019","type":"agent_assigned","agent":"legal-writing-agent","data":{"name":"한석봉","role":"법률문서 작성"}}
-{"id":"evt_034","type":"writing_completed","data":{"output_file":"opinion.md","sources_count":14}}
-{"id":"evt_035","type":"agent_assigned","agent":"second-review-agent","data":{"name":"반성문","role":"품질 검토 / 파트너 최종 승인"}}
-{"id":"evt_041","type":"review_completed","data":{"approval":"approved_with_revisions","comments_count":9}}
-{"id":"evt_042","type":"revision_requested","data":{"cycle":1,"max_cycles":2,"critical":2,"major":3,"minor":4}}
-{"id":"evt_043","type":"agent_assigned","agent":"legal-writing-agent","data":{"role":"법률문서 수정 (revision cycle 1)"}}
-{"id":"evt_044","type":"error","agent":"legal-writing-agent","data":{"error_type":"rate_limit","message":"Anthropic usage limit hit, reset 6am Asia/Seoul"}}
-{"id":"evt_045","type":"verbatim_verified","agent":"orchestrator","data":{"verifier":"orchestrator_meta","reason":"review-agent token limit hit; meta verification via korean-law MCP","critical_pass":2,"major_pass":1,"final_status":"approved"}}
-{"id":"evt_046","type":"docx_generated","data":{"output":"opinion.docx","size_bytes":56519,"tables":5,"paragraphs":138}}
-{"id":"evt_final","type":"final_output","data":{"total_sources":33,"grade_distribution":{"A":29,"B":4},"review_cycle":1,"final_approval":"approved"}}
-```
-
-Read that stream carefully. `evt_044` is a **real rate-limit failure in production**. A sub-agent died mid-revision. `evt_045` is the rescue — the orchestrator itself cross-checked the revised opinion's verbatim citations against the `korean-law` MCP and passed the revision. In a single-LLM system, that failure would have been "model returned an error" with nothing to learn from. Here, **the failure and its resolution are part of the permanent record**. That is what "the process is the product" actually means.
+Failure modes are in the permanent record too. In the [Phase 1 E2E case](samples/20260410-012238-391f/events.jsonl), a mid-revision rate-limit error (`evt_044`) triggered a meta-verification rescue (`evt_045`) where the orchestrator itself cross-checked citations against `korean-law` MCP. In a single-LLM system that failure would have been a dead chat tab. Here it's a typed event in an append-only log. **That's what "the process is the product" actually means.**
 
 Because we reuse real specialized agents with their own source grading and fact-checking, this level of observability is free. We did not have to build an audit layer.
 
@@ -196,48 +178,42 @@ If you want a cheap legal chatbot, this is the wrong project. If you want a lega
 
 ### System diagram
 
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                          ORCHESTRATOR                                 │
-│                (Claude Code main session, ~25-40K context)            │
-│                                                                       │
-│  1. Intake ──────────────────────────────────────────────────────────│
-│     Generate CASE_ID, create output/{CASE_ID}/, init events.jsonl    │
-│                                                                       │
-│  2. Classify (skills/route-case.md)                                  │
-│     jurisdiction × domain × task → specialist roster + pattern       │
-│                                                                       │
-│  3. Dispatch (Claude Code Agent tool) ──┐                            │
-└──────────────────────────────────────────┼────────────────────────────┘
-                                           │
-                  ┌────────────────────────┼────────────────────────┐
-                  ▼                        ▼                        ▼
-        ┌──────────────────┐    ┌──────────────────┐    ┌──────────────────┐
-        │   Subagent A     │    │   Subagent B     │    │   Subagent C     │
-        │  (new Claude,    │    │  (new Claude,    │    │  (new Claude,    │
-        │   fresh 200K)    │    │   fresh 200K)    │    │   fresh 200K)    │
-        │                  │    │                  │    │                  │
-        │  own CLAUDE.md   │    │  own CLAUDE.md   │    │  own CLAUDE.md   │
-        │  own skills      │    │  own skills      │    │  own skills      │
-        │  own KB          │    │  own KB          │    │  own KB          │
-        │  own MCP tools   │    │  own MCP tools   │    │  own MCP tools   │
-        │                  │    │                  │    │                  │
-        │  writes:         │    │  writes:         │    │  writes:         │
-        │  A-result.md     │    │  B-result.md     │    │  C-result.md     │
-        │  A-meta.json     │    │  B-meta.json     │    │  B-meta.json     │
-        └────────┬─────────┘    └────────┬─────────┘    └────────┬─────────┘
-                 │                       │                       │
-                 └───────────────────────┼───────────────────────┘
-                                         ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│                          ORCHESTRATOR                                 │
-│                                                                       │
-│  4. Handoff: reads only summary + key_findings from each agent       │
-│     (full result.md referenced by path → context-efficient)          │
-│                                                                       │
-│  5. Final assembly (skills/deliver-output.md)                        │
-│     opinion.md + opinion.docx + events.jsonl + sources.json          │
-└──────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    Q([Incoming legal question])
+    Q --> I
+
+    subgraph OrcTop["Orchestrator · Claude Code main session (~25-40K ctx)"]
+        direction TB
+        I["1 · Intake<br/>generate CASE_ID<br/>init events.jsonl"]
+        C["2 · Classify<br/><i>skills/route-case.md</i><br/>jurisdiction × domain × task"]
+        D["3 · Dispatch<br/>Claude Code Agent tool"]
+        I --> C --> D
+    end
+
+    D --> SA
+    D --> SB
+    D --> SC
+
+    subgraph Subs["Subagents · independent Claude instances, each with fresh 200K ctx"]
+        direction LR
+        SA["Subagent A<br/>own CLAUDE.md<br/>own skills<br/>own KB<br/>own MCP tools"]
+        SB["Subagent B<br/>own CLAUDE.md<br/>own skills<br/>own KB<br/>own MCP tools"]
+        SC["Subagent C<br/>own CLAUDE.md<br/>own skills<br/>own KB<br/>own MCP tools"]
+    end
+
+    SA -.->|"A-result.md<br/>A-meta.json"| H
+    SB -.->|"B-result.md<br/>B-meta.json"| H
+    SC -.->|"C-result.md<br/>C-meta.json"| H
+
+    subgraph OrcBot["Orchestrator · assembly"]
+        direction TB
+        H["4 · Handoff<br/>reads only summary + key_findings<br/>full result.md referenced by path"]
+        F["5 · Final assembly<br/><i>skills/deliver-output.md</i>"]
+        H --> F
+    end
+
+    F --> OUT([opinion.md + opinion.docx<br/>events.jsonl + sources.json])
 ```
 
 ### Five-stage workflow

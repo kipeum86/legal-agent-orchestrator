@@ -36,7 +36,7 @@
 
 ## Quick Look: A Real Case
 
-Here is one actual case from this repository — no mock data, no hand-wavy demo. Every file referenced below lives under [`output/20260410-012238-391f/`](output/20260410-012238-391f/).
+Here is one actual case from this repository — no mock data, no hand-wavy demo. Every file referenced below lives under [`samples/20260410-012238-391f/`](samples/20260410-012238-391f/), and a full agent-by-agent breakdown of what each subagent did on this case (plus the three Phase 2.2 mini E2E runs) is in [`samples/README.md`](samples/README.md).
 
 **The query (one sentence from the user):**
 
@@ -130,7 +130,7 @@ Jinju Law Firm is the opposite:
 - How did the revision cycle play out? → visible (`revision_requested`, `verbatim_verified`)
 - What did the partner comment on? → stored in `review-result.md`, one row per comment with line references
 
-Here are 15 events selected from an actual 47-event case file ([`output/20260410-012238-391f/events.jsonl`](output/20260410-012238-391f/events.jsonl)):
+Here are 15 events selected from an actual 47-event case file ([`samples/20260410-012238-391f/events.jsonl`](samples/20260410-012238-391f/events.jsonl)):
 
 ```jsonl
 {"id":"evt_001","type":"case_received","data":{"query":"한국 게임산업법의 확률형 아이템(가챠) 규제에 대한 법률 의견서를 작성해줘"}}
@@ -371,7 +371,7 @@ Each agent lives in its own GitHub repository. `setup.sh` auto-clones them, or c
 
 ## Sample Case Walkthrough
 
-This is the same case as the [Quick Look](#quick-look-a-real-case), unpacked properly. All files referenced are on disk under [`output/20260410-012238-391f/`](output/20260410-012238-391f/) — you can `cat` them yourself.
+This is the same case as the [Quick Look](#quick-look-a-real-case), unpacked properly. All files referenced are on disk under [`samples/20260410-012238-391f/`](samples/20260410-012238-391f/) — you can `cat` them yourself.
 
 ### The query
 
@@ -412,7 +412,7 @@ Pattern 2 (sequential handoff). Pattern 1 wasn't needed because only one jurisdi
 
 11 key findings, including the load-bearing observation that **§33② violations are not listed in the direct administrative fine provision §48**, meaning enforcement must go through a §38 corrective order → §45 criminal penalty two-step — a structural detail that changes the client's risk picture entirely.
 
-See [`research-result.md`](output/20260410-012238-391f/research-result.md) (37 KB) and [`research-meta.json`](output/20260410-012238-391f/research-meta.json) (10 KB).
+See [`research-result.md`](samples/20260410-012238-391f/research-result.md) (37 KB) and [`research-meta.json`](samples/20260410-012238-391f/research-meta.json) (10 KB).
 
 ### Stage 2 — Drafting (한석봉, legal-writing-agent)
 
@@ -427,11 +427,11 @@ See [`research-result.md`](output/20260410-012238-391f/research-result.md) (37 K
 - 8-item recommendations (권고사항)
 - Conclusion + signature block
 
-See [`opinion-v1.md`](output/20260410-012238-391f/opinion-v1.md) (39 KB) for the v1 draft before review.
+See [`opinion-v1.md`](samples/20260410-012238-391f/opinion-v1.md) (39 KB) for the v1 draft before review.
 
 ### Stage 3 — Review (반성문, Partner) — the catch
 
-The partner returned `approved_with_revisions` with **9 comments: 2 Critical, 3 Major, 4 Minor**. These are not generic style nits. Two of them, verbatim from [`review-meta.json`](output/20260410-012238-391f/review-meta.json):
+The partner returned `approved_with_revisions` with **9 comments: 2 Critical, 3 Major, 4 Minor**. These are not generic style nits. Two of them, verbatim from [`review-meta.json`](samples/20260410-012238-391f/review-meta.json):
 
 > **[Critical #1]** Block quote of 게임산업법 §38 ⑩⑪ in the draft does not match the current statute text (법률 제19877호). Receiver scope is `제9항` in the draft but `제7항부터 제9항까지` in the actual statute; the verb phrases are `이행·보고` in the draft but `조치 완료·통보` in the actual statute; the recipient is stated as "문화체육관광부장관만" but the actual statute says "게임물관리위원회위원장 또는 문화체육관광부장관"; the §11 proviso is drafted as two descriptive clauses but the statute enumerates three items. **Block quotes must be verbatim.**
 
@@ -447,7 +447,7 @@ The partner's 9 comments also included:
 - **[Minor]** Three different enforcement dates were listed side by side (2024-03-22 / 2025-10-23 / 2026-03-24), which confused readers — the partner wanted a single canonical baseline date.
 - **[Minor]** The 8 recommendations lacked "immediate / short-term / medium-term" time markers.
 
-See [`review-result.md`](output/20260410-012238-391f/review-result.md) (23 KB) for the full comment set with line-level references.
+See [`review-result.md`](samples/20260410-012238-391f/review-result.md) (23 KB) for the full comment set with line-level references.
 
 ### Stage 4 — Revision + the meta-verification rescue
 
@@ -468,7 +468,7 @@ evt_045  verbatim_verified  verifier=orchestrator_meta
          final_status: approved
 ```
 
-The orchestrator itself read the revised draft, queried `korean-law` MCP for the §38, §31-2, §47 primary-source text, and did the verbatim diff directly. See [`verbatim-verification.md`](output/20260410-012238-391f/verbatim-verification.md) (5 KB) for the full rescue log.
+The orchestrator itself read the revised draft, queried `korean-law` MCP for the §38, §31-2, §47 primary-source text, and did the verbatim diff directly. See [`verbatim-verification.md`](samples/20260410-012238-391f/verbatim-verification.md) (5 KB) for the full rescue log.
 
 This pattern was not in the original design. It emerged under pressure during the E2E test. It is now part of how the system handles rate-limited sub-agents — and will be a load-bearing fallback for Pattern 3 debates, where a specialist going down mid-argument used to be fatal.
 
@@ -500,7 +500,7 @@ Not a marketing claim — these are the actual numbers from `output/` folders yo
 
 | Metric | Value |
 |--------|-------|
-| Case | [`20260410-012238-391f`](output/20260410-012238-391f/) |
+| Case | [`20260410-012238-391f`](samples/20260410-012238-391f/) |
 | Pipeline | `general-legal-research → legal-writing → second-review → revision 1` |
 | Events | 47 |
 | Total sources | 33 (29 Grade A / 4 Grade B / 0 C / 0 D) |
@@ -513,9 +513,9 @@ Not a marketing claim — these are the actual numbers from `output/` folders yo
 
 | Test | Pipeline | Pattern | Sources | Grade A/B/C | Tokens | Wall time | Notes |
 |------|----------|---------|---------|-------------|--------|-----------|-------|
-| **T1** | `PIPA-expert` solo | direct | 9 | 8 / 1 / 0 | ~60K | 582s | [`test-T1-20260410-121640/`](output/test-T1-20260410-121640/). Exposed a `library/grade-b/` KB gap, since resolved. |
-| **Regression** | `game-legal-research` solo | direct | 32 | 25 / 0 / 7 | ~170K | 797s | [`test-regression-20260410-121640/`](output/test-regression-20260410-121640/). Specialist vs v1 generalist baseline: −3% comparable, 11/11 topic coverage. |
-| **T2** | `[PIPA ∥ GDPR]` parallel | Pattern 1 | 26 | 26 / 0 / 0 | ~124K | 334s | [`test-T2-20260410-121640/`](output/test-T2-20260410-121640/). Both branches executed truly in parallel; 5-dimension cross-jurisdiction tagging intact. |
+| **T1** | `PIPA-expert` solo | direct | 9 | 8 / 1 / 0 | ~60K | 582s | [`test-T1-20260410-121640/`](samples/test-T1-20260410-121640/). Exposed a `library/grade-b/` KB gap, since resolved. |
+| **Regression** | `game-legal-research` solo | direct | 32 | 25 / 0 / 7 | ~170K | 797s | [`test-regression-20260410-121640/`](samples/test-regression-20260410-121640/). Specialist vs v1 generalist baseline: −3% comparable, 11/11 topic coverage. |
+| **T2** | `[PIPA ∥ GDPR]` parallel | Pattern 1 | 26 | 26 / 0 / 0 | ~124K | 334s | [`test-T2-20260410-121640/`](samples/test-T2-20260410-121640/). Both branches executed truly in parallel; 5-dimension cross-jurisdiction tagging intact. |
 
 ### Phase 2.1 Specialist Routing — [`skills/route-case.md`](skills/route-case.md) v2
 
@@ -629,9 +629,11 @@ legal-agent-orchestrator/
 │   └── manage-debate.md                # Phase 2.3 debate logic (skeleton)
 ├── scripts/
 │   └── md-to-docx.py                   # DOCX conversion (style guide §11)
-├── agents/                             # 8 subordinate agents (symlinks or clones)
-├── output/                             # case artifacts ({case-id}/)
-│   ├── 20260410-012238-391f/           # Phase 1 E2E sample case
+├── agents/                             # 8 subordinate agents (symlinks or clones, gitignored)
+├── output/                             # live case artifacts ({case-id}/, gitignored)
+├── samples/                            # frozen portfolio-evidence case snapshots (tracked)
+│   ├── README.md                       # agent-by-agent breakdown of all 4 sample cases
+│   ├── 20260410-012238-391f/           # Phase 1 E2E sample case (47 events, 33 sources)
 │   ├── test-T1-20260410-121640/        # Phase 2.2 T1 (PIPA solo)
 │   ├── test-T2-20260410-121640/        # Phase 2.2 T2 (PIPA ∥ GDPR)
 │   └── test-regression-20260410-121640/
@@ -708,7 +710,8 @@ Yes. Write it as a standalone Claude Code agent (any structure — CLAUDE.md, sk
 | [skills/deliver-output.md](skills/deliver-output.md) | Final assembly procedure |
 | [skills/manage-debate.md](skills/manage-debate.md) | Phase 2.3 debate logic (skeleton) |
 | [resume.md](resume.md) | Development status (cross-session handoff doc) |
-| [output/20260410-012238-391f/](output/20260410-012238-391f/) | The sample case referenced throughout this README |
+| [samples/README.md](samples/README.md) | **Agent-by-agent breakdown of all 4 sample cases** — who did what, what each artifact contains |
+| [samples/20260410-012238-391f/](samples/20260410-012238-391f/) | The sample case referenced throughout this README |
 
 ---
 

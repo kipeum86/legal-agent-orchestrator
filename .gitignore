@@ -4,3 +4,10 @@ output/
 .DS_Store
 node_modules/
 .claude/settings.local.json
+
+# Internal design docs, session logs, and todo planning files — never public.
+# Whitelist approach: block everything under docs/, then allow only files
+# that carry genuine portfolio/public value.
+docs/*
+docs/**/*
+!docs/ko-legal-opinion-style-guide.md

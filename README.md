@@ -703,8 +703,6 @@ Yes. Write it as a standalone Claude Code agent (any structure — CLAUDE.md, sk
 
 | Document | Description |
 |----------|-------------|
-| [docs/design.md](docs/design.md) | Design doc (office-hours 6-round adversarial review, APPROVED 9/10) |
-| [docs/notes/architecture-defense.md](docs/notes/architecture-defense.md) | Source material for this README — extended "why this architecture" defense |
 | [docs/ko-legal-opinion-style-guide.md](docs/ko-legal-opinion-style-guide.md) | Canonical Korean legal opinion style guide (force-injected into every Korean agent call) |
 | [skills/route-case.md](skills/route-case.md) | Classification + pipeline selection logic (v2, 637 lines) |
 | [skills/deliver-output.md](skills/deliver-output.md) | Final assembly procedure |

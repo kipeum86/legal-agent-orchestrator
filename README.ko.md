@@ -23,6 +23,27 @@
 
 ---
 
+## 팀 소개 — 법무법인 진주 소속 에이전트
+
+이 오케스트레이터는 가상의 한국 로펌 **법무법인 진주**의 **본점**이다. 아래 8명의 변호사는 각자 독립된 GitHub 리포지토리에 standalone Claude Code 에이전트로 존재한다. `./setup.sh`를 실행하면 이들 전부가 `agents/` 아래로 clone되어 바로 디스패치될 수 있는 상태가 된다.
+
+| 담당 변호사 | Agent 리포지토리 | 전문 분야 | Phase |
+|------------|------------------|----------|-------|
+| **김재식 (Kim Jaesik)** | [general-legal-research](https://github.com/lowtidebuild/general-legal-research) | 한국법 범용 리서치 — 어느 도메인이든 | Phase 1 ✓ |
+| **한석봉 (Han Seokbong)** | [legal-writing-agent](https://github.com/lowtidebuild/legal-writing-agent) | 한국 로펌 MEMORANDUM 형식으로 법률 의견서 작성 | Phase 1 ✓ |
+| **반성문 (Ban Seong-mun)** · *파트너* | [second-review-agent](https://github.com/lowtidebuild/second-review-agent) | 품질 검토 — MCP로 verbatim 대조, Critical/Major/Minor 코멘트, 최종 승인 | Phase 1 ✓ |
+| **정보호 (Jeong Bo-ho)** | [PIPA-expert](https://github.com/lowtidebuild/PIPA-expert) | 한국 개인정보보호법 전문가. 전용 PIPA/PIPC 지식 베이스 보유 | Phase 2 ✓ |
+| **김덕배 (Kim De Bruyne)** | [GDPR-expert](https://github.com/lowtidebuild/GDPR-expert) | EU 데이터보호법 전문가 (Chapter V 국외이전, Schrems II, EDPB guidance) | Phase 2 ✓ |
+| **심진주 (Sim Jinju)** | [game-legal-research](https://github.com/lowtidebuild/game-legal-research) | 국제 게임법 전문가 — 확률형 아이템, 라이브 서비스 규제, 국경 간 콘텐츠 규제 | Phase 2 ✓ |
+| **고덕수 (Ko Duksoo)** | [contract-review-agent](https://github.com/lowtidebuild/contract-review-agent) | 한국법 하에서 상사계약서 검토 (SaaS, NDA, 고용, 라이선스) | Phase 2 |
+| **변혁기 (Byeon Hyeok-gi)** | [legal-translation-agent](https://github.com/lowtidebuild/legal-translation-agent) | 법률문서 번역 (KR ↔ EN). 어조와 인용 형식 보존 | Phase 2 |
+
+**오케스트레이터는 하위 에이전트의 `CLAUDE.md`, skills, 지식 베이스를 절대 수정하지 않는다.** 이것이 "100% 재활용"의 실천이다. 어느 변호사가 자기 리포에 버그 픽스를 올리면 다음 `./setup.sh update` 한 번으로 자동으로 반영된다.
+
+> 브리핑 계열 에이전트 2개(`game-legal-briefing`, `game-policy-briefing`)는 같은 작성자의 GitHub org에 존재하지만 독립 Python 앱이라 이 오케스트레이터의 스코프 바깥이며, `setup.sh`에서 클론 대상으로 포함되지 않는다.
+
+---
+
 ## 작동 방식
 
 법률 질문 하나를 던지면 오케스트레이터가 라우팅하고, 전문가들이 일하고, 의견서가 나온다. 실제 쿼리 하나에서 벌어진 일 — 전체 파일은 [`samples/20260410-012238-391f/`](samples/20260410-012238-391f/):
@@ -155,42 +176,105 @@ commercial legal AI product는 블랙박스다. 답은 받지만 어떻게 나�
 
 ---
 
-## 에이전트 로스터
+## 시작하기
 
-| # | Agent ID | 담당 변호사 | 관할권 | 역할 |
-|---|----------|------------|--------|------|
-| 1 | `general-legal-research` | 김재식 | KR | 범용 법률 리서치 |
-| 2 | `legal-writing-agent` | 한석봉 | KR | 한국 로펌 MEMORANDUM 형식으로 의견서 작성 |
-| 3 | `second-review-agent` | 반성문 (파트너) | KR | 품질 검토 파트너 — MCP verbatim 대조, Critical/Major/Minor 코멘트 |
-| 4 | `PIPA-expert` | 정보호 | KR | 한국 개인정보보호법 전문가 |
-| 5 | `GDPR-expert` | 김덕배 | EU | EU 데이터보호법 전문가 |
-| 6 | `game-legal-research` | 심진주 | KR + 국제 | 게임법 전문가 (확률형 아이템, 라이브 서비스, 콘텐츠 규제) |
-| 7 | `contract-review-agent` | 고덕수 | KR | 상사계약서 검토 |
-| 8 | `legal-translation-agent` | 변혁기 | KR / EN | 법률문서 번역, 어조·인용 형식 보존 |
+### 사전 조건
 
-각 에이전트는 독립된 GitHub 리포지토리에 호스팅된다. `setup.sh`가 자동 클론한다. **오케스트레이터는 하위 에이전트의 `CLAUDE.md`를 절대 수정하지 않는다** — 이것이 "100% 재활용"의 실천이다.
+- **[Claude Code](https://docs.claude.com/claude-code)** 설치 및 로그인. Max 구독 강력 추천 — 케이스 한 건에 서브에이전트 합산 200K+ 토큰을 쓰는데 종량제 API에서는 빠르게 누적된다. Max에서는 marginal cost가 0.
+- **macOS 또는 Linux**. `git`, `bash` 또는 `zsh`, `python3` (3.10+) 필요.
+- **[법제처 Open API](https://open.law.go.kr/) 계정.** 무료, 이메일만으로 가입. `LAW_OC` 키를 발급받게 되며, 이게 `korean-law` MCP 서버가 한국 법령·판례·행정해석례를 실시간 조회할 때 쓰는 인증 키.
 
----
-
-## 빠른 시작
+### 1. 오케스트레이터 클론
 
 ```bash
-# 1. 사전 조건: Claude Code (Max 구독 권장), Python 3.10+, 법제처 Open API 계정
-
 git clone https://github.com/lowtidebuild/legal-agent-orchestrator.git
 cd legal-agent-orchestrator
+```
 
-# 2. API 키 설정 (쉘 세션마다 필요 — Claude Code는 .env 자동 로드 X)
-export LAW_OC=your_law_oc_key
+이 시점에서 받는 것: 오케스트레이터 자체 — `CLAUDE.md`(파트너 시스템 프롬프트), `.mcp.json`(MCP 서버 설정), `skills/`(라우팅 및 어셈블 로직), `setup.sh`, 그리고 [`samples/`](samples/) 디렉토리에 4개의 실제 케이스 스냅샷. 8명의 하위 변호사는 **아직 설치되지 않은** 상태.
 
-# 3. 8개 하위 에이전트 설치
+### 2. 8명의 하위 에이전트 설치
+
+```bash
 ./setup.sh
+```
 
-# 4. Claude Code 실행; CLAUDE.md와 .mcp.json 자동 로드
+이 스크립트가 8명의 변호사 각자의 GitHub 리포지토리를 `agents/` 아래에 Agent ID 이름으로 clone한다:
+
+```
+agents/
+├── general-legal-research/     ← 김재식
+├── legal-writing-agent/        ← 한석봉
+├── second-review-agent/        ← 반성문 (파트너)
+├── PIPA-expert/                ← 정보호
+├── GDPR-expert/                ← 김덕배
+├── game-legal-research/        ← 심진주
+├── contract-review-agent/      ← 고덕수
+└── legal-translation-agent/    ← 변혁기
+```
+
+각 폴더는 자체 `CLAUDE.md`, `skills/`, 지식 베이스, MCP 설정을 가진 **독립된 Claude Code 에이전트**다. 오케스트레이터가 케이스를 처리할 때 Claude Code의 `Agent` tool로 이 에이전트들을 `cwd: agents/{agent-id}/`로 호출하므로, 각 서브에이전트는 자기 작업 디렉토리에서 자기 context로 돌아간다.
+
+`setup.sh`의 다른 명령:
+- `./setup.sh update` — 이미 클론된 에이전트 각각의 최신 커밋을 pull
+- `./setup.sh status` — 각 에이전트의 브랜치 + 최신 커밋 표시
+- `./setup.sh link` — **개발 모드**: `~/코딩 프로젝트/` 아래에 이미 에이전트 리포들을 체크아웃해놨다면, 새 clone 대신 심볼릭 링크를 만들어서 로컬 수정이 즉시 반영되도록 함
+
+### 3. 법제처 Open API 키 설정
+
+```bash
+export LAW_OC=your_law_oc_key
+```
+
+⚠️ 이건 **쉘 세션마다 필요**하다. Claude Code는 `.env`를 자동 로드하지 않고, `LAW_OC` 없이는 `korean-law` MCP 서버가 첫 법령 조회에서부터 실패한다. 가장 간단한 해결책은 `~/.zshrc` 또는 `~/.bashrc`에 `export LAW_OC=...`를 추가하는 것.
+
+### 4. 오케스트레이터 디렉토리에서 Claude Code 실행
+
+```bash
 claude
 ```
 
-이제 법률 질문을 던져보자. 결과는 `output/{CASE_ID}/`에 `events.jsonl`, 에이전트별 `result.md`/`meta.json`, 최종 `opinion.md` + `opinion.docx`로 저장된다.
+Claude Code가 시작할 때 다음을 자동 로드한다:
+- **[CLAUDE.md](CLAUDE.md)** — 오케스트레이터 시스템 프롬프트. 메인 Claude 세션에게 "너는 법무법인 진주의 대표 변호사이고, 이게 너의 워크플로우이고, 이게 소속 변호사 8명이고, 이게 호출할 수 있는 스킬들이다"라고 가르침
+- **[.mcp.json](.mcp.json)** — 사용 가능한 MCP 서버 설정 (`korean-law` 및 `kordoc`); 디스패치 시 각 서브에이전트가 이를 상속
+- **`skills/*.md`** — 오케스트레이터가 서브루틴처럼 실행하는 markdown 절차 문서
+
+이제 대표 변호사와 대화하는 상태다. 한국어나 영어로 법률 질문을 던져보자.
+
+### 5. 첫 케이스 실행
+
+예시 쿼리:
+
+```
+확률형 아이템 공급 확률 정보공개 의무 — 해외 관계회사가 한국 이용자 대상
+게임을 운영할 때 국내대리인 지정 요건과 위반 시 리스크는?
+```
+
+```
+의료기기 스타트업이 환자 음성 데이터를 AI 학습에 사용하려고 합니다.
+가명처리만으로 충분한가요, 별도 동의가 필요한가요?
+```
+
+벌어지는 일:
+1. 오케스트레이터가 질문을 분류한다 (관할권 × 도메인 × 작업). 파이프라인을 결정하고, `output/{CASE_ID}/`를 생성하고, `events.jsonl` append를 시작한다.
+2. `Agent` tool로 첫 번째 서브에이전트를 디스패치한다. 서브에이전트가 nested context에서 실행되는 것을 볼 수 있다 — MCP 호출, KB 읽기, 결과 기록.
+3. 제어가 오케스트레이터로 돌아오면 서브에이전트의 `{agent}-meta.json` summary를 읽고 다음 에이전트를 디스패치한다.
+4. 모든 에이전트가 끝나면 `skills/deliver-output.md`가 `opinion.md`를 어셈블하고 `opinion.docx`로 변환한다 (스타일 가이드에 따른 이중 폰트 한국어 타이포그래피).
+
+케이스당 벽시계 시간 5~15분 예상. 오케스트레이터는 latency를 최소화하려는 게 아니다 — 사용자가 나중에 수동으로 재확인해야 할 것들의 개수를 최소화하려는 것이다.
+
+### 6. 결과 확인
+
+```
+output/{CASE_ID}/
+├── events.jsonl            ← 전체 타임라인, 한 줄에 이벤트 하나
+├── {agent}-result.md       ← 각 서브에이전트의 상세 분석
+├── {agent}-meta.json       ← 각 서브에이전트의 2000 토큰 요약 + grading된 소스
+├── opinion.md              ← 최종 의견서 (markdown)
+└── opinion.docx            ← 최종 의견서 (DOCX, 클라이언트 전달 가능)
+```
+
+[`samples/`](samples/) 아래 샘플 케이스가 완성된 케이스 파일이 어떻게 생겼는지 정확히 보여준다. 실행하지 않고 "이 시스템이 성공적으로 처리한 실제 케이스가 어떻게 생겼나?"를 보고 싶다면 [`samples/20260410-012238-391f/opinion.md`](samples/20260410-012238-391f/opinion.md)를 열어보자 — 한국 확률형 아이템 규제에 관한 최종 리비전된 MEMORANDUM.
 
 ---
 
@@ -203,7 +287,7 @@ claude
 - [x] **Phase 2.2 후속** — PIPA-expert `library/grade-b/` 보강 (landmark 30건: 법령해석례 20 + 대법원 판례 10, [lowtidebuild/PIPA-expert@6b8137c](https://github.com/lowtidebuild/PIPA-expert/commit/6b8137c))
 - [ ] **Phase 2.3** — Pattern 3 멀티라운드 토론 (킬러 피처)
 - [ ] **Phase 3** — Case Replay (Next.js 정적 뷰어)
-- [ ] 8개 하위 에이전트 public 배포
+- [ ] 8개 하위 에이전트 리포지토리 public 배포 감사
 
 ---
 
@@ -215,8 +299,11 @@ claude
 **클라이언트 기밀은 어떻게 보호하나요?**
 모든 실행은 사용자의 로컬 머신에서 사용자 본인의 Claude Code 세션으로 이루어집니다. 중간 SaaS가 없습니다. 다만 Claude Code 자체가 추론을 위해 Anthropic에 프롬프트를 보내므로, 특정 사안에 그게 허용되는지는 소속 로펌 정책에 따라 다릅니다. `output/`, `agents/`, `.env`는 gitignored라서 케이스 파일과 API 키가 커밋에 새어나가지 않습니다.
 
+**`./setup.sh`가 제 머신에 정확히 뭘 하나요?**
+이 리포지토리 안에 `agents/` 폴더를 만들고, 8개의 public GitHub 리포지토리를 그 아래로 clone합니다. 이 디렉토리 바깥은 건드리지 않습니다. global package 설치도 없고, `git clone`이 하는 것 외의 환경 변이도 없습니다. 각 에이전트 폴더는 지식 베이스 크기에 따라 대략 10~80 MB 정도.
+
 **제 전문 에이전트를 추가할 수 있나요?**
-네. 독립된 Claude Code 에이전트로 작성하고 `agents/` 아래에 drop (또는 심볼릭 링크) 후 [`skills/route-case.md`](skills/route-case.md)에 한 행 추가하면 됩니다. 오케스트레이터 변경은 불필요합니다. plugin 모양으로 설계되어 있습니다.
+네. 독립된 Claude Code 에이전트로 작성(자체 `CLAUDE.md`, `skills/`, 선택적으로 `library/`와 `.mcp.json`)하고, `agents/` 아래에 drop (또는 심볼릭 링크)하고, `setup.sh`의 `REPOS` 배열에 한 줄 추가하고, [`skills/route-case.md`](skills/route-case.md)에 라우터가 언제 그 에이전트를 부를지 한 행 추가하면 됩니다. 오케스트레이터 코드 변경은 불필요합니다. plugin 모양으로 설계되어 있습니다.
 
 **의견서 한 건에 얼마 드나요?**
 Claude Code Max: marginal dollar cost 0. 종량제 API: 복잡도와 리비전 사이클에 따라 대략 $3~10. 진짜 비용은 벽시계 시간(파이프라인당 5~15분).
@@ -229,14 +316,14 @@ Claude Code Max: marginal dollar cost 0. 종량제 API: 복잡도와 리비전 �
 legal-agent-orchestrator/
 ├── CLAUDE.md                           # 오케스트레이터 시스템 프롬프트
 ├── .mcp.json                           # MCP 서버 설정 (korean-law + kordoc)
-├── setup.sh                            # 에이전트 클론/링크 관리
+├── setup.sh                            # 8개 하위 에이전트 클론
 ├── skills/
 │   ├── route-case.md                   # 분류 + 파이프라인 선택
 │   ├── deliver-output.md               # 최종 어셈블리
 │   └── manage-debate.md                # Phase 2.3 토론 (skeleton)
 ├── scripts/
 │   └── md-to-docx.py                   # DOCX 변환 (이중 폰트 한국어 스타일 가이드 §11)
-├── agents/                             # 8 하위 에이전트 (gitignored)
+├── agents/                             # 8 하위 에이전트 (gitignored, setup.sh로 채워짐)
 ├── output/                             # 런타임 케이스 아티팩트 (gitignored)
 ├── samples/                            # 포트폴리오 증거용 frozen 샘플
 │   ├── README.md                       # 4개 샘플의 에이전트별 작업 분해

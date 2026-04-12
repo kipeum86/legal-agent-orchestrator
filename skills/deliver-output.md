@@ -14,7 +14,7 @@ ls -la "$PROJECT_ROOT/output/$CASE_ID/"
 
 **필수 파일:**
 - `events.jsonl` — 이벤트 로그
-- `opinion.md` 또는 `*-result.md` — 최종 결과물
+- `opinion.md` 또는 `debate-opinion.md` 또는 `*-result.md` — 최종 결과물
 - `*-meta.json` — 각 에이전트의 메타데이터
 
 ---
@@ -58,6 +58,12 @@ ls -la "$PROJECT_ROOT/output/$CASE_ID/"
 echo '{"id":"evt_final","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestrator","type":"final_output","data":{"file_path":"output/'"$CASE_ID"'/opinion.md","format":"markdown","summary":"FINAL_SUMMARY","total_sources":N,"grade_distribution":{"A":0,"B":0,"C":0,"D":0}}}' >> "$PROJECT_ROOT/output/$CASE_ID/events.jsonl"
 ```
 
+<!-- IF pattern == pattern_3 (토론) -->
+```bash
+echo '{"id":"evt_final","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestrator","type":"final_output","data":{"case_id":"'"$CASE_ID"'","pattern":"pattern_3","primary_deliverable":"debate-opinion.docx","deliverables":["debate-opinion.docx","debate-transcript.docx","sources.json"],"summary":"VERDICT_SUMMARY","total_sources":N,"grade_distribution":{"A":0,"B":0,"C":0,"D":0}}}' >> "$PROJECT_ROOT/output/$CASE_ID/events.jsonl"
+```
+<!-- END IF -->
+
 ---
 
 ## Step 4: 클라이언트에게 전달
@@ -83,3 +89,28 @@ echo '{"id":"evt_final","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchest
 - 검토 코멘트를 legal-writing-agent에 전달하여 수정 요청
 - 수정 후 다시 second-review-agent에 재검토 요청
 - 최대 2회 수정 사이클 후 현재 상태로 전달
+
+<!-- IF pattern == pattern_3 (토론) -->
+
+📋 사건 {CASE_ID} 처리 완료 — 멀티라운드 토론
+
+📄 **최종 결과물:**
+- 토론 종합 판단 보고서: `output/{CASE_ID}/debate-opinion.docx`
+- 토론 트랜스크립트: `output/{CASE_ID}/debate-transcript.docx`
+
+⚖️ **토론 개요:**
+- 주제: {TOPIC}
+- {AGENT_A_NAME} ({JURISDICTION_A}) vs {AGENT_B_NAME} ({JURISDICTION_B})
+- 라운드: {N_ROUNDS}
+- 결론: {VERDICT_SUMMARY}
+
+👥 **참여 변호사:**
+- {AGENT_A_NAME} (토론자)
+- {AGENT_B_NAME} (토론자)
+- 한석봉 (종합 판단 작성)
+- 반성문 파트너 (검토: {approval status})
+
+📊 참조 소스: `output/{CASE_ID}/sources.json` ({N}개 소스)
+📊 이벤트 로그: `output/{CASE_ID}/events.jsonl`
+
+<!-- END IF -->

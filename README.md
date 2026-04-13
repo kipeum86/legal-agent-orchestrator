@@ -9,8 +9,6 @@
 ![MCP: korean-law](https://img.shields.io/badge/MCP-korean--law-green)
 ![Status: Phase 2.2 validated](https://img.shields.io/badge/Status-Phase_2.2_validated-brightgreen)
 
-**Status:** Phase 1 E2E passed · Phase 2.1/2.2 validated with 3 mini runs · Phase 2.3 (multi-round debate) in progress.
-
 ---
 
 ## Overview
@@ -19,7 +17,7 @@ Most "legal AI" products are a single LLM you throw questions at. This one is di
 
 An **orchestrator plays the role of managing partner**. It classifies each incoming question, routes it to the right specialist lawyer, and picks the collaboration pattern (sequential handoff / parallel research / multi-round debate). The eight subordinate agents are real Claude Code agents — each with its own jurisdiction, knowledge base, and MCP tools — and this project reuses them **100% unmodified**.
 
-Every step is logged to `events.jsonl`, producing a replayable artifact. Which lawyer was assigned, which sources (Grade A/B/C) were cited, what the fact-checker flagged — it's all visible.
+Every step is logged to `events.jsonl`, and the final delivery step folds the whole case folder into a single `case-report.md`. Which lawyer was assigned, which sources (Grade A/B/C) were cited, what the fact-checker flagged, and how revisions resolved — it's all visible in one narrative artifact.
 
 ---
 
@@ -99,7 +97,7 @@ flowchart TB
         H --> F
     end
 
-    F --> OUT([opinion.md + opinion.docx<br/>events.jsonl + sources.json])
+    F --> OUT([opinion.md + opinion.docx<br/>case-report.md + events.jsonl + sources.json])
 ```
 
 ### Three collaboration patterns
@@ -144,7 +142,7 @@ The orchestrator spends tokens only on classification, dispatch prompts, and rea
 
 Wrapping existing Claude Code agents in a web framework loses 40–50% of their capability: MCP breaks, the skills system needs reimplementation, knowledge-base browsing changes. You end up with a pretty demo producing legal opinions at half quality.
 
-We inverted the tradeoff: **Claude Code as the runtime, agents preserved 100% intact, visualization decoupled into static Case Replay.** Real legal work, not a demo.
+We inverted the tradeoff: **Claude Code as the runtime, agents preserved 100% intact, and final delivery collapsed into a single `case-report.md` artifact instead of a web UI.** Real legal work, not a demo.
 
 ### 3. The Process Is the Product
 
@@ -259,7 +257,7 @@ What happens next:
 1. The orchestrator classifies the question (jurisdiction × domain × task), picks a pipeline, creates `output/{CASE_ID}/`, and starts appending to `events.jsonl`.
 2. It dispatches the first subagent via `Agent` tool. You'll see the subagent run in a nested context — calling MCP, reading its KB, writing results.
 3. Control returns to the orchestrator, which reads the subagent's `{agent}-meta.json` summary and dispatches the next agent in the pipeline.
-4. When all agents finish, `skills/deliver-output.md` assembles `opinion.md` + converts it to `opinion.docx` (dual-font Korean typography per the style guide).
+4. When all agents finish, `skills/deliver-output.md` assembles `opinion.md`, converts it to `opinion.docx`, and generates `case-report.md`.
 
 Expect 5–15 minutes of wall-clock time per case. The orchestrator is not trying to minimize latency — it's trying to minimize the number of things you have to manually double-check afterwards.
 
@@ -271,10 +269,44 @@ output/{CASE_ID}/
 ├── {agent}-result.md       ← each subagent's detailed analysis
 ├── {agent}-meta.json       ← each subagent's 2000-token summary + graded sources
 ├── opinion.md              ← final opinion in markdown
+├── case-report.md          ← single-file narrative case archive
 └── opinion.docx            ← final opinion as DOCX (client-ready)
 ```
 
-The sample cases under [`samples/`](samples/) show exactly what a completed case file looks like. If you want to see what "a real case that this system successfully processed" looks like without running anything, open [`samples/20260410-012238-391f/opinion.md`](samples/20260410-012238-391f/opinion.md) — the final revised memorandum on Korean loot-box regulation.
+The sample cases under [`samples/`](samples/) show exactly what a completed case file looks like. If you want to see what "a real case that this system successfully processed" looks like without running anything, start with [`samples/20260410-012238-391f/case-report.md`](samples/20260410-012238-391f/case-report.md) — the single-file archive for the Korean loot-box regulation opinion.
+
+### 7. Generate `case-report.md`
+
+The orchestrator does not ship a web viewer anymore. Instead, every completed case can be collapsed into a single Markdown archive that renders directly on GitHub.
+
+Generate it manually for an existing case:
+
+```bash
+python3 scripts/generate-case-report.py samples/20260410-012238-391f
+```
+
+Or for a freshly completed live case:
+
+```bash
+python3 "$PROJECT_ROOT/scripts/generate-case-report.py" "$PROJECT_ROOT/output/$CASE_ID"
+```
+
+`skills/deliver-output.md` now calls this automatically at the final delivery step, so completed cases should end with:
+
+- `opinion.md`
+- `opinion.docx`
+- `sources.json`
+- `events.jsonl`
+- `case-report.md`
+
+The generated report is designed to be the one file you open first. It includes:
+- case metadata and status
+- human-readable timeline derived from `events.jsonl`
+- participating lawyers and their contributions
+- partner review findings grouped by severity
+- source table with grade breakdown
+- the final opinion inlined under one document
+- relative links to the original raw artifacts
 
 ---
 
@@ -286,7 +318,8 @@ The sample cases under [`samples/`](samples/) show exactly what a completed case
 - [x] **Phase 2.2** — Pattern 1 parallel dispatch (3 mini runs validated — see [`samples/README.md`](samples/README.md))
 - [x] **Phase 2.2 follow-up** — PIPA-expert `library/grade-b/` expansion (30 landmark items: 20 legal interpretations + 10 Supreme Court precedents, [kipeum86/PIPA-expert@6b8137c](https://github.com/kipeum86/PIPA-expert/commit/6b8137c))
 - [ ] **Phase 2.3** — Pattern 3 multi-round debate (the killer feature)
-- [ ] **Phase 3** — Case Replay (Next.js static viewer)
+- [x] **Phase 3** — single-file `case-report.md` generation workflow (`scripts/generate-case-report.py` + `skills/generate-case-report.md`)
+- [ ] Auto-backfill `case-report.md` for additional non-smoke-test sample cases as they accumulate
 - [ ] Public release audit pass for all 8 subordinate agent repositories
 
 ---
@@ -319,14 +352,17 @@ legal-agent-orchestrator/
 ├── setup.sh                            # clones the 8 subordinate agents
 ├── skills/
 │   ├── route-case.md                   # classification + pipeline selection
-│   ├── deliver-output.md               # final assembly
+│   ├── deliver-output.md               # final assembly + case-report generation handoff
+│   ├── generate-case-report.md         # single-file case archive generation
 │   └── manage-debate.md                # Phase 2.3 debate (skeleton)
 ├── scripts/
-│   └── md-to-docx.py                   # DOCX conversion (dual-font Korean style guide §11)
+│   ├── md-to-docx.py                   # DOCX conversion (dual-font Korean style guide §11)
+│   └── generate-case-report.py         # narrative case-report.md generator
 ├── agents/                             # 8 subordinate agents (gitignored, populated by setup.sh)
 ├── output/                             # live case artifacts (gitignored)
 ├── samples/                            # frozen portfolio-evidence case snapshots
 │   ├── README.md                       # agent-by-agent breakdown of all 4 samples
+│   ├── 20260410-012238-391f/case-report.md
 │   └── ...
 └── docs/
     └── ko-legal-opinion-style-guide.md # canonical Korean legal opinion style guide

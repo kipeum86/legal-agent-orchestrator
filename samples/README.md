@@ -1,8 +1,8 @@
 # Sample Cases — Who did what, and what they produced
 
-This directory contains **four real cases** that were processed by the orchestrator, frozen and committed as portfolio evidence. The main README references these files throughout — in particular, the [Quick Look](../README.md#quick-look-a-real-case), [Process Is the Product](../README.md#3-the-process-is-the-product), [Sample Case Walkthrough](../README.md#sample-case-walkthrough), and [Measured Performance](../README.md#measured-performance) sections.
+This directory contains **four real cases** that were processed by the orchestrator, frozen and committed as portfolio evidence. The main README references these files throughout as proof that the system runs end-to-end on real questions, and the full Phase 1 case now includes a derived [`case-report.md`](20260410-012238-391f/case-report.md) as the one-file narrative archive.
 
-These cases are **not synthetic demos**. They were produced by actually running the system end-to-end. Every `events.jsonl`, every `{agent}-result.md`, every `{agent}-meta.json` is the untouched output of a real subagent dispatch.
+These cases are **not synthetic demos**. They were produced by actually running the system end-to-end. Every `events.jsonl`, every `{agent}-result.md`, every `{agent}-meta.json` is the untouched output of a real subagent dispatch. `case-report.md` is the only derived artifact, generated afterward from those raw files.
 
 > ⚠️ **Snapshot, not live output.** New cases processed by the orchestrator land under `output/` (which is gitignored). Files under `samples/` are an immutable frozen copy kept in git so anyone cloning the repo can inspect real data without having to run the system themselves.
 
@@ -14,6 +14,7 @@ These cases are **not synthetic demos**. They were produced by actually running 
 **Query:** "한국 게임산업법의 확률형 아이템(가챠) 규제에 대한 법률 의견서를 작성해줘"
 **Pattern:** 2 — sequential handoff (with revision cycle)
 **Total events:** 47 · **Sources:** 33 (29 Grade A + 4 Grade B) · **Revision:** 1 cycle · **Approval:** approved
+**One-file archive:** [`case-report.md`](20260410-012238-391f/case-report.md)
 
 ### Agents involved and their assignments
 
@@ -28,9 +29,9 @@ These cases are **not synthetic demos**. They were produced by actually running 
 
 ### Recommended reading order for visitors
 
-1. **Start with the timeline:** [`events.jsonl`](20260410-012238-391f/events.jsonl) — 47 lines, under 2 minutes to skim. Each line is one atomic event. `evt_001` (the query) → `evt_final` (summary).
-2. **See what the partner caught:** [`review-meta.json`](20260410-012238-391f/review-meta.json) → the `comments` array with severity-ranked findings. This is the single most impressive piece of evidence in this repository for "the fact-checker is real."
-3. **See the final deliverable:** [`opinion.md`](20260410-012238-391f/opinion.md) — the post-revision memorandum that would actually go to a client.
+1. **Start with the one-file archive:** [`case-report.md`](20260410-012238-391f/case-report.md) — the whole case in one Markdown document.
+2. **Then inspect the raw timeline:** [`events.jsonl`](20260410-012238-391f/events.jsonl) — 47 lines, one atomic event each, `evt_001` → `evt_final`.
+3. **See what the partner caught:** [`review-meta.json`](20260410-012238-391f/review-meta.json) → the `comments` array with severity-ranked findings. This is the single most impressive piece of evidence in this repository for "the fact-checker is real."
 4. **See the rescue:** [`verbatim-verification.md`](20260410-012238-391f/verbatim-verification.md) — the orchestrator's in-process meta-verification log when the writing agent died mid-revision.
 
 ---

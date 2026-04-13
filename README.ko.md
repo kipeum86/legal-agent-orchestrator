@@ -9,8 +9,6 @@
 ![MCP: korean-law](https://img.shields.io/badge/MCP-korean--law-green)
 ![Status: Phase 2.2 검증 완료](https://img.shields.io/badge/Status-Phase_2.2_validated-brightgreen)
 
-**상태:** Phase 1 E2E 통과 · Phase 2.1/2.2 mini 3건 검증 완료 · Phase 2.3 (멀티라운드 토론) 진행 중.
-
 ---
 
 ## 개요
@@ -19,7 +17,7 @@
 
 **오케스트레이터가 파트너 변호사 역할**을 맡습니다. 들어오는 질문을 분류하고, 적합한 전문 변호사에게 배정하고, 협업 패턴(순차 핸드오프 / 병렬 리서치 / 멀티라운드 토론)을 직접 선택합니다. 8명의 하위 에이전트는 각자 다른 관할권, 지식 베이스, MCP 도구를 가진 진짜 Claude Code 에이전트이며, 이 프로젝트는 그들을 **단 한 줄도 수정하지 않고 100% 그대로 재활용**합니다.
 
-모든 단계는 `events.jsonl`에 기록되어 재생 가능한 아티팩트로 남습니다. 어느 변호사가 배정됐는지, 어떤 소스(Grade A/B/C)를 인용했는지, 팩트체커가 무엇을 지적했는지 — 전부 확인할 수 있습니다.
+모든 단계는 `events.jsonl`에 기록되며, 최종 전달 단계에서 사건 전체가 하나의 `case-report.md`로 다시 묶입니다. 어느 변호사가 배정됐는지, 어떤 소스(Grade A/B/C)를 인용했는지, 팩트체커가 무엇을 지적했는지, 리비전이 어떻게 해소됐는지 — 전부 한 파일에서 확인할 수 있습니다.
 
 ---
 
@@ -99,7 +97,7 @@ flowchart TB
         H --> F
     end
 
-    F --> OUT([opinion.md + opinion.docx<br/>events.jsonl + sources.json])
+    F --> OUT([opinion.md + opinion.docx<br/>case-report.md + events.jsonl + sources.json])
 ```
 
 ### 협업 패턴 3종
@@ -144,7 +142,7 @@ flowchart LR
 
 기존 Claude Code 에이전트를 웹 프레임워크로 감싸면 capability의 40~50%가 소실됩니다: MCP가 끊기고, 스킬 시스템을 재구현해야 하고, KB 탐색 방식이 달라집니다. 결국 원본 에이전트의 절반 수준 퀄리티만 나오는 예쁜 데모가 됩니다.
 
-그래서 트레이드오프를 뒤집었습니다: **Claude Code를 런타임으로 사용하고, 에이전트 capability를 100% 보존하고, 시각화는 정적 Case Replay로 분리합니다.** 실제 법률 업무가 돌아가는 아키텍처입니다 — 데모가 아닙니다.
+그래서 트레이드오프를 뒤집었습니다: **Claude Code를 런타임으로 사용하고, 에이전트 capability를 100% 보존하고, 최종 전달은 웹 UI 대신 단일 `case-report.md` 산출물로 수렴시킵니다.** 실제 법률 업무가 돌아가는 아키텍처입니다 — 데모가 아닙니다.
 
 ### 3. 프로세스 자체가 프로덕트입니다
 
@@ -259,7 +257,7 @@ Claude Code가 시작할 때 다음을 자동 로드합니다:
 1. 오케스트레이터가 질문을 분류합니다 (관할권 × 도메인 × 작업). 파이프라인을 결정하고, `output/{CASE_ID}/`를 생성하고, `events.jsonl` append를 시작합니다.
 2. `Agent` tool로 첫 번째 서브에이전트를 디스패치합니다. 서브에이전트가 nested context에서 실행되는 것을 확인할 수 있습니다 — MCP 호출, KB 읽기, 결과 기록.
 3. 제어가 오케스트레이터로 돌아오면 서브에이전트의 `{agent}-meta.json` summary를 읽고 다음 에이전트를 디스패치합니다.
-4. 모든 에이전트가 끝나면 `skills/deliver-output.md`가 `opinion.md`를 어셈블하고 `opinion.docx`로 변환합니다 (스타일 가이드에 따른 이중 폰트 한국어 타이포그래피).
+4. 모든 에이전트가 끝나면 `skills/deliver-output.md`가 `opinion.md`를 어셈블하고 `opinion.docx`로 변환한 뒤 `case-report.md`까지 생성합니다.
 
 케이스당 벽시계 시간은 5~15분 정도 예상됩니다. 이 오케스트레이터는 latency를 최소화하는 것이 아니라, 사용자가 나중에 수동으로 재확인해야 할 항목의 수를 최소화하는 것을 목표로 합니다.
 
@@ -271,10 +269,45 @@ output/{CASE_ID}/
 ├── {agent}-result.md       ← 각 서브에이전트의 상세 분석
 ├── {agent}-meta.json       ← 각 서브에이전트의 2000 토큰 요약 + grading된 소스
 ├── opinion.md              ← 최종 의견서 (markdown)
+├── case-report.md          ← 사건 전체를 묶은 단일 narrative 리포트
 └── opinion.docx            ← 최종 의견서 (DOCX, 클라이언트 전달 가능)
 ```
 
-[`samples/`](samples/) 아래 샘플 케이스에서 완성된 케이스 파일의 구조를 확인하실 수 있습니다. 시스템을 실행하지 않고 "성공적으로 처리된 실제 케이스가 어떤 모습인지" 보고 싶으시다면 [`samples/20260410-012238-391f/opinion.md`](samples/20260410-012238-391f/opinion.md)를 열어보세요 — 한국 확률형 아이템 규제에 관한 최종 리비전 MEMORANDUM입니다.
+[`samples/`](samples/) 아래 샘플 케이스에서 완성된 케이스 파일의 구조를 확인하실 수 있습니다. 시스템을 실행하지 않고 "성공적으로 처리된 실제 케이스가 어떤 모습인지" 보고 싶으시다면 [`samples/20260410-012238-391f/case-report.md`](samples/20260410-012238-391f/case-report.md)를 먼저 열어보세요 — 한국 확률형 아이템 규제 사건의 단일 파일 아카이브입니다.
+
+### 7. `case-report.md` 생성
+
+이제 오케스트레이터는 별도 웹 viewer를 제공하지 않습니다. 대신 완료된 케이스 폴더를 GitHub에서 바로 읽기 좋은 단일 Markdown 아카이브로 접습니다.
+
+기존 샘플 케이스에 수동 적용:
+
+```bash
+python3 scripts/generate-case-report.py samples/20260410-012238-391f
+```
+
+방금 완료된 실시간 케이스에 적용:
+
+```bash
+python3 "$PROJECT_ROOT/scripts/generate-case-report.py" "$PROJECT_ROOT/output/$CASE_ID"
+```
+
+`skills/deliver-output.md`는 이제 최종 전달 직전에 이 스크립트를 자동 호출합니다. 따라서 정상 완료된 케이스는 보통 다음 파일로 마감됩니다.
+
+- `opinion.md`
+- `opinion.docx`
+- `sources.json`
+- `events.jsonl`
+- `case-report.md`
+
+생성된 리포트에는 다음이 포함됩니다.
+
+- 사건 메타데이터와 상태 요약
+- `events.jsonl`에서 사람이 읽는 타임라인으로 바꾼 처리 과정
+- 참여 변호사와 핵심 기여
+- severity 기준으로 정리한 파트너 리뷰 결과
+- grade 분포가 포함된 인용 소스 표
+- 인라인으로 삽입된 최종 의견서 본문
+- 원본 산출물 상대 경로 링크
 
 ---
 
@@ -286,7 +319,8 @@ output/{CASE_ID}/
 - [x] **Phase 2.2** — Pattern 1 병렬 디스패치 (3 mini 검증 — [`samples/README.md`](samples/README.md))
 - [x] **Phase 2.2 후속** — PIPA-expert `library/grade-b/` 보강 (landmark 30건: 법령해석례 20 + 대법원 판례 10, [kipeum86/PIPA-expert@6b8137c](https://github.com/kipeum86/PIPA-expert/commit/6b8137c))
 - [ ] **Phase 2.3** — Pattern 3 멀티라운드 토론 (킬러 피처)
-- [ ] **Phase 3** — Case Replay (Next.js 정적 뷰어)
+- [x] **Phase 3** — 단일 `case-report.md` 생성 워크플로우 (`scripts/generate-case-report.py` + `skills/generate-case-report.md`)
+- [ ] smoke test가 아닌 추가 샘플 케이스에 `case-report.md` 소급 적용
 - [ ] 8개 하위 에이전트 리포지토리 public 배포 감사
 
 ---
@@ -319,14 +353,17 @@ legal-agent-orchestrator/
 ├── setup.sh                            # 8개 하위 에이전트 클론
 ├── skills/
 │   ├── route-case.md                   # 분류 + 파이프라인 선택
-│   ├── deliver-output.md               # 최종 어셈블리
+│   ├── deliver-output.md               # 최종 어셈블리 + case-report 생성 호출
+│   ├── generate-case-report.md         # 단일 사건 리포트 생성
 │   └── manage-debate.md                # Phase 2.3 멀티라운드 토론
 ├── scripts/
-│   └── md-to-docx.py                   # DOCX 변환 (이중 폰트 한국어 스타일 가이드 §11)
+│   ├── md-to-docx.py                   # DOCX 변환 (이중 폰트 한국어 스타일 가이드 §11)
+│   └── generate-case-report.py         # narrative case-report.md 생성기
 ├── agents/                             # 8 하위 에이전트 (gitignored, setup.sh로 설치)
 ├── output/                             # 런타임 케이스 아티팩트 (gitignored)
 ├── samples/                            # 포트폴리오 증거용 frozen 샘플
 │   ├── README.md                       # 4개 샘플의 에이전트별 작업 분해
+│   ├── 20260410-012238-391f/case-report.md
 │   └── ...
 └── docs/
     └── ko-legal-opinion-style-guide.md # 한국어 법률 의견서 스타일 정본

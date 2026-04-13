@@ -3,6 +3,8 @@ output/
 .env
 .DS_Store
 node_modules/
+.pnpm-store/
+__pycache__/
 .claude/settings.local.json
 
 # Internal design docs, session logs, and todo planning files — never public.
@@ -11,6 +13,8 @@ node_modules/
 docs/*
 docs/**/*
 !docs/ko-legal-opinion-style-guide.md
+!docs/phase3-case-replay-design.md
+!docs/phase3-frontend-spec.md
 
 # Dev handoff doc (session state, next-steps, internal breadcrumbs) — not public.
 resume.md

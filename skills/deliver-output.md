@@ -66,7 +66,25 @@ echo '{"id":"evt_final","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchest
 
 ---
 
-## Step 4: 클라이언트에게 전달
+## Step 4: case-report.md 생성
+
+최종 전달 직전에 반드시 `case-report.md`를 생성하세요.
+
+```bash
+python3 "$PROJECT_ROOT/scripts/generate-case-report.py" "$PROJECT_ROOT/output/$CASE_ID"
+```
+
+생성 후 확인:
+
+```bash
+[ -f "$PROJECT_ROOT/output/$CASE_ID/case-report.md" ]
+```
+
+`events.jsonl`이 없는 smoke test 디렉토리라면 생성이 skip될 수 있습니다. 이 경우에도 파이프라인 자체를 실패로 처리하지는 않습니다.
+
+---
+
+## Step 5: 클라이언트에게 전달
 
 최종 결과를 클라이언트에게 보고하세요:
 
@@ -75,6 +93,7 @@ echo '{"id":"evt_final","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchest
 
 📄 **최종 결과물:**
 - 의견서: output/{CASE_ID}/opinion.md
+- 사건 리포트: output/{CASE_ID}/case-report.md
 - 참조 소스: output/{CASE_ID}/sources.json ({N}개 소스, Grade A: {n}개)
 
 👥 **참여 변호사:**
@@ -97,6 +116,7 @@ echo '{"id":"evt_final","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchest
 📄 **최종 결과물:**
 - 토론 종합 판단 보고서: `output/{CASE_ID}/debate-opinion.docx`
 - 토론 트랜스크립트: `output/{CASE_ID}/debate-transcript.docx`
+- 사건 리포트: `output/{CASE_ID}/case-report.md`
 
 ⚖️ **토론 개요:**
 - 주제: {TOPIC}

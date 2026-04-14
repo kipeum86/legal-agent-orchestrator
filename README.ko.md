@@ -7,7 +7,6 @@
 ![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
 ![Runtime: Claude Code](https://img.shields.io/badge/Runtime-Claude_Code-orange)
 ![MCP: korean-law](https://img.shields.io/badge/MCP-korean--law-green)
-![Status: Phase 2.2 검증 완료](https://img.shields.io/badge/Status-Phase_2.2_validated-brightgreen)
 
 ---
 
@@ -311,24 +310,7 @@ python3 "$PROJECT_ROOT/scripts/generate-case-report.py" "$PROJECT_ROOT/output/$C
 
 ---
 
-## 진행 상황 & 로드맵
-
-- [x] **Phase 0** — 기술 스파이크 (Agent tool, MCP, 병렬 실행)
-- [x] **Phase 1** — 3 에이전트 기본 파이프라인 + E2E ([샘플 케이스](samples/20260410-012238-391f/))
-- [x] **Phase 2.1** — 전문가 라우팅 ([`skills/route-case.md`](skills/route-case.md) v2, 637줄)
-- [x] **Phase 2.2** — Pattern 1 병렬 디스패치 (3 mini 검증 — [`samples/README.md`](samples/README.md))
-- [x] **Phase 2.2 후속** — PIPA-expert `library/grade-b/` 보강 (landmark 30건: 법령해석례 20 + 대법원 판례 10, [kipeum86/PIPA-expert@6b8137c](https://github.com/kipeum86/PIPA-expert/commit/6b8137c))
-- [ ] **Phase 2.3** — Pattern 3 멀티라운드 토론 (킬러 피처)
-- [x] **Phase 3** — 단일 `case-report.md` 생성 워크플로우 (`scripts/generate-case-report.py` + `skills/generate-case-report.md`)
-- [ ] smoke test가 아닌 추가 샘플 케이스에 `case-report.md` 소급 적용
-- [ ] 8개 하위 에이전트 리포지토리 public 배포 감사
-
----
-
 ## FAQ
-
-**프로덕션에 사용할 수 있나요?**
-아닙니다. 포트폴리오/연구 프로젝트입니다. Phase 1 E2E 의견서 초안은 한국 변호사가 편집하여 전달할 수 있을 수준의 실제 MEMORANDUM이지만, 실제 클라이언트 업무에 사용하려면 자격을 갖춘 변호사의 검토, 관할권 면책조항, 소속 로펌의 엔게이지먼트 정책 준수가 필요합니다.
 
 **클라이언트 기밀은 어떻게 보호하나요?**
 모든 실행은 사용자의 로컬 머신에서 사용자 본인의 Claude Code 세션으로 이루어집니다. 중간 SaaS는 없습니다. 다만 Claude Code 자체가 추론을 위해 Anthropic에 프롬프트를 전송하므로, 특정 사안에서 이것이 허용되는지는 소속 로펌 정책에 따라 다릅니다. `output/`, `agents/`, `.env`는 gitignored 되어 있어 케이스 파일과 API 키가 커밋에 포함되지 않습니다.

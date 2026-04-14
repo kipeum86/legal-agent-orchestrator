@@ -7,7 +7,6 @@
 ![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
 ![Runtime: Claude Code](https://img.shields.io/badge/Runtime-Claude_Code-orange)
 ![MCP: korean-law](https://img.shields.io/badge/MCP-korean--law-green)
-![Status: Phase 2.2 validated](https://img.shields.io/badge/Status-Phase_2.2_validated-brightgreen)
 
 ---
 
@@ -310,24 +309,7 @@ The generated report is designed to be the one file you open first. It includes:
 
 ---
 
-## Status & Roadmap
-
-- [x] **Phase 0** — Tech spike (Agent tool, MCP, parallel execution)
-- [x] **Phase 1** — 3-agent baseline pipeline + E2E ([sample case](samples/20260410-012238-391f/))
-- [x] **Phase 2.1** — Specialist routing ([`skills/route-case.md`](skills/route-case.md) v2, 637 lines)
-- [x] **Phase 2.2** — Pattern 1 parallel dispatch (3 mini runs validated — see [`samples/README.md`](samples/README.md))
-- [x] **Phase 2.2 follow-up** — PIPA-expert `library/grade-b/` expansion (30 landmark items: 20 legal interpretations + 10 Supreme Court precedents, [kipeum86/PIPA-expert@6b8137c](https://github.com/kipeum86/PIPA-expert/commit/6b8137c))
-- [ ] **Phase 2.3** — Pattern 3 multi-round debate (the killer feature)
-- [x] **Phase 3** — single-file `case-report.md` generation workflow (`scripts/generate-case-report.py` + `skills/generate-case-report.md`)
-- [ ] Auto-backfill `case-report.md` for additional non-smoke-test sample cases as they accumulate
-- [ ] Public release audit pass for all 8 subordinate agent repositories
-
----
-
 ## FAQ
-
-**Is this production-ready?**
-No. This is a portfolio/research project. The Phase 1 E2E opinion draft is a real memorandum that a Korean lawyer could edit and deliver, but using it for actual client work requires human review by an admitted attorney, jurisdiction disclaimers, and your firm's engagement policies.
 
 **How does it handle client confidentiality?**
 Everything runs locally on your machine under your own Claude Code session. No intermediate SaaS. Claude Code itself sends prompts to Anthropic for inference — whether that's acceptable for a given matter depends on your firm. `output/`, `agents/`, and `.env` are gitignored so case files and API keys don't leak into commits.

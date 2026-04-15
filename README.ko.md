@@ -45,21 +45,17 @@
 
 ## 작동 방식
 
-법률 질문 하나를 던지면 오케스트레이터가 라우팅하고, 전문가들이 일하고, 의견서가 나옵니다. 실제 쿼리 하나에서 벌어진 일 — 전체 파일은 [`samples/20260410-012238-391f/`](samples/20260410-012238-391f/):
-
-> **쿼리:** "한국 게임산업법의 확률형 아이템(가챠) 규제에 대한 법률 의견서를 작성해줘"
+법률 질문 하나를 던지면 오케스트레이터가 라우팅하고, 전문가들이 일하고, 의견서가 나옵니다. 전형적인 처리 흐름은 아래와 같습니다.
 
 | 단계 | 에이전트 | 수행한 작업 | 산출물 |
 |------|---------|------------|--------|
-| **1. 리서치** | 김재식 · `general-legal-research` | `korean-law` MCP로 1차 소스 14건 수집 — 법조문, 넥슨 공정위 116억 과징금 결정, 집행 경로 | [`research-result.md`](samples/20260410-012238-391f/research-result.md) |
-| **2. 드래프팅** | 한석봉 · `legal-writing-agent` | 한국형 전문 메모 형식 작성 (결론요약 → 면책조항 → 7개 쟁점 검토 → 리스크 매트릭스 → 8개 권고사항) | [`opinion-v1.md`](samples/20260410-012238-391f/opinion-v1.md) |
-| **3. 리뷰** | 반성문 · `second-review-agent` | 모든 블록 인용구를 MCP로 verbatim 대조, **9개 코멘트 반환 (Critical 2 + Major 3 + Minor 4)** — 실제 법조문 원문 불일치 적발 | [`review-result.md`](samples/20260410-012238-391f/review-result.md) |
-| **4. 리비전 rescue** | `legal-writing-agent` + 오케스트레이터 | 작성자가 리비전 중 rate limit 발생; 오케스트레이터가 직접 `korean-law` MCP로 수정된 인용구 대조 | [`verbatim-verification.md`](samples/20260410-012238-391f/verbatim-verification.md) |
-| **5. 최종 전달** | 오케스트레이터 | 한국 법률 의견서 스타일 가이드(Times New Roman + 맑은 고딕)에 따라 DOCX 어셈블 | [`opinion.docx`](samples/20260410-012238-391f/opinion.docx) |
+| **1. 리서치** | 김재식 · `general-legal-research` | `korean-law` MCP로 1차 소스, 판례, 행정 결정례, 집행 경로를 수집 | `research-result.md` |
+| **2. 드래프팅** | 한석봉 · `legal-writing-agent` | 한국형 법률 의견서 초안을 작성 | `opinion.md` |
+| **3. 리뷰** | 반성문 · `second-review-agent` | 블록 인용구를 verbatim 대조하고, severity 기준으로 코멘트를 반환 | `review-result.md` |
+| **4. 리비전 rescue** | `legal-writing-agent` + 오케스트레이터 | 리비전이 막히면 오케스트레이터가 직접 1차 소스를 재대조 | `verbatim-verification.md` |
+| **5. 최종 전달** | 오케스트레이터 | 최종 전달 묶음을 조립하고 클라이언트용 파일을 생성 | `opinion.docx`, `case-report.md` |
 
-**결과:** 소스 33건 (Grade A 29 + Grade B 4) · 이벤트 47건 · 리비전 1회 · 승인.
-
-전체 이벤트 타임라인 → [`events.jsonl`](samples/20260410-012238-391f/events.jsonl) · 4개 샘플 케이스 전체의 에이전트별 작업 분해 → [`samples/README.md`](samples/README.md).
+**결과:** 감사 가능한 소스 묶음, typed event log, 리뷰 결과, 최종 전달 파일이 남습니다.
 
 ### 시스템 다이어그램
 
@@ -151,7 +147,7 @@ flowchart LR
 
 Jinju Legal Orchestrator는 정반대입니다. 어느 스페셜리스트가 배정됐는지, 어떤 소스를 참조했는지, 팩트체커가 무엇을 지적했는지, 리비전 사이클이 어떻게 해소됐는지 — 전부 `events.jsonl`에 이벤트 단위로 기록됩니다.
 
-실패 모드까지 영구 기록에 남습니다. [Phase 1 E2E 케이스](samples/20260410-012238-391f/events.jsonl)에서 리비전 도중 rate limit 에러(`evt_044`)가 발생하자, 오케스트레이터가 직접 나서서 메타 검증 rescue(`evt_045`)를 수행했습니다. 단일 LLM 시스템에서는 "모델 에러"로 끝났을 것이 여기서는 append-only 로그의 typed 이벤트로 남습니다. **그것이 "프로세스 자체가 프로덕트"의 실전 의미입니다.**
+실패 모드까지 영구 기록에 남습니다. 예를 들어 리비전 도중 rate limit 에러가 발생하면, 오케스트레이터가 직접 메타 검증 rescue를 수행할 수 있습니다. 단일 LLM 시스템에서는 "모델 에러"로 끝났을 것이 여기서는 append-only 로그의 typed 이벤트로 남습니다. **그것이 "프로세스 자체가 프로덕트"의 실전 의미입니다.**
 
 ### 4. 토큰을 많이 태웁니다 — 의도적입니다
 
@@ -190,7 +186,7 @@ git clone https://github.com/kipeum86/legal-agent-orchestrator.git
 cd legal-agent-orchestrator
 ```
 
-이 시점에서 받는 것: 오케스트레이터 자체 — `CLAUDE.md`(리드 오케스트레이터 시스템 프롬프트), `.mcp.json`(MCP 서버 설정), `skills/`(라우팅 및 어셈블 로직), `setup.sh`, 그리고 [`samples/`](samples/) 디렉토리에 4개의 실제 케이스 스냅샷입니다. 8명의 하위 에이전트는 **아직 설치되지 않은** 상태입니다.
+이 시점에서 받는 것: 오케스트레이터 자체 — `CLAUDE.md`(리드 오케스트레이터 시스템 프롬프트), `.mcp.json`(MCP 서버 설정), `skills/`(라우팅 및 어셈블 로직), `setup.sh`입니다. 8명의 하위 에이전트는 **아직 설치되지 않은** 상태입니다.
 
 ### 2. 8명의 하위 에이전트 설치
 
@@ -274,19 +270,11 @@ output/{CASE_ID}/
 └── opinion.docx            ← 최종 의견서 (DOCX, 클라이언트 전달 가능)
 ```
 
-[`samples/`](samples/) 아래 샘플 케이스에서 완성된 케이스 파일의 구조를 확인하실 수 있습니다. 시스템을 실행하지 않고 "성공적으로 처리된 실제 케이스가 어떤 모습인지" 보고 싶으시다면 [`samples/20260410-012238-391f/case-report.md`](samples/20260410-012238-391f/case-report.md)를 먼저 열어보세요 — 한국 확률형 아이템 규제 사건의 단일 파일 아카이브입니다.
-
 ### 7. `case-report.md` 생성
 
 이제 오케스트레이터는 별도 웹 viewer를 제공하지 않습니다. 대신 완료된 케이스 폴더를 GitHub에서 바로 읽기 좋은 단일 Markdown 아카이브로 접습니다.
 
-기존 샘플 케이스에 수동 적용:
-
-```bash
-python3 scripts/generate-case-report.py samples/20260410-012238-391f
-```
-
-방금 완료된 실시간 케이스에 적용:
+완료된 실시간 케이스에 수동 적용:
 
 ```bash
 python3 "$PROJECT_ROOT/scripts/generate-case-report.py" "$PROJECT_ROOT/output/$CASE_ID"
@@ -345,10 +333,6 @@ legal-agent-orchestrator/
 │   └── generate-case-report.py         # narrative case-report.md 생성기
 ├── agents/                             # 8 하위 에이전트 (gitignored, setup.sh로 설치)
 ├── output/                             # 런타임 케이스 아티팩트 (gitignored)
-├── samples/                            # 포트폴리오 증거용 frozen 샘플
-│   ├── README.md                       # 4개 샘플의 에이전트별 작업 분해
-│   ├── 20260410-012238-391f/case-report.md
-│   └── ...
 └── docs/
     └── ko-legal-opinion-style-guide.md # 한국어 법률 의견서 스타일 정본
 ```

@@ -45,21 +45,17 @@ This repository is the central coordinator for **Jinju Legal Orchestrator**, a f
 
 ## How It Works
 
-Send a legal question. The orchestrator routes it, the specialists do the work, and you get an opinion. Here is what happened on one real query — full files at [`samples/20260410-012238-391f/`](samples/20260410-012238-391f/):
-
-> **Query:** "한국 게임산업법의 확률형 아이템(가챠) 규제에 대한 법률 의견서를 작성해줘"
+Send a legal question. The orchestrator routes it, the specialists do the work, and you get an opinion. A typical pipeline looks like this:
 
 | Stage | Agent | What it did | Output |
 |-------|-------|-------------|--------|
-| **1. Research** | 김재식 · `general-legal-research` | Pulled 14 primary sources from `korean-law` MCP — statute text, the KFTC ₩11.6B Nexon decision, enforcement path | [`research-result.md`](samples/20260410-012238-391f/research-result.md) |
-| **2. Drafting** | 한석봉 · `legal-writing-agent` | Wrote a Korean professional-format legal memorandum (summary → disclaimer → 7 issue analyses → risk matrix → 8 recommendations) | [`opinion-v1.md`](samples/20260410-012238-391f/opinion-v1.md) |
-| **3. Review** | 반성문 · `second-review-agent` | Ran verbatim MCP checks on every block quote, returned **9 comments (2 Critical + 3 Major + 4 Minor)** — including a real statute-text mismatch | [`review-result.md`](samples/20260410-012238-391f/review-result.md) |
-| **4. Revision rescue** | `legal-writing-agent` + orchestrator | Writer hit a rate limit mid-revision; orchestrator took over and cross-checked the fixed citations directly against `korean-law` MCP | [`verbatim-verification.md`](samples/20260410-012238-391f/verbatim-verification.md) |
-| **5. Delivery** | orchestrator | Assembled final DOCX (Times New Roman + 맑은 고딕 per the Korean legal style guide) | [`opinion.docx`](samples/20260410-012238-391f/opinion.docx) |
+| **1. Research** | 김재식 · `general-legal-research` | Pulls primary sources from `korean-law` MCP — statute text, precedents, agency decisions, enforcement path | `research-result.md` |
+| **2. Drafting** | 한석봉 · `legal-writing-agent` | Produces the first opinion draft in Korean legal memorandum format | `opinion.md` |
+| **3. Review** | 반성문 · `second-review-agent` | Runs verbatim source checks, identifies mismatches, and returns severity-ranked comments | `review-result.md` |
+| **4. Revision rescue** | `legal-writing-agent` + orchestrator | If revision stalls, the orchestrator can take over and verify citations directly against primary sources | `verbatim-verification.md` |
+| **5. Delivery** | orchestrator | Assembles the final bundle and generates client-facing files | `opinion.docx`, `case-report.md` |
 
-**Result:** 33 sources (29 Grade A + 4 Grade B) · 47 events · 1 revision cycle · approved.
-
-Full event timeline → [`events.jsonl`](samples/20260410-012238-391f/events.jsonl) · Agent-by-agent deep dive for all 4 sample cases → [`samples/README.md`](samples/README.md).
+**Result:** audited sources, a typed event log, review findings, and a final deliverable bundle.
 
 ### System diagram
 
@@ -151,7 +147,7 @@ Most commercial legal AI products are black boxes. You get an answer; you don't 
 
 Jinju Legal Orchestrator is the opposite. Which specialist was assigned, which sources were consulted, what the fact-checker flagged, how revision cycles resolved — all visible in `events.jsonl`, one line per event.
 
-Failure modes are in the permanent record too. In the [Phase 1 E2E case](samples/20260410-012238-391f/events.jsonl), a mid-revision rate-limit error (`evt_044`) triggered an orchestrator-level meta-verification rescue (`evt_045`). In a single-LLM system, that failure would have been a dead chat tab. Here it's a typed event in an append-only log. **That's what "the process is the product" means in practice.**
+Failure modes are in the permanent record too. If a mid-revision rate-limit error occurs, the orchestrator can trigger a meta-verification rescue instead of dying as a dead chat tab. Here it's a typed event in an append-only log. **That's what "the process is the product" means in practice.**
 
 ### 4. Yes, it burns a lot of tokens — on purpose
 
@@ -190,7 +186,7 @@ git clone https://github.com/kipeum86/legal-agent-orchestrator.git
 cd legal-agent-orchestrator
 ```
 
-What you have now: the orchestrator itself — `CLAUDE.md` (the lead orchestrator system prompt), `.mcp.json` (MCP server config), `skills/` (routing and assembly logic), `setup.sh`, and `samples/` with four real cases you can inspect immediately. The eight subordinate agents are **not yet installed**.
+What you have now: the orchestrator itself — `CLAUDE.md` (the lead orchestrator system prompt), `.mcp.json` (MCP server config), `skills/` (routing and assembly logic), and `setup.sh`. The eight subordinate agents are **not yet installed**.
 
 ### 2. Install the eight subordinate agents
 
@@ -274,19 +270,11 @@ output/{CASE_ID}/
 └── opinion.docx            ← final opinion as DOCX (client-ready)
 ```
 
-The sample cases under [`samples/`](samples/) show exactly what a completed case file looks like. If you want to see what "a real case that this system successfully processed" looks like without running anything, start with [`samples/20260410-012238-391f/case-report.md`](samples/20260410-012238-391f/case-report.md) — the single-file archive for the Korean loot-box regulation opinion.
-
 ### 7. Generate `case-report.md`
 
 The orchestrator does not ship a web viewer anymore. Instead, every completed case can be collapsed into a single Markdown archive that renders directly on GitHub.
 
-Generate it manually for an existing case:
-
-```bash
-python3 scripts/generate-case-report.py samples/20260410-012238-391f
-```
-
-Or for a freshly completed live case:
+Generate it manually for a completed live case:
 
 ```bash
 python3 "$PROJECT_ROOT/scripts/generate-case-report.py" "$PROJECT_ROOT/output/$CASE_ID"
@@ -344,10 +332,6 @@ legal-agent-orchestrator/
 │   └── generate-case-report.py         # narrative case-report.md generator
 ├── agents/                             # 8 subordinate agents (gitignored, populated by setup.sh)
 ├── output/                             # live case artifacts (gitignored)
-├── samples/                            # frozen portfolio-evidence case snapshots
-│   ├── README.md                       # agent-by-agent breakdown of all 4 samples
-│   ├── 20260410-012238-391f/case-report.md
-│   └── ...
 └── docs/
     └── ko-legal-opinion-style-guide.md # canonical Korean legal opinion style guide
 ```

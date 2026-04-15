@@ -13,8 +13,6 @@ __pycache__/
 docs/*
 docs/**/*
 !docs/ko-legal-opinion-style-guide.md
-!docs/phase3-case-replay-design.md
-!docs/phase3-frontend-spec.md
 
 # Dev handoff doc (session state, next-steps, internal breadcrumbs) — not public.
 resume.md

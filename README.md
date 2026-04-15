@@ -4,7 +4,7 @@
 
 > An AI-based legal workflow system running on Claude Code. Eight specialist agents collaborate to produce audit-friendly legal analysis with transparent process logs.
 >
-> Disclaimer: This project supports legal research, drafting, review, and workflow orchestration. It is not a law firm, does not provide legal advice, and is not a substitute for licensed counsel in the relevant jurisdiction. AI outputs may contain errors, inaccurate citations, or incomplete analysis, so verify before reliance. No attorney-client relationship is created by using this repository.
+> Disclaimer: This repository supports legal research, drafting, review, and workflow orchestration. It is designed as an AI workflow system for legal work and should not be relied on as a substitute for advice from qualified counsel in the relevant jurisdiction. AI outputs may contain errors, inaccurate citations, or incomplete analysis, and no attorney-client relationship is created through use of this repository.
 
 ![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
 ![Runtime: Claude Code](https://img.shields.io/badge/Runtime-Claude_Code-orange)

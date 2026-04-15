@@ -270,17 +270,21 @@ def convert(md_path: Path, docx_path: Path) -> None:
             i += 1
             continue
 
-        # MEMORANDUM (centered, large, bold)
-        if stripped == "**MEMORANDUM**":
+        # Common opinion titles (centered, large, bold)
+        if stripped in {
+            "**MEMORANDUM**",
+            "**법률 검토 의견서**",
+            "**Legal Analysis Memo**",
+        }:
             p = doc.add_paragraph()
             p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
             style_paragraph(p, space_after_pt=14, space_before_pt=6)
-            r = p.add_run("MEMORANDUM")
+            r = p.add_run(stripped.strip("*"))
             set_run_font(r, size_pt=20, bold=True)
             i += 1
             continue
 
-        # Date line directly under MEMORANDUM (e.g. "2026. 4. 10.") — center it
+        # Date line directly under the opinion title (e.g. "2026. 4. 10.") — center it
         if re.match(r"^\d{4}\.\s*\d{1,2}\.\s*\d{1,2}\.$", stripped):
             p = doc.add_paragraph()
             p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER

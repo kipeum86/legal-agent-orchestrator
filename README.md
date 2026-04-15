@@ -37,7 +37,7 @@ This repository is the central coordinator for **Jinju Legal Orchestrator**, a f
 
 **The orchestrator never modifies a subordinate agent's `CLAUDE.md`, skills, or knowledge base.** That's what "100% reuse" means in practice. If a specialist ships a bug fix to their own repo, it flows through here on the next `./setup.sh update`.
 
-> Two briefing-style agents (`game-legal-briefing`, `game-policy-briefing`) exist in the same author's GitHub org but are standalone Python apps outside this orchestrator's scope and are not cloned by `setup.sh`.
+> `setup.sh` only clones the repositories used directly by this orchestrator. Standalone projects outside this workflow are not included.
 
 ---
 

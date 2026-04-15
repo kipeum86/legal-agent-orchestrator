@@ -145,7 +145,7 @@ We inverted the tradeoff: **Claude Code as the runtime, agents preserved 100% in
 
 ### 3. The Process Is the Product
 
-Harvey AI is a black box. You get an answer; you don't know how.
+Most commercial legal AI products are black boxes. You get an answer; you don't know how.
 
 Jinju Law Firm is the opposite. Which lawyer was assigned, which sources were consulted, what the fact-checker flagged, how revision cycles resolved — all visible in `events.jsonl`, one line per event.
 

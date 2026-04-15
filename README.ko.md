@@ -3,6 +3,8 @@
 **English:** [README.md](README.md)
 
 > Claude Code 위에서 돌아가는 AI 기반 법률 워크플로우 시스템. 8명의 전문 스페셜리스트 에이전트가 협업하여 감사 가능한 법률 분석 결과물을 생성합니다.
+>
+> 면책 안내: 이 프로젝트는 법률 리서치, 드래프팅, 리뷰, 워크플로우 오케스트레이션을 지원하기 위한 시스템입니다. 법무법인이나 변호사가 아니며, 자격 있는 전문가의 법률자문을 대체하지 않습니다. AI 산출물에는 오류, 부정확한 인용, 불완전한 분석이 포함될 수 있으므로 실제 의사결정 전에는 반드시 별도 검토가 필요합니다. 이 저장소를 사용한다고 해서 변호사-의뢰인 관계가 성립하지 않습니다.
 
 ![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
 ![Runtime: Claude Code](https://img.shields.io/badge/Runtime-Claude_Code-orange)

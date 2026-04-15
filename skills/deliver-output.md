@@ -96,15 +96,15 @@ python3 "$PROJECT_ROOT/scripts/generate-case-report.py" "$PROJECT_ROOT/output/$C
 - 사건 리포트: output/{CASE_ID}/case-report.md
 - 참조 소스: output/{CASE_ID}/sources.json ({N}개 소스, Grade A: {n}개)
 
-👥 **참여 변호사:**
+👥 **참여 에이전트:**
 - 김재식 (리서치)
 - 한석봉 (작성)
-- 반성문 파트너 (검토: {approved/revision_needed})
+- 반성문 시니어 리뷰 스페셜리스트 (검토: {approved/revision_needed})
 
 📊 **파이프라인 이벤트 로그:** output/{CASE_ID}/events.jsonl
 ```
 
-파트너 검토에서 `revision_needed`가 반환된 경우:
+시니어 리뷰에서 `revision_needed`가 반환된 경우:
 - 검토 코멘트를 legal-writing-agent에 전달하여 수정 요청
 - 수정 후 다시 second-review-agent에 재검토 요청
 - 최대 2회 수정 사이클 후 현재 상태로 전달
@@ -124,11 +124,11 @@ python3 "$PROJECT_ROOT/scripts/generate-case-report.py" "$PROJECT_ROOT/output/$C
 - 라운드: {N_ROUNDS}
 - 결론: {VERDICT_SUMMARY}
 
-👥 **참여 변호사:**
+👥 **참여 에이전트:**
 - {AGENT_A_NAME} (토론자)
 - {AGENT_B_NAME} (토론자)
 - 한석봉 (종합 판단 작성)
-- 반성문 파트너 (검토: {approval status})
+- 반성문 시니어 리뷰 스페셜리스트 (검토: {approval status})
 
 📊 참조 소스: `output/{CASE_ID}/sources.json` ({N}개 소스)
 📊 이벤트 로그: `output/{CASE_ID}/events.jsonl`

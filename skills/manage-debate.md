@@ -271,7 +271,7 @@ R3-B: {PROJECT_ROOT}/output/{CASE_ID}/debate-round-3-{AGENT_B_ID}-result.md
 |---|---|
 | **수 신** | 귀사 |
 | **참 조** | 법무·컴플라이언스 담당 |
-| **발 신** | 법무법인 진주 |
+| **발 신** | Jinju Legal Orchestrator |
 | **제 목** | {TOPIC} — 토론 종합 판단 보고서 |
 
 ---
@@ -289,8 +289,8 @@ R3-B: {PROJECT_ROOT}/output/{CASE_ID}/debate-round-3-{AGENT_B_ID}-result.md
 |------|---------------------|---------------------|-----------|
 ## 5. 종합 판단
 ## 6. 권고사항
-## 7. 파트너 검토 의견
-(placeholder: "파트너 검토 후 기재됩니다.")
+## 7. 시니어 리뷰 의견
+(placeholder: "시니어 리뷰 후 기재됩니다.")
 
 === 문서 2: debate-transcript.md (토론 트랜스크립트) ===
 
@@ -306,7 +306,7 @@ R3-B: {PROJECT_ROOT}/output/{CASE_ID}/debate-round-3-{AGENT_B_ID}-result.md
 |---|---|
 | **수 신** | 귀사 |
 | **참 조** | 법무·컴플라이언스 담당 |
-| **발 신** | 법무법인 진주 |
+| **발 신** | Jinju Legal Orchestrator |
 | **제 목** | {TOPIC} — 토론 트랜스크립트 |
 
 ---
@@ -358,11 +358,11 @@ R3-B: {PROJECT_ROOT}/output/{CASE_ID}/debate-round-3-{AGENT_B_ID}-result.md
 
 ### Step 6: Review — second-review-agent (반성문)
 
-Verdict 결과물은 `second-review-agent`가 파트너 검토합니다.
+Verdict 결과물은 `second-review-agent`가 시니어 리뷰합니다.
 
 검토 프롬프트 템플릿:
 ```text
-다음 토론 결과물을 파트너 검토하세요.
+다음 토론 결과물을 시니어 리뷰하세요.
 
 [검토 대상]
 1. 토론 종합 판단 보고서: {PROJECT_ROOT}/output/{CASE_ID}/debate-opinion.md
@@ -381,8 +381,8 @@ Verdict 결과물은 `second-review-agent`가 파트너 검토합니다.
 - 트랜스크립트가 각 라운드 내용을 충실히 포함하는가
 - 스타일 가이드 준수
 
-[파트너 검토 의견 삽입]
-debate-opinion.md의 "## 7. 파트너 검토 의견" 섹션 placeholder를 2-3문단의 파트너 소견으로 교체하세요.
+[시니어 리뷰 의견 삽입]
+debate-opinion.md의 "## 7. 시니어 리뷰 의견" 섹션 placeholder를 2-3문단의 시니어 리뷰 소견으로 교체하세요.
 
 {{STYLE_GUIDE_BLOCK}}
 {{ERROR_CONTRACT_BLOCK}}

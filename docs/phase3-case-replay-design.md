@@ -424,7 +424,7 @@ Pattern 3은 다음처럼 확장한다.
 4. Debate Round 2
 5. Debate Round 3 (optional)
 6. Verdict Writing
-7. Partner Review
+7. Senior Review
 8. Delivery
 
 ---

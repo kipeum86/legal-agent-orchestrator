@@ -1,4 +1,4 @@
-# Phase 3 Frontend Spec — 법무법인 진주 Case Replay
+# Phase 3 Frontend Spec — Jinju Legal Orchestrator Case Replay
 > [DEPRECATED 2026-04-14] 이 문서는 Vercel 기반 정적 뷰어 접근을 전제로 작성되었으나, case-report.md 단일 파일 출력 방식으로 방향이 변경되었습니다. skills/generate-case-report.md 를 참조하세요.
 
 **작성일:** 2026-04-14
@@ -35,7 +35,7 @@ Codex는 이 스펙만 보고 구현이 가능해야 한다. 디자인 시스템
 
 ### 1.1 한 줄 정의
 
-**"8명의 AI 변호사가 실제로 협업한 법률 사건 기록을 재생하는 정적 웹사이트."**
+**"8명의 AI 스페셜리스트가 실제로 협업한 법률 사건 기록을 재생하는 정적 웹사이트."**
 
 ### 1.2 이것이 아닌 것
 
@@ -46,9 +46,9 @@ Codex는 이 스펙만 보고 구현이 가능해야 한다. 디자인 시스템
 
 ### 1.3 톤 & 무드
 
-**법무법인 웹사이트의 진지함 + Linear의 타이포그래피적 샤프함.**
+**전문 법률 워크플로우 제품의 진지함 + Linear의 타이포그래피적 샤프함.**
 
-- 참조군: Ropes & Gray, Paul Weiss 같은 로펌 웹 + Linear changelog + Stripe docs + Pitchfork review
+- 참조군: Ropes & Gray, Paul Weiss 같은 법률 조직 웹 + Linear changelog + Stripe docs + Pitchfork review
 - 피할 것: 보라/인디고 그라디언트, 카드 그리드, 이모지, 3-col feature grid, 도넛 차트, stock photo, floating blobs, centered everything
 
 **핵심:** 방문자가 "AI 포트폴리오"가 아니라 **"실제 법률 사건 기록 아카이브"**처럼 느껴야 한다.
@@ -287,14 +287,14 @@ Codex는 이 스펙만 보고 구현이 가능해야 한다. 디자인 시스템
 ### 4.2 글로벌 네비게이션
 
 **Header (모든 페이지):**
-- 좌측: 워드마크 "**법무법인 진주**" (Noto Serif KR 700, 20px) — `/`로 링크
+- 좌측: 워드마크 "**Jinju Legal Orchestrator**" (Noto Serif KR 700, 20px) — `/`로 링크
 - 우측: `Case` (현재 케이스 shortcut), `GitHub` (외부 링크 아이콘 포함)
 - 높이: 64px
 - 스타일: paper 배경, 하단 `border-bottom: 1px solid var(--rule)`, sticky
 - 모바일 (<640): 우측 링크는 그대로 노출 (햄버거 금지, 2개뿐이라 공간 있음)
 
 **Footer (모든 페이지):**
-- 좌측: `법무법인 진주 · 2026 · an AI legal orchestrator`
+- 좌측: `Jinju Legal Orchestrator · 2026 · an AI legal orchestrator`
 - 우측: GitHub, MIT License
 - 높이: 96px
 - 스타일: `--mute` 색, 12px, 상단 hairline
@@ -319,7 +319,7 @@ Codex는 이 스펙만 보고 구현이 가능해야 한다. 디자인 시스템
 │ § 어떻게 돌아가나 (How it works)         │
 │   - 3단계 수직 다이어그램                │
 ├──────────────────────────────────────────┤
-│ § 8명의 변호사 (Meet the Team)           │
+│ § 8명의 스페셜리스트 (Meet the Team)     │
 │   - 8명 table-style 리스트               │
 ├──────────────────────────────────────────┤
 │ § 실제 처리한 케이스 (Featured case)     │
@@ -338,7 +338,7 @@ Codex는 이 스펙만 보고 구현이 가능해야 한다. 디자인 시스템
 
 ```
 [Kicker] ─────────────────────────────────────
-AI 변호사 8명이 실제로 협업한
+AI 스페셜리스트 8명이 실제로 협업한
 법률 사건 기록 아카이브
 
 규칙 기반 워크플로우로 리서치 → 작성 → 리뷰를
@@ -347,7 +347,7 @@ AI 변호사 8명이 실제로 협업한
 ┌─────────┐  ┌─────────┐  ┌─────────┐
 │ 8명     │  │ 1 케이스 │  │ 33 소스 │
 │ 전문 AI │  │ 공개     │  │ 중 A등급 │
-│ 변호사  │  │          │  │ 29건    │
+│ specialist │ │        │  │ 29건    │
 └─────────┘  └─────────┘  └─────────┘
 
 [케이스 기록 보기 →]  [GitHub ↗]
@@ -358,13 +358,13 @@ AI 변호사 8명이 실제로 협업한
 | 요소 | 값 |
 |---|---|
 | Kicker | Inter 500, 12px, uppercase, letter-spacing 0.08em, `--mute` 색, 위에 24px `─` |
-| Kicker 문구 | `법무법인 진주 · AN AI LEGAL ORCHESTRATOR` |
+| Kicker 문구 | `Jinju Legal Orchestrator · AN AI LEGAL ORCHESTRATOR` |
 | Display | Noto Serif KR 700, `--text-5xl` (64px), `--ink`, line-height 1.1, letter-spacing -0.02em. 모바일 `--text-4xl` (44px) |
-| Display 문구 | "AI 변호사 8명이 실제로 협업한<br />법률 사건 기록 아카이브" (2줄 강제) |
+| Display 문구 | "AI 스페셜리스트 8명이 실제로 협업한<br />법률 사건 기록 아카이브" (2줄 강제) |
 | Sub | Inter 400, `--text-lg` (18px), `--ink-soft`, line-height 1.7, 최대 폭 560px |
-| Sub 문구 | "규칙 기반 워크플로우로 법률 리서치, 의견서 작성, 파트너 리뷰를 자동화하고, 모든 이벤트를 사건 폴더에 남깁니다." |
+| Sub 문구 | "규칙 기반 워크플로우로 법률 리서치, 의견서 작성, 시니어 리뷰를 자동화하고, 모든 이벤트를 사건 폴더에 남깁니다." |
 | Stats row | 3개 셀, flex gap 48px. 각 셀 = 숫자(JetBrains Mono 500, 32px, `--ink`) + 라벨(Inter 400, 12px, `--mute`, uppercase). 숫자 tabular-nums 강제 |
-| Stats 값 | `8` 전문 AI 변호사 · `1` 공개 케이스 · `29 / 33` A등급 소스 |
+| Stats 값 | `8` 전문 AI 스페셜리스트 · `1` 공개 케이스 · `29 / 33` A등급 소스 |
 | CTA primary | "케이스 기록 보기 →" — Inter 500, 15px, `--accent` 배경, paper 글자, padding 12/20, radius 4, hover `--accent-hover` |
 | CTA secondary | "GitHub ↗" — ghost 버튼. 투명 배경, `--accent` 글자 + border 1px `--accent` |
 | 수직 여백 | hero top `--space-10` (128px), hero bottom `--space-9` (96px) |
@@ -384,15 +384,15 @@ AI 변호사 8명이 실제로 협업한
   01   라우팅
        ─────────────────────
        클라이언트 질문을 분석해 8명의
-       전문 변호사 중 담당자를 배정합니다.
+       전문 스페셜리스트 중 담당자를 배정합니다.
        질문 유형에 따라 Pattern 1~3 중
        협업 패턴이 결정됩니다.
 
   02   리서치 · 작성 · 검토
        ─────────────────────
-       담당 변호사가 법령·판례를 A/B/C/D
+       담당 스페셜리스트가 법령·판례를 A/B/C/D
        등급으로 리서치하고, 법률문서를
-       작성합니다. 파트너 변호사가 critical
+       작성합니다. 시니어 리뷰 담당자가 critical
        findings를 다시 잡아냅니다.
 
   03   배포
@@ -411,12 +411,12 @@ AI 변호사 8명이 실제로 협업한
 - 단계 사이 `--space-7` 여백
 - 아이콘/일러스트 금지
 
-### 5.4 Meet the Team (§8명의 변호사)
+### 5.4 Meet the Team (§8명의 스페셜리스트)
 
 **레이아웃:** 아바타 카드 그리드 금지. 법률 디렉토리 스타일의 table-like list.
 
 ```
-§ 8명의 변호사
+§ 8명의 스페셜리스트
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   #01   김재식          범용 법률 리서치              PHASE 1
@@ -427,7 +427,7 @@ AI 변호사 8명이 실제로 협업한
         ─────────────────────────────────────────
         legal-writing-agent
 
-  #03   반성문  파트너   품질 검토, 최종 승인          PHASE 1
+  #03   반성문  시니어 리뷰   품질 검토, 최종 승인          PHASE 1
         ─────────────────────────────────────────
         second-review-agent
 
@@ -438,7 +438,7 @@ AI 변호사 8명이 실제로 협업한
 **스펙:**
 - 각 row: grid-template-columns `56px 120px 1fr 80px` (번호, 이름, 역할, phase)
 - 번호 `#01` — JetBrains Mono 500, `--mute`
-- 이름 — Noto Serif KR 700, 18px, `--ink`. 파트너는 옆에 작은 `파트너` 배지
+- 이름 — Noto Serif KR 700, 18px, `--ink`. 시니어 리뷰 담당자는 옆에 작은 `시니어 리뷰` 배지
 - 역할 — Inter 400, 16px, `--ink-soft`
 - agent_id — Inter 400, 13px, `--mute`, row 아래 작게
 - Phase 배지 — Inter 500, 11px, uppercase, letter-spacing 0.06em, 오른쪽 정렬
@@ -484,9 +484,9 @@ AI 변호사 8명이 실제로 협업한
 
 **문구 (작성 시 Codex가 이 초안을 존중):**
 
-> 변호사는 로봇이 아니다. 그래서 AI에게 법률 업무를 맡기는 건 어렵다. 판례를 정확히 인용하는지, 리뷰어가 빠뜨린 쟁점을 잡아내는지, 어디에서 근거가 흔들렸는지를 모르면 결과물을 신뢰할 수 없다.
+> 법률 업무는 높은 정확성과 검증이 필요하다. 판례를 정확히 인용하는지, 리뷰어가 빠뜨린 쟁점을 잡아내는지, 어디에서 근거가 흔들렸는지를 모르면 결과물을 신뢰할 수 없다.
 >
-> 법무법인 진주는 그 과정 전체를 기록한다. 질문이 어떻게 분류됐는지, 어떤 법령이 A등급으로 인용됐는지, 파트너 변호사가 무엇을 critical로 지적했는지, 수정이 어떻게 반영됐는지가 모두 `events.jsonl`에 남는다. 이 사이트는 그 기록을 사람이 읽을 수 있게 재생한다.
+> Jinju Legal Orchestrator는 그 과정 전체를 기록한다. 질문이 어떻게 분류됐는지, 어떤 법령이 A등급으로 인용됐는지, 시니어 리뷰 담당자가 무엇을 critical로 지적했는지, 수정이 어떻게 반영됐는지가 모두 `events.jsonl`에 남는다. 이 사이트는 그 기록을 사람이 읽을 수 있게 재생한다.
 
 **스펙:**
 - 섹션 제목 스타일 동일
@@ -653,7 +653,7 @@ PATTERN 2 · 2026.04.09 · 12분 13초
 **레이아웃:** 참여 에이전트별 활동 요약.
 
 ```
-§ 참여 변호사
+§ 참여 에이전트
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   김재식              범용 법률 리서치         PHASE 1
@@ -689,11 +689,11 @@ PATTERN 2 · 2026.04.09 · 12분 13초
 **레이아웃:** severity별로 그룹.
 
 ```
-§ 파트너 리뷰 (반성문)
+§ 시니어 리뷰 (반성문)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   최종 판정      ✓ APPROVED (1회 수정 후)
-  리뷰어         반성문 (Senior Partner)
+  리뷰어         반성문 (Senior Review Specialist)
   소요 시간       24분 17초
 
 
@@ -837,7 +837,7 @@ PATTERN 2 · 2026.04.09 · 12분 13초
 
 **스펙:**
 - 데스크톱 ≥lg에서만 노출. `position: sticky; top: 96px;`
-- 섹션 리스트: 요약, 타임라인, 변호사, 리뷰, 소스, 문서
+- 섹션 리스트: 요약, 타임라인, 에이전트, 리뷰, 소스, 문서
 - Inter 400, 13px, `--mute`
 - active 항목: `--ink` + 좌측 2px `--accent` border
 - scroll-spy로 active 토글 (IntersectionObserver 사용, client component 하나만)
@@ -969,9 +969,9 @@ Grade 색은 텍스트가 아닌 배지 배경에만 사용하며, 반드시 글
 ### 10.1 `<head>` (랜딩)
 
 ```
-<title>법무법인 진주 · AI Legal Case Archive</title>
-<meta name="description" content="8명의 전문 AI 변호사가 실제로 협업한 법률 사건 기록 아카이브. 리서치 → 작성 → 파트너 리뷰의 전 과정을 이벤트 로그로 재생합니다.">
-<meta property="og:title" content="법무법인 진주">
+<title>Jinju Legal Orchestrator · AI Legal Case Archive</title>
+<meta name="description" content="8명의 전문 AI 스페셜리스트가 실제로 협업한 법률 사건 기록 아카이브. 리서치 → 작성 → 시니어 리뷰의 전 과정을 이벤트 로그로 재생합니다.">
+<meta property="og:title" content="Jinju Legal Orchestrator">
 <meta property="og:description" content="...">
 <meta property="og:type" content="website">
 <meta property="og:image" content="/og-landing.png">
@@ -981,7 +981,7 @@ Grade 색은 텍스트가 아닌 배지 배경에만 사용하며, 반드시 글
 ### 10.2 `<head>` (케이스 상세)
 
 ```
-<title>{case.question_short} · 법무법인 진주</title>
+<title>{case.question_short} · Jinju Legal Orchestrator</title>
 <meta name="description" content="Pattern {N} · {agents_joined} · {total_sources} 소스 · {status}">
 ```
 
@@ -1115,7 +1115,7 @@ legal-agent-orchestrator/
 │       │   ├── case-loader.ts            # samples/ 읽어 CaseData 반환
 │       │   ├── events.ts                 # event type alias + 집계
 │       │   ├── types.ts                  # CaseData, Event, Source, Finding 등
-│       │   ├── team.ts                   # 8명 변호사 정적 데이터
+│       │   ├── team.ts                   # 8명 스페셜리스트 정적 데이터
 │       │   └── format.ts                 # 날짜, 시간 포매팅
 │       ├── public/
 │       │   ├── fonts/                    # (next/font 쓰면 자동)
@@ -1135,7 +1135,7 @@ legal-agent-orchestrator/
 - `apps/web/` 서브디렉토리 — 향후 다른 앱(예: `apps/admin/`)이 생길 여지 + 루트를 깔끔히
 - `components/primitives/` — 배지/버튼 등 원자 컴포넌트
 - `lib/case-loader.ts` — samples/에서 파일 읽어 타입 안전 객체 반환. Codex의 정규화 스크립트를 나중에 이 자리에 plug-in 가능
-- `lib/team.ts` — 변호사 8명 정적 데이터 (README에서 도출)
+- `lib/team.ts` — 스페셜리스트 8명 정적 데이터 (README에서 도출)
 
 ---
 
@@ -1253,11 +1253,11 @@ export const TEAM: Array<{
   name: string;
   role: string;
   phase: 1 | 2;
-  isPartner?: boolean;
+  isSeniorReview?: boolean;
 }> = [
   { id: 'general-legal-research', name: '김재식', role: '범용 법률 리서치', phase: 1 },
   { id: 'legal-writing-agent',   name: '한석봉', role: '법률문서 작성',     phase: 1 },
-  { id: 'second-review-agent',   name: '반성문', role: '품질 검토, 최종 승인', phase: 1, isPartner: true },
+  { id: 'second-review-agent',   name: '반성문', role: '품질 검토, 최종 승인', phase: 1, isSeniorReview: true },
   { id: 'GDPR-expert',           name: '김덕배', role: 'EU 데이터보호법 (GDPR)', phase: 2 },
   { id: 'PIPA-expert',           name: '정보호', role: '한국 개인정보보호법',    phase: 2 },
   { id: 'game-legal-research',   name: '심진주', role: '게임산업 국제법',       phase: 2 },

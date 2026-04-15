@@ -1,6 +1,6 @@
 # GDPR 국외이전(Third Country Transfer) 규제 — EU 관점 리서치
 
-**작성자:** 김덕배 변호사 (GDPR-expert, 법무법인 진주)
+**작성자:** EU Data Protection Specialist 김덕배 (GDPR-expert, Jinju Legal Orchestrator)
 **작성일:** 2026-04-10
 **케이스:** test-T2-20260410-121640 (Pattern 1 parallel dispatch — GDPR branch)
 **범위:** EU GDPR 측면만 (한국 PIPA 측면은 병렬 PIPA-expert 분기가 담당)

@@ -57,11 +57,11 @@
 
 ## Step 2: 에이전트 로스터
 
-| ID | 변호사 | 도메인 | 주력 관할권 | 특기 | 내장 KB |
+| ID | 스페셜리스트 | 도메인 | 주력 관할권 | 특기 | 내장 KB |
 |----|--------|--------|-------------|------|---------|
 | `general-legal-research` | 김재식 | general | KR + 국제 fallback | 범용 리서치, korean-law MCP | — (MCP 기반) |
 | `legal-writing-agent` | 한석봉 | — (writing) | — | 의견서 드래프팅, 스타일 가이드 준수 | — |
-| `second-review-agent` | 반성문 (파트너) | — (review) | — | 품질 검토, 승인/수정 결정 | — |
+| `second-review-agent` | 반성문 (시니어 리뷰 스페셜리스트) | — (review) | — | 품질 검토, 승인/수정 결정 | — |
 | `GDPR-expert` | 김덕배 | data_protection | **EU** | GDPR, ePrivacy, EU AI Act, Data Act, Data Governance Act | Grade A 1,027 + CJEU 51 + EDPB 120 |
 | `PIPA-expert` | 정보호 | data_protection | **KR** | 한국 개인정보보호법, 시행령, PIPC 가이드라인, 처분례 | Grade A 929 + PIPC 가이드 46 |
 | `game-legal-research` | 심진주 | game_regulation | **국제 (KR 포함)** | 게임산업 국제 법률 리서치, cross-jurisdiction | 9단계 리서치 파이프라인 |
@@ -233,11 +233,11 @@ echo '{"id":"evt_NNN","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestra
 비교·통합하는 의견서를 작성하세요.
 
 [참여 에이전트]
-1. {agent_a_id} ({변호사명}) — {summary_a}
+1. {agent_a_id} ({스페셜리스트명}) — {summary_a}
    주요 발견: {key_findings_a}
    상세 결과: {PROJECT_ROOT}/output/{CASE_ID}/{agent_a_id}-result.md
 
-2. {agent_b_id} ({변호사명}) — {summary_b}
+2. {agent_b_id} ({스페셜리스트명}) — {summary_b}
    주요 발견: {key_findings_b}
    상세 결과: {PROJECT_ROOT}/output/{CASE_ID}/{agent_b_id}-result.md
 
@@ -344,7 +344,7 @@ if [ ! -f "$TRANSLATION_CONFIG" ]; then
   "created": "orchestrator-auto",
   "user": {
     "name": "Orchestrator",
-    "affiliation": "법무법인 진주 오케스트레이터",
+    "affiliation": "Jinju Legal Orchestrator",
     "role": "automated dispatch"
   },
   "preferences": {
@@ -489,11 +489,11 @@ CJEU/EDPB 인용은 CELEX/결정번호까지 정확히 기재하세요.
 
 <!-- IF pattern == pattern_1 (병렬 멀티 전문가) -->
 [참여 에이전트 N개의 독립 분석]
-1. {AGENT_A_ID} ({변호사명_A}) — {SUMMARY_A}
+1. {AGENT_A_ID} ({스페셜리스트명_A}) — {SUMMARY_A}
    주요 발견: {KEY_FINDINGS_A}
    상세: {PROJECT_ROOT}/output/{CASE_ID}/{AGENT_A_ID}-result.md
 
-2. {AGENT_B_ID} ({변호사명_B}) — {SUMMARY_B}
+2. {AGENT_B_ID} ({스페셜리스트명_B}) — {SUMMARY_B}
    주요 발견: {KEY_FINDINGS_B}
    상세: {PROJECT_ROOT}/output/{CASE_ID}/{AGENT_B_ID}-result.md
 
@@ -525,9 +525,9 @@ CJEU/EDPB 인용은 CELEX/결정번호까지 정확히 기재하세요.
 # meta.json 추가 필드: pattern (pattern_1|pattern_2), partial_results (bool)
 ```
 
-#### `second-review-agent` (반성문 파트너)
+#### `second-review-agent` (반성문 시니어 리뷰 스페셜리스트)
 ```
-다음 법률 의견서를 파트너 검토하세요.
+다음 법률 의견서를 시니어 리뷰하세요.
 
 [의견서 경로] {PROJECT_ROOT}/output/{CASE_ID}/opinion.md를 Read하세요.
 [원본 리서치 요약] {RESEARCH_SUMMARY}

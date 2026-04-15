@@ -1,8 +1,8 @@
-# Jinju Law Firm Orchestrator · 법무법인 진주
+# Jinju Legal Orchestrator · 진주 리걸 오케스트레이터
 
 **한국어:** [README.ko.md](README.ko.md)
 
-> An AI law firm running on Claude Code. Eight specialist lawyer agents collaborate like a real firm to produce legal opinions with full audit trails.
+> An AI-based legal workflow system running on Claude Code. Eight specialist agents collaborate to produce audit-friendly legal analysis with transparent process logs.
 
 ![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
 ![Runtime: Claude Code](https://img.shields.io/badge/Runtime-Claude_Code-orange)
@@ -14,28 +14,28 @@
 
 Most "legal AI" products are a single LLM you throw questions at. This one is different.
 
-An **orchestrator plays the role of managing partner**. It classifies each incoming question, routes it to the right specialist lawyer, and picks the collaboration pattern (sequential handoff / parallel research / multi-round debate). The eight subordinate agents are real Claude Code agents — each with its own jurisdiction, knowledge base, and MCP tools — and this project reuses them **100% unmodified**.
+The **lead orchestrator** classifies each incoming question, routes it to the right specialist agent, and picks the collaboration pattern (sequential handoff / parallel research / multi-round debate). The eight subordinate agents are real Claude Code agents — each with its own jurisdiction, knowledge base, and MCP tools — and this project reuses them **100% unmodified**.
 
-Every step is logged to `events.jsonl`, and the final delivery step folds the whole case folder into a single `case-report.md`. Which lawyer was assigned, which sources (Grade A/B/C) were cited, what the fact-checker flagged, and how revisions resolved — it's all visible in one narrative artifact.
+Every step is logged to `events.jsonl`, and the final delivery step folds the whole case folder into a single `case-report.md`. Which specialist was assigned, which sources (Grade A/B/C) were cited, what the fact-checker flagged, and how revisions resolved — it's all visible in one narrative artifact.
 
 ---
 
-## Meet the Team — 법무법인 진주 소속 에이전트
+## Meet the Team — Jinju Legal Orchestrator Specialist Agents
 
-This orchestrator is the **main office** of a fictional Korean law firm, 법무법인 진주 (Jinju Law Firm). Each of the eight attorneys below lives in its own independent GitHub repository as a standalone Claude Code agent. When you run `./setup.sh` they are all cloned into `agents/` and ready to be dispatched.
+This repository is the central coordinator for **Jinju Legal Orchestrator**, a fictional AI legal workflow system. Each of the eight specialists below lives in its own independent GitHub repository as a standalone Claude Code agent. When you run `./setup.sh` they are all cloned into `agents/` and ready to be dispatched.
 
-| Attorney | Agent repository | What they actually do | Phase |
+| Specialist | Agent repository | What they actually do | Phase |
 |----------|------------------|-----------------------|-------|
-| **김재식 (Kim Jaesik)** | [general-legal-research](https://github.com/kipeum86/general-legal-research) | Evidence-based international legal research across **17+ jurisdictions**. The generalist research associate — any legal question, any jurisdiction, grade-A source-first workflow. | Phase 1 ✓ |
+| **김재식 (Kim Jaesik)** | [general-legal-research](https://github.com/kipeum86/general-legal-research) | Evidence-based international legal research across **17+ jurisdictions**. The generalist research specialist — any legal question, any jurisdiction, grade-A source-first workflow. | Phase 1 ✓ |
 | **한석봉 (Han Seokbong)** | [legal-writing-agent](https://github.com/kipeum86/legal-writing-agent) | Bilingual (KR/EN) drafter for **non-contract** legal documents. Drafts via a D1–D6 pipeline, revises via an R1–R7 tracked-change pipeline. Korean drafts follow 쟁점→결론→분석 conventions; English drafts follow IRAC/CRAC with Bluebook/OSCOLA. | Phase 1 ✓ |
-| **반성문 (Ban Seong-mun)** · *Partner* | [second-review-agent](https://github.com/kipeum86/second-review-agent) | Final quality gate for AI-generated legal documents. Verifies citations against primary legal databases (law.go.kr, congress.gov, eur-lex, and more), checks legal logic, and ships redlined DOCX with tracked changes. Independent release gate (Pass / Pass with Warnings / Manual Review Required / Not Recommended). Zero tolerance for hallucinated citations. | Phase 1 ✓ |
-| **정보호 (Jeong Bo-ho)** | [PIPA-expert](https://github.com/kipeum86/PIPA-expert) | Korean data privacy law specialist built on structured RAG: **929 statute files, 46 PIPC official guidelines, 30 landmark cases and interpretations, 2,369 cross-reference edges**. Produces law firm-grade DOCX opinions. | Phase 2 ✓ |
+| **반성문 (Ban Seong-mun)** · *Senior Review Specialist* | [second-review-agent](https://github.com/kipeum86/second-review-agent) | Final quality gate for AI-generated legal documents. Verifies citations against primary legal databases (law.go.kr, congress.gov, eur-lex, and more), checks legal logic, and ships redlined DOCX with tracked changes. Independent release gate (Pass / Pass with Warnings / Manual Review Required / Not Recommended). Zero tolerance for hallucinated citations. | Phase 1 ✓ |
+| **정보호 (Jeong Bo-ho)** | [PIPA-expert](https://github.com/kipeum86/PIPA-expert) | Korean data privacy law specialist built on structured RAG: **929 statute files, 46 PIPC official guidelines, 30 landmark cases and interpretations, 2,369 cross-reference edges**. Produces professional-format DOCX opinions. | Phase 2 ✓ |
 | **김덕배 (Kim De Bruyne)** | [GDPR-expert](https://github.com/kipeum86/GDPR-expert) | EU data protection law specialist built on structured RAG: **5 EU laws (321 articles + 535 recitals), 120 EDPB documents, 51 CJEU judgments, 33 enforcement decisions** — 1,060+ indexed items. | Phase 2 ✓ |
 | **심진주 (Sim Jinju)** | [game-legal-research](https://github.com/kipeum86/game-legal-research) | International game-industry legal research — cross-jurisdiction regulatory comparison for game clients. Evidence-based, primary-source-first, with real local output pipeline for deliverable-grade work product. | Phase 2 ✓ |
 | **고덕수 (Ko Duksoo)** | [contract-review-agent](https://github.com/kipeum86/contract-review-agent) | Contract review pipeline — drop a contract in, get back a **DOCX with tracked-change redlines, margin comments (internal strategy + external-facing), a full analysis report, and negotiation recommendations**. Node.js + Python stack. Final legal judgment stays with the human. | Phase 2 |
-| **변혁기 (Byeon Hyeok-gi)** | [legal-translation-agent](https://github.com/kipeum86/legal-translation-agent) | Legal document translation across **5 languages** with zero-omission guarantee and dual-pass translation merged via comparative synthesis. Jurisdiction-aware terminology (BGB, UCC, PRC, Taiwan, APPI) and a persistent firm-wide translation memory that grows with every job. | Phase 2 |
+| **변혁기 (Byeon Hyeok-gi)** | [legal-translation-agent](https://github.com/kipeum86/legal-translation-agent) | Legal document translation across **5 languages** with zero-omission guarantee and dual-pass translation merged via comparative synthesis. Jurisdiction-aware terminology (BGB, UCC, PRC, Taiwan, APPI) and a persistent shared translation memory that grows with every job. | Phase 2 |
 
-**The orchestrator never modifies a subordinate agent's `CLAUDE.md`, skills, or knowledge base.** That's what "100% reuse" means in practice. If an attorney ships a bug fix to their own repo, it flows through here on the next `./setup.sh update`.
+**The orchestrator never modifies a subordinate agent's `CLAUDE.md`, skills, or knowledge base.** That's what "100% reuse" means in practice. If a specialist ships a bug fix to their own repo, it flows through here on the next `./setup.sh update`.
 
 > Two briefing-style agents (`game-legal-briefing`, `game-policy-briefing`) exist in the same author's GitHub org but are standalone Python apps outside this orchestrator's scope and are not cloned by `setup.sh`.
 
@@ -50,7 +50,7 @@ Send a legal question. The orchestrator routes it, the specialists do the work, 
 | Stage | Agent | What it did | Output |
 |-------|-------|-------------|--------|
 | **1. Research** | 김재식 · `general-legal-research` | Pulled 14 primary sources from `korean-law` MCP — statute text, the KFTC ₩11.6B Nexon decision, enforcement path | [`research-result.md`](samples/20260410-012238-391f/research-result.md) |
-| **2. Drafting** | 한석봉 · `legal-writing-agent` | Wrote a Korean law-firm memorandum (summary → disclaimer → 7 issue analyses → risk matrix → 8 recommendations) | [`opinion-v1.md`](samples/20260410-012238-391f/opinion-v1.md) |
+| **2. Drafting** | 한석봉 · `legal-writing-agent` | Wrote a Korean professional-format legal memorandum (summary → disclaimer → 7 issue analyses → risk matrix → 8 recommendations) | [`opinion-v1.md`](samples/20260410-012238-391f/opinion-v1.md) |
 | **3. Review** | 반성문 · `second-review-agent` | Ran verbatim MCP checks on every block quote, returned **9 comments (2 Critical + 3 Major + 4 Minor)** — including a real statute-text mismatch | [`review-result.md`](samples/20260410-012238-391f/review-result.md) |
 | **4. Revision rescue** | `legal-writing-agent` + orchestrator | Writer hit a rate limit mid-revision; orchestrator took over and cross-checked the fixed citations directly against `korean-law` MCP | [`verbatim-verification.md`](samples/20260410-012238-391f/verbatim-verification.md) |
 | **5. Delivery** | orchestrator | Assembled final DOCX (Times New Roman + 맑은 고딕 per the Korean legal style guide) | [`opinion.docx`](samples/20260410-012238-391f/opinion.docx) |
@@ -147,7 +147,7 @@ We inverted the tradeoff: **Claude Code as the runtime, agents preserved 100% in
 
 Most commercial legal AI products are black boxes. You get an answer; you don't know how.
 
-Jinju Law Firm is the opposite. Which lawyer was assigned, which sources were consulted, what the fact-checker flagged, how revision cycles resolved — all visible in `events.jsonl`, one line per event.
+Jinju Legal Orchestrator is the opposite. Which specialist was assigned, which sources were consulted, what the fact-checker flagged, how revision cycles resolved — all visible in `events.jsonl`, one line per event.
 
 Failure modes are in the permanent record too. In the [Phase 1 E2E case](samples/20260410-012238-391f/events.jsonl), a mid-revision rate-limit error (`evt_044`) triggered an orchestrator-level meta-verification rescue (`evt_045`). In a single-LLM system, that failure would have been a dead chat tab. Here it's a typed event in an append-only log. **That's what "the process is the product" means in practice.**
 
@@ -161,7 +161,7 @@ If you want a cheap legal chatbot, this is the wrong project. If you want a defe
 
 ### Comparison
 
-| Aspect | Single LLM | LangGraph / Agent SDK | **Jinju Law Firm** |
+| Aspect | Single LLM | LangGraph / Agent SDK | **Jinju Legal Orchestrator** |
 |--------|-----------|----------------------|---------------------|
 | Multi-specialist reasoning | Prompt personas | Agents reimplemented in the framework | **Real Claude Code agents, 100% reused** |
 | Knowledge bases | Stuffed into context | Rebuilt for the framework | Each agent's native KB, untouched |
@@ -188,7 +188,7 @@ git clone https://github.com/kipeum86/legal-agent-orchestrator.git
 cd legal-agent-orchestrator
 ```
 
-What you have now: the orchestrator itself — `CLAUDE.md` (the managing partner's system prompt), `.mcp.json` (MCP server config), `skills/` (routing and assembly logic), `setup.sh`, and `samples/` with four real cases you can inspect immediately. The eight subordinate agents are **not yet installed**.
+What you have now: the orchestrator itself — `CLAUDE.md` (the lead orchestrator system prompt), `.mcp.json` (MCP server config), `skills/` (routing and assembly logic), `setup.sh`, and `samples/` with four real cases you can inspect immediately. The eight subordinate agents are **not yet installed**.
 
 ### 2. Install the eight subordinate agents
 
@@ -196,13 +196,13 @@ What you have now: the orchestrator itself — `CLAUDE.md` (the managing partner
 ./setup.sh
 ```
 
-This script clones all eight attorneys' GitHub repositories into `agents/` under their Agent ID names:
+This script clones all eight specialists' GitHub repositories into `agents/` under their Agent ID names:
 
 ```
 agents/
 ├── general-legal-research/     ← 김재식
 ├── legal-writing-agent/        ← 한석봉
-├── second-review-agent/        ← 반성문 (Partner)
+├── second-review-agent/        ← 반성문 (Senior Review Specialist)
 ├── PIPA-expert/                ← 정보호
 ├── GDPR-expert/                ← 김덕배
 ├── game-legal-research/        ← 심진주
@@ -232,11 +232,11 @@ claude
 ```
 
 When Claude Code starts, it auto-loads:
-- **[CLAUDE.md](CLAUDE.md)** — the orchestrator system prompt that tells the main Claude session "you are the managing partner of Jinju Law Firm, here is your workflow, here are your eight attorneys, here are the skills you can invoke"
+- **[CLAUDE.md](CLAUDE.md)** — the orchestrator system prompt that tells the main Claude session "you are the lead orchestrator of Jinju Legal Orchestrator, here is your workflow, here are your eight specialists, here are the skills you can invoke"
 - **[.mcp.json](.mcp.json)** — the MCP servers available (`korean-law` and `kordoc`); each subagent inherits these on dispatch
 - **`skills/*.md`** — markdown procedure documents the orchestrator executes as subroutines
 
-You're now talking to the managing partner. Ask a legal question in Korean or English.
+You're now talking to the lead orchestrator. Ask a legal question in Korean or English.
 
 ### 5. Your first case
 
@@ -301,7 +301,7 @@ python3 "$PROJECT_ROOT/scripts/generate-case-report.py" "$PROJECT_ROOT/output/$C
 The generated report is designed to be the one file you open first. It includes:
 - case metadata and status
 - human-readable timeline derived from `events.jsonl`
-- participating lawyers and their contributions
+- participating specialists and their contributions
 - partner review findings grouped by severity
 - source table with grade breakdown
 - the final opinion inlined under one document
@@ -315,7 +315,7 @@ The generated report is designed to be the one file you open first. It includes:
 Everything runs locally on your machine under your own Claude Code session. No intermediate SaaS. Claude Code itself sends prompts to Anthropic for inference — whether that's acceptable for a given matter depends on your firm. `output/`, `agents/`, and `.env` are gitignored so case files and API keys don't leak into commits.
 
 **What does `./setup.sh` actually do to my machine?**
-It creates an `agents/` folder inside this repository and clones eight public GitHub repositories into it, one per attorney. Nothing outside this directory is touched. No global package installs, no environment mutations beyond whatever `git clone` does. Each agent folder is roughly 10–80 MB depending on its knowledge base size.
+It creates an `agents/` folder inside this repository and clones eight public GitHub repositories into it, one per specialist agent. Nothing outside this directory is touched. No global package installs, no environment mutations beyond whatever `git clone` does. Each agent folder is roughly 10–80 MB depending on its knowledge base size.
 
 **Can I add my own specialist agent?**
 Yes. Write it as a standalone Claude Code agent (its own `CLAUDE.md`, `skills/`, optional `library/`, optional `.mcp.json`), drop it under `agents/` (or symlink it), add one line to the `REPOS` array in `setup.sh`, and add one row to [`skills/route-case.md`](skills/route-case.md) so the router knows when to call it. No orchestrator code changes needed. The design is plugin-shaped.

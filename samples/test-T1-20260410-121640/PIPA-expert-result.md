@@ -2,16 +2,16 @@
 
 2026. 4. 10.
 
-| 수 신 | 법무법인 진주 오케스트레이터 (내부 라우팅 테스트) |
+| 수 신 | Jinju Legal Orchestrator (내부 라우팅 테스트) |
 |---|---|
-| 발 신 | **법무법인 진주 / 정보호 변호사 (PIPA-expert)** |
+| 발 신 | **Jinju Legal Orchestrator / Privacy Specialist 정보호 (PIPA-expert)** |
 | 제 목 | **개인정보 보호법 제28조의2(가명정보의 처리 등) 조문 해석 리서치** |
 
 ---
 
 ## 1. 검토의 배경 및 질의의 요지
 
-본 건은 법무법인 진주 오케스트레이터의 전문가 라우팅 검증(T1) 목적의 내부 테스트 요청이다. 의뢰된 리서치 항목은 다음과 같다.
+본 건은 Jinju Legal Orchestrator의 전문가 라우팅 검증(T1) 목적의 내부 테스트 요청이다. 의뢰된 리서치 항목은 다음과 같다.
 
 1. 「개인정보 보호법」 제28조의2(가명정보의 처리 등) 조문 원문 verbatim 인용
 2. 가명정보 처리의 법적 요건 및 정보주체 동의 면제 범위
@@ -158,7 +158,7 @@ PIPA-expert 로컬 KB의 `library/grade-b/pipc-decisions/` 및 `library/grade-b/
 
 ---
 
-**작성:** 정보호 변호사 (PIPA-expert Agent)
+**작성:** Privacy Specialist 정보호 (PIPA-expert Agent)
 **작성일:** 2026. 4. 10.
 **Case ID:** test-T1-20260410-121640
 **Test Marker:** T1_PIPA_specialist_routing

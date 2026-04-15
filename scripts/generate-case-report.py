@@ -418,7 +418,7 @@ def render_single_event(event: dict[str, Any], pattern: int) -> tuple[str, list[
         labels = {
             "research_completed": "리서치 완료",
             "writing_completed": "의견서 작성 완료",
-            "review_completed": "파트너 검토 완료",
+            "review_completed": "시니어 리뷰 완료",
             "agent_completed": f"{who} 작업 완료",
         }
         heading = f"### {ts} · {labels.get(event_type, f'{who} 작업 완료')}"
@@ -759,9 +759,9 @@ def render_review_section(
     review_meta: dict[str, Any] | None,
     writing_meta: dict[str, Any] | None,
 ) -> list[str]:
-    lines = ["## 파트너 리뷰 결과", ""]
+    lines = ["## 시니어 리뷰 결과", ""]
     if not isinstance(review_meta, dict):
-        lines.append("리뷰 단계 메타데이터가 없어 파트너 리뷰 결과를 상세히 재구성하지 못했습니다.")
+        lines.append("리뷰 단계 메타데이터가 없어 시니어 리뷰 결과를 상세히 재구성하지 못했습니다.")
         return lines
 
     approval = normalize_status(str(review_meta.get("approval") or ""))
@@ -996,7 +996,7 @@ def generate_case_report(case_dir: Path) -> tuple[Path | None, list[str]]:
             "## 처리 과정",
             *build_timeline_entries(events, pattern),
             "",
-            "## 참여 변호사",
+            "## 참여 에이전트",
             *build_agent_sections(events, meta_bundle),
             "",
             *render_review_section(

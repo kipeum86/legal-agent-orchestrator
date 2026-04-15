@@ -1,7 +1,7 @@
 # 확률형 아이템(가챠) 규제 법률 리서치 결과물
 
-**작성 에이전트:** game-legal-research (심진주, 3년차 Associate, 국제 게임산업 법률 전문)
-**법무법인 진주 (Jinju Law Firm)**
+**작성 에이전트:** game-legal-research (Game Industry Research Specialist 심진주, 국제 게임산업 법률 전문)
+**Jinju Legal Orchestrator**
 **작성일:** 2026. 4. 10.
 **문서 유형:** 법률 의견서 작성용 1차 리서치 (Phase 1 research output)
 **대상 질의:** 한국 게임산업법의 확률형 아이템(가챠) 규제에 관한 법률 의견서 작성용 리서치
@@ -544,7 +544,7 @@
 **문서 끝 (End of Research Deliverable)**
 
 **메타정보:**
-- 작성자: game-legal-research 에이전트 (심진주, 3년차 Associate)
+- 작성자: game-legal-research 에이전트 (Game Industry Research Specialist 심진주)
 - 작성일: 2026.4.10.
 - 케이스 ID: test-regression-20260410-121640
 - 테스트 마커: regression_v2_option_b_game_specialist

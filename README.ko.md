@@ -1,8 +1,8 @@
-# 법무법인 진주 오케스트레이터 · Jinju Law Firm Orchestrator
+# 진주 리걸 오케스트레이터 · Jinju Legal Orchestrator
 
 **English:** [README.md](README.md)
 
-> Claude Code 위에서 돌아가는 AI 로펌. 8명의 전문 변호사 에이전트가 실제 로펌처럼 협업하여 전 과정이 감사 가능한 법률 의견서를 생성합니다.
+> Claude Code 위에서 돌아가는 AI 기반 법률 워크플로우 시스템. 8명의 전문 스페셜리스트 에이전트가 협업하여 감사 가능한 법률 분석 결과물을 생성합니다.
 
 ![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
 ![Runtime: Claude Code](https://img.shields.io/badge/Runtime-Claude_Code-orange)
@@ -14,28 +14,28 @@
 
 시중의 "법률 AI"는 대부분 단일 LLM에 질문을 던지는 구조입니다. 이 프로젝트는 다릅니다.
 
-**오케스트레이터가 파트너 변호사 역할**을 맡습니다. 들어오는 질문을 분류하고, 적합한 전문 변호사에게 배정하고, 협업 패턴(순차 핸드오프 / 병렬 리서치 / 멀티라운드 토론)을 직접 선택합니다. 8명의 하위 에이전트는 각자 다른 관할권, 지식 베이스, MCP 도구를 가진 진짜 Claude Code 에이전트이며, 이 프로젝트는 그들을 **단 한 줄도 수정하지 않고 100% 그대로 재활용**합니다.
+**리드 오케스트레이터가 전체 조율 역할**을 맡습니다. 들어오는 질문을 분류하고, 적합한 전문 스페셜리스트 에이전트에게 배정하고, 협업 패턴(순차 핸드오프 / 병렬 리서치 / 멀티라운드 토론)을 직접 선택합니다. 8명의 하위 에이전트는 각자 다른 관할권, 지식 베이스, MCP 도구를 가진 진짜 Claude Code 에이전트이며, 이 프로젝트는 그들을 **단 한 줄도 수정하지 않고 100% 그대로 재활용**합니다.
 
-모든 단계는 `events.jsonl`에 기록되며, 최종 전달 단계에서 사건 전체가 하나의 `case-report.md`로 다시 묶입니다. 어느 변호사가 배정됐는지, 어떤 소스(Grade A/B/C)를 인용했는지, 팩트체커가 무엇을 지적했는지, 리비전이 어떻게 해소됐는지 — 전부 한 파일에서 확인할 수 있습니다.
+모든 단계는 `events.jsonl`에 기록되며, 최종 전달 단계에서 사건 전체가 하나의 `case-report.md`로 다시 묶입니다. 어느 스페셜리스트가 배정됐는지, 어떤 소스(Grade A/B/C)를 인용했는지, 팩트체커가 무엇을 지적했는지, 리비전이 어떻게 해소됐는지 — 전부 한 파일에서 확인할 수 있습니다.
 
 ---
 
-## 팀 소개 — 법무법인 진주 소속 에이전트
+## 팀 소개 — Jinju Legal Orchestrator 소속 에이전트
 
-이 오케스트레이터는 가상의 한국 로펌 **법무법인 진주**의 **본점**입니다. 아래 8명의 변호사는 각자 독립된 GitHub 리포지토리에 standalone Claude Code 에이전트로 존재합니다. `./setup.sh`를 실행하면 이들 전부가 `agents/` 아래로 clone되어 바로 디스패치할 수 있는 상태가 됩니다.
+이 저장소는 가상의 AI 법률 워크플로우 시스템 **Jinju Legal Orchestrator**의 중앙 오케스트레이터입니다. 아래 8명의 스페셜리스트는 각자 독립된 GitHub 리포지토리에 standalone Claude Code 에이전트로 존재합니다. `./setup.sh`를 실행하면 이들 전부가 `agents/` 아래로 clone되어 바로 디스패치할 수 있는 상태가 됩니다.
 
-| 담당 변호사 | Agent 리포지토리 | 실제로 하는 일 | Phase |
+| 담당 스페셜리스트 | Agent 리포지토리 | 실제로 하는 일 | Phase |
 |------------|------------------|---------------|-------|
 | **김재식 (Kim Jaesik)** | [general-legal-research](https://github.com/kipeum86/general-legal-research) | **17+ 관할권**을 커버하는 증거 기반 국제 법률 리서치. 한국법뿐 아니라 어느 관할권의 어떤 법률 질문이든 받는 제너럴리스트 리서치 어소시엇. Grade A 1차 소스 우선 워크플로우. | Phase 1 ✓ |
 | **한석봉 (Han Seokbong)** | [legal-writing-agent](https://github.com/kipeum86/legal-writing-agent) | **한/영 이중 언어** 비계약 법률 문서 드래프터. 신규 작성 D1–D6 파이프라인, 리비전 R1–R7 tracked-change 파이프라인. 한국어 문서는 쟁점→결론→분석 관행, 영어 문서는 IRAC/CRAC + Bluebook/OSCOLA 관행 적용. | Phase 1 ✓ |
-| **반성문 (Ban Seong-mun)** · *파트너* | [second-review-agent](https://github.com/kipeum86/second-review-agent) | AI 생성 법률 문서 최종 품질 게이트. 인용을 **여러 primary legal database**(law.go.kr, congress.gov, eur-lex 등)에 대해 verbatim 대조하고, 법적 논리와 작성 품질을 점검하며, tracked change가 들어간 redlined DOCX를 생성합니다. 독립 release 게이트(Pass / Pass with Warnings / Manual Review Required / Not Recommended). 환각 인용 zero tolerance. | Phase 1 ✓ |
-| **정보호 (Jeong Bo-ho)** | [PIPA-expert](https://github.com/kipeum86/PIPA-expert) | 한국 개인정보보호법 전문가. 구조화 RAG 기반: **법조문 929건, PIPC 공식 가이드라인 46건, landmark 판례·해석례 30건, cross-reference 엣지 2,369개**. 로펌 수준의 DOCX 의견서 산출. | Phase 2 ✓ |
+| **반성문 (Ban Seong-mun)** · *시니어 리뷰 스페셜리스트* | [second-review-agent](https://github.com/kipeum86/second-review-agent) | AI 생성 법률 문서 최종 품질 게이트. 인용을 **여러 primary legal database**(law.go.kr, congress.gov, eur-lex 등)에 대해 verbatim 대조하고, 법적 논리와 작성 품질을 점검하며, tracked change가 들어간 redlined DOCX를 생성합니다. 독립 release 게이트(Pass / Pass with Warnings / Manual Review Required / Not Recommended). 환각 인용 zero tolerance. | Phase 1 ✓ |
+| **정보호 (Jeong Bo-ho)** | [PIPA-expert](https://github.com/kipeum86/PIPA-expert) | 한국 개인정보보호법 전문가. 구조화 RAG 기반: **법조문 929건, PIPC 공식 가이드라인 46건, landmark 판례·해석례 30건, cross-reference 엣지 2,369개**. 전문 형식의 DOCX 의견서 산출. | Phase 2 ✓ |
 | **김덕배 (Kim De Bruyne)** | [GDPR-expert](https://github.com/kipeum86/GDPR-expert) | EU 데이터보호법 전문가. 구조화 RAG 기반: **EU 법률 5개(조문 321 + recital 535), EDPB 문서 120건, CJEU 판결 51건, enforcement 결정 33건** — 인덱스 아이템 1,060+. | Phase 2 ✓ |
 | **심진주 (Sim Jinju)** | [game-legal-research](https://github.com/kipeum86/game-legal-research) | 국제 게임 산업 법률 리서치. 게임 클라이언트 자문을 위한 다관할권 규제 비교. 증거 기반, 1차 소스 우선, deliverable 수준 결과물 로컬 출력 파이프라인 보유. | Phase 2 ✓ |
 | **고덕수 (Ko Duksoo)** | [contract-review-agent](https://github.com/kipeum86/contract-review-agent) | 계약서 검토 파이프라인 — 계약서를 drop하면 **tracked-change redline이 들어간 DOCX, 여백 코멘트(internal strategy + external-facing), 전체 분석 리포트, 협상 권고**가 반환됩니다. Node.js + Python 스택. 최종 법률 판단은 사람이 합니다. | Phase 2 |
-| **변혁기 (Byeon Hyeok-gi)** | [legal-translation-agent](https://github.com/kipeum86/legal-translation-agent) | **5개 언어** 법률 문서 번역. zero-omission 보장, dual-pass 번역을 comparative synthesis로 병합. 관할권 인식 용어(BGB, UCC, PRC, Taiwan, APPI) 준수, 매 작업마다 성장하는 firm-wide 번역 메모리. | Phase 2 |
+| **변혁기 (Byeon Hyeok-gi)** | [legal-translation-agent](https://github.com/kipeum86/legal-translation-agent) | **5개 언어** 법률 문서 번역. zero-omission 보장, dual-pass 번역을 comparative synthesis로 병합. 관할권 인식 용어(BGB, UCC, PRC, Taiwan, APPI) 준수, 매 작업마다 성장하는 shared 번역 메모리. | Phase 2 |
 
-**오케스트레이터는 하위 에이전트의 `CLAUDE.md`, skills, 지식 베이스를 절대 수정하지 않습니다.** 이것이 "100% 재활용"의 실천입니다. 어느 변호사가 자기 리포에 버그 픽스를 올리면 다음 `./setup.sh update` 한 번으로 자동 반영됩니다.
+**오케스트레이터는 하위 에이전트의 `CLAUDE.md`, skills, 지식 베이스를 절대 수정하지 않습니다.** 이것이 "100% 재활용"의 실천입니다. 어느 스페셜리스트가 자기 리포에 버그 픽스를 올리면 다음 `./setup.sh update` 한 번으로 자동 반영됩니다.
 
 > 브리핑 계열 에이전트 2개(`game-legal-briefing`, `game-policy-briefing`)는 같은 작성자의 GitHub org에 존재하지만 독립 Python 앱이라 이 오케스트레이터의 스코프 바깥이며, `setup.sh`에서 클론 대상으로 포함되지 않습니다.
 
@@ -50,7 +50,7 @@
 | 단계 | 에이전트 | 수행한 작업 | 산출물 |
 |------|---------|------------|--------|
 | **1. 리서치** | 김재식 · `general-legal-research` | `korean-law` MCP로 1차 소스 14건 수집 — 법조문, 넥슨 공정위 116억 과징금 결정, 집행 경로 | [`research-result.md`](samples/20260410-012238-391f/research-result.md) |
-| **2. 드래프팅** | 한석봉 · `legal-writing-agent` | 한국 로펌 MEMORANDUM 작성 (결론요약 → 면책조항 → 7개 쟁점 검토 → 리스크 매트릭스 → 8개 권고사항) | [`opinion-v1.md`](samples/20260410-012238-391f/opinion-v1.md) |
+| **2. 드래프팅** | 한석봉 · `legal-writing-agent` | 한국형 전문 메모 형식 작성 (결론요약 → 면책조항 → 7개 쟁점 검토 → 리스크 매트릭스 → 8개 권고사항) | [`opinion-v1.md`](samples/20260410-012238-391f/opinion-v1.md) |
 | **3. 리뷰** | 반성문 · `second-review-agent` | 모든 블록 인용구를 MCP로 verbatim 대조, **9개 코멘트 반환 (Critical 2 + Major 3 + Minor 4)** — 실제 법조문 원문 불일치 적발 | [`review-result.md`](samples/20260410-012238-391f/review-result.md) |
 | **4. 리비전 rescue** | `legal-writing-agent` + 오케스트레이터 | 작성자가 리비전 중 rate limit 발생; 오케스트레이터가 직접 `korean-law` MCP로 수정된 인용구 대조 | [`verbatim-verification.md`](samples/20260410-012238-391f/verbatim-verification.md) |
 | **5. 최종 전달** | 오케스트레이터 | 한국 법률 의견서 스타일 가이드(Times New Roman + 맑은 고딕)에 따라 DOCX 어셈블 | [`opinion.docx`](samples/20260410-012238-391f/opinion.docx) |
@@ -147,7 +147,7 @@ flowchart LR
 
 상용 법률 AI 제품은 대체로 블랙박스입니다. 답은 받지만 어떻게 나왔는지 알 수 없습니다.
 
-법무법인 진주는 정반대입니다. 어느 변호사가 배정됐는지, 어떤 소스를 참조했는지, 팩트체커가 무엇을 지적했는지, 리비전 사이클이 어떻게 해소됐는지 — 전부 `events.jsonl`에 이벤트 단위로 기록됩니다.
+Jinju Legal Orchestrator는 정반대입니다. 어느 스페셜리스트가 배정됐는지, 어떤 소스를 참조했는지, 팩트체커가 무엇을 지적했는지, 리비전 사이클이 어떻게 해소됐는지 — 전부 `events.jsonl`에 이벤트 단위로 기록됩니다.
 
 실패 모드까지 영구 기록에 남습니다. [Phase 1 E2E 케이스](samples/20260410-012238-391f/events.jsonl)에서 리비전 도중 rate limit 에러(`evt_044`)가 발생하자, 오케스트레이터가 직접 나서서 메타 검증 rescue(`evt_045`)를 수행했습니다. 단일 LLM 시스템에서는 "모델 에러"로 끝났을 것이 여기서는 append-only 로그의 typed 이벤트로 남습니다. **그것이 "프로세스 자체가 프로덕트"의 실전 의미입니다.**
 
@@ -161,7 +161,7 @@ flowchart LR
 
 ### 비교표
 
-| 측면 | 단일 LLM | LangGraph / Agent SDK | **법무법인 진주** |
+| 측면 | 단일 LLM | LangGraph / Agent SDK | **Jinju Legal Orchestrator** |
 |------|---------|----------------------|-------------------|
 | 멀티 전문가 추론 | 프롬프트 페르소나 | 프레임워크에 에이전트 재구현 | **진짜 Claude Code 에이전트, 100% 재활용** |
 | 지식 베이스 | 컨텍스트에 꾸겨 넣기 | 프레임워크용으로 재구축 | 각 에이전트의 네이티브 KB 그대로 |
@@ -188,7 +188,7 @@ git clone https://github.com/kipeum86/legal-agent-orchestrator.git
 cd legal-agent-orchestrator
 ```
 
-이 시점에서 받는 것: 오케스트레이터 자체 — `CLAUDE.md`(파트너 시스템 프롬프트), `.mcp.json`(MCP 서버 설정), `skills/`(라우팅 및 어셈블 로직), `setup.sh`, 그리고 [`samples/`](samples/) 디렉토리에 4개의 실제 케이스 스냅샷입니다. 8명의 하위 변호사는 **아직 설치되지 않은** 상태입니다.
+이 시점에서 받는 것: 오케스트레이터 자체 — `CLAUDE.md`(리드 오케스트레이터 시스템 프롬프트), `.mcp.json`(MCP 서버 설정), `skills/`(라우팅 및 어셈블 로직), `setup.sh`, 그리고 [`samples/`](samples/) 디렉토리에 4개의 실제 케이스 스냅샷입니다. 8명의 하위 에이전트는 **아직 설치되지 않은** 상태입니다.
 
 ### 2. 8명의 하위 에이전트 설치
 
@@ -196,13 +196,13 @@ cd legal-agent-orchestrator
 ./setup.sh
 ```
 
-이 스크립트가 8명의 변호사 각자의 GitHub 리포지토리를 `agents/` 아래에 Agent ID 이름으로 clone합니다:
+이 스크립트가 8명의 스페셜리스트 각자의 GitHub 리포지토리를 `agents/` 아래에 Agent ID 이름으로 clone합니다:
 
 ```
 agents/
 ├── general-legal-research/     ← 김재식
 ├── legal-writing-agent/        ← 한석봉
-├── second-review-agent/        ← 반성문 (파트너)
+├── second-review-agent/        ← 반성문 (시니어 리뷰 스페셜리스트)
 ├── PIPA-expert/                ← 정보호
 ├── GDPR-expert/                ← 김덕배
 ├── game-legal-research/        ← 심진주
@@ -232,11 +232,11 @@ claude
 ```
 
 Claude Code가 시작할 때 다음을 자동 로드합니다:
-- **[CLAUDE.md](CLAUDE.md)** — 오케스트레이터 시스템 프롬프트. 메인 Claude 세션에게 "당신은 법무법인 진주의 대표 변호사이고, 이것이 워크플로우이고, 소속 변호사 8명이고, 호출할 수 있는 스킬들입니다"라고 지시합니다
+- **[CLAUDE.md](CLAUDE.md)** — 오케스트레이터 시스템 프롬프트. 메인 Claude 세션에게 "당신은 Jinju Legal Orchestrator의 리드 오케스트레이터이고, 이것이 워크플로우이고, 소속 스페셜리스트 8명이고, 호출할 수 있는 스킬들입니다"라고 지시합니다
 - **[.mcp.json](.mcp.json)** — 사용 가능한 MCP 서버 설정 (`korean-law` 및 `kordoc`); 디스패치 시 각 서브에이전트가 이를 상속합니다
 - **`skills/*.md`** — 오케스트레이터가 서브루틴처럼 실행하는 markdown 절차 문서입니다
 
-이제 대표 변호사와 대화하는 상태입니다. 한국어나 영어로 법률 질문을 입력하시면 됩니다.
+이제 리드 오케스트레이터와 대화하는 상태입니다. 한국어나 영어로 법률 질문을 입력하시면 됩니다.
 
 ### 5. 첫 케이스 실행
 
@@ -302,8 +302,8 @@ python3 "$PROJECT_ROOT/scripts/generate-case-report.py" "$PROJECT_ROOT/output/$C
 
 - 사건 메타데이터와 상태 요약
 - `events.jsonl`에서 사람이 읽는 타임라인으로 바꾼 처리 과정
-- 참여 변호사와 핵심 기여
-- severity 기준으로 정리한 파트너 리뷰 결과
+- 참여 에이전트와 핵심 기여
+- severity 기준으로 정리한 시니어 리뷰 결과
 - grade 분포가 포함된 인용 소스 표
 - 인라인으로 삽입된 최종 의견서 본문
 - 원본 산출물 상대 경로 링크
@@ -313,7 +313,7 @@ python3 "$PROJECT_ROOT/scripts/generate-case-report.py" "$PROJECT_ROOT/output/$C
 ## FAQ
 
 **클라이언트 기밀은 어떻게 보호하나요?**
-모든 실행은 사용자의 로컬 머신에서 사용자 본인의 Claude Code 세션으로 이루어집니다. 중간 SaaS는 없습니다. 다만 Claude Code 자체가 추론을 위해 Anthropic에 프롬프트를 전송하므로, 특정 사안에서 이것이 허용되는지는 소속 로펌 정책에 따라 다릅니다. `output/`, `agents/`, `.env`는 gitignored 되어 있어 케이스 파일과 API 키가 커밋에 포함되지 않습니다.
+모든 실행은 사용자의 로컬 머신에서 사용자 본인의 Claude Code 세션으로 이루어집니다. 중간 SaaS는 없습니다. 다만 Claude Code 자체가 추론을 위해 Anthropic에 프롬프트를 전송하므로, 특정 사안에서 이것이 허용되는지는 소속 조직 정책에 따라 다릅니다. `output/`, `agents/`, `.env`는 gitignored 되어 있어 케이스 파일과 API 키가 커밋에 포함되지 않습니다.
 
 **`./setup.sh`가 머신에 정확히 무엇을 하나요?**
 이 리포지토리 안에 `agents/` 폴더를 만들고, 8개의 public GitHub 리포지토리를 그 아래로 clone합니다. 이 디렉토리 바깥은 건드리지 않습니다. global package 설치도 없고, `git clone`이 수행하는 것 외의 환경 변이도 없습니다. 각 에이전트 폴더는 지식 베이스 크기에 따라 대략 10~80 MB 정도입니다.

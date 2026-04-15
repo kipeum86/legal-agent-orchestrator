@@ -1,6 +1,6 @@
 # PIPA 국외이전 규제 리서치 (Pattern 1 Parallel — KR Branch)
 
-**에이전트:** PIPA-expert (정보호 변호사)
+**에이전트:** PIPA-expert (Privacy Specialist 정보호)
 **Dispatch:** T2 Parallel Pattern 1 test, KR 측면만 (GDPR 측면은 병렬 GDPR-expert 담당)
 **Date:** 2026-04-10
 **Fact-checker:** 비활성 (Phase 0 #6 override)

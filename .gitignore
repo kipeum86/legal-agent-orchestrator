@@ -12,7 +12,6 @@ __pycache__/
 # that carry genuine portfolio/public value.
 docs/*
 docs/**/*
-!legal-writing-formatting-guide.md
 
 # Dev handoff doc (session state, next-steps, internal breadcrumbs) — not public.
 resume.md

@@ -2,14 +2,16 @@
 
 모든 에이전트 작업이 완료된 후, 최종 결과물을 어셈블하고 클라이언트에게 전달합니다.
 
+이 스킬의 모든 orchestrator bash 예시는 `PRIVATE_DIR="${LEGAL_ORCHESTRATOR_PRIVATE_DIR:-$PROJECT_ROOT/output}"`가 이미 설정되어 있다고 가정합니다. (`CLAUDE.md` Step 1)
+
 ---
 
 ## Step 1: 결과물 확인
 
-output/{CASE_ID}/ 디렉토리의 파일을 확인하세요:
+기본 work-product 디렉토리(`$PRIVATE_DIR/{CASE_ID}`; env 미설정 시 `output/{CASE_ID}`와 동일)의 파일을 확인하세요:
 
 ```bash
-ls -la "$PROJECT_ROOT/output/$CASE_ID/"
+ls -la "$PRIVATE_DIR/$CASE_ID/"
 ```
 
 **필수 파일:**
@@ -45,7 +47,7 @@ ls -la "$PROJECT_ROOT/output/$CASE_ID/"
 
 각 meta.json을 Read하여 sources 배열을 추출하고, 위 형식으로 병합한 뒤 파일로 저장:
 ```bash
-# Write tool로 $PROJECT_ROOT/output/$CASE_ID/sources.json에 저장
+# Write tool로 $PRIVATE_DIR/$CASE_ID/sources.json에 저장
 ```
 
 ---
@@ -55,12 +57,12 @@ ls -la "$PROJECT_ROOT/output/$CASE_ID/"
 파이프라인 완료 이벤트를 기록하세요:
 
 ```bash
-echo '{"id":"evt_final","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestrator","type":"final_output","data":{"file_path":"output/'"$CASE_ID"'/opinion.md","format":"markdown","summary":"FINAL_SUMMARY","total_sources":N,"grade_distribution":{"A":0,"B":0,"C":0,"D":0}}}' >> "$PROJECT_ROOT/output/$CASE_ID/events.jsonl"
+echo '{"id":"evt_final","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestrator","type":"final_output","data":{"file_path":"'"$PRIVATE_DIR"'/'"$CASE_ID"'/opinion.md","format":"markdown","summary":"FINAL_SUMMARY","total_sources":N,"grade_distribution":{"A":0,"B":0,"C":0,"D":0}}}' >> "$PRIVATE_DIR/$CASE_ID/events.jsonl"
 ```
 
 <!-- IF pattern == pattern_3 (토론) -->
 ```bash
-echo '{"id":"evt_final","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestrator","type":"final_output","data":{"case_id":"'"$CASE_ID"'","pattern":"pattern_3","primary_deliverable":"debate-opinion.docx","deliverables":["debate-opinion.docx","debate-transcript.docx","sources.json"],"summary":"VERDICT_SUMMARY","total_sources":N,"grade_distribution":{"A":0,"B":0,"C":0,"D":0}}}' >> "$PROJECT_ROOT/output/$CASE_ID/events.jsonl"
+echo '{"id":"evt_final","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestrator","type":"final_output","data":{"case_id":"'"$CASE_ID"'","pattern":"pattern_3","primary_deliverable":"'"$PRIVATE_DIR"'/'"$CASE_ID"'/debate-opinion.docx","deliverables":["'"$PRIVATE_DIR"'/'"$CASE_ID"'/debate-opinion.docx","'"$PRIVATE_DIR"'/'"$CASE_ID"'/debate-transcript.docx","'"$PRIVATE_DIR"'/'"$CASE_ID"'/sources.json"],"summary":"VERDICT_SUMMARY","total_sources":N,"grade_distribution":{"A":0,"B":0,"C":0,"D":0}}}' >> "$PRIVATE_DIR/$CASE_ID/events.jsonl"
 ```
 <!-- END IF -->
 
@@ -71,13 +73,13 @@ echo '{"id":"evt_final","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchest
 최종 전달 직전에 반드시 `case-report.md`를 생성하세요.
 
 ```bash
-python3 "$PROJECT_ROOT/scripts/generate-case-report.py" "$PROJECT_ROOT/output/$CASE_ID"
+python3 "$PROJECT_ROOT/scripts/generate-case-report.py" "$PRIVATE_DIR/$CASE_ID"
 ```
 
 생성 후 확인:
 
 ```bash
-[ -f "$PROJECT_ROOT/output/$CASE_ID/case-report.md" ]
+[ -f "$PRIVATE_DIR/$CASE_ID/case-report.md" ]
 ```
 
 `events.jsonl`이 없는 smoke test 디렉토리라면 생성이 skip될 수 있습니다. 이 경우에도 파이프라인 자체를 실패로 처리하지는 않습니다.
@@ -89,9 +91,9 @@ python3 "$PROJECT_ROOT/scripts/generate-case-report.py" "$PROJECT_ROOT/output/$C
 DOCX 생성 또는 최종 전달 직전에, 최종 opinion/transcript markdown에 injection 잔여물이 남아있지 않은지 확인합니다.
 
 ```bash
-for f in "$PROJECT_ROOT/output/$CASE_ID"/opinion.md \
-         "$PROJECT_ROOT/output/$CASE_ID"/debate-opinion.md \
-         "$PROJECT_ROOT/output/$CASE_ID"/debate-transcript.md; do
+for f in "$PRIVATE_DIR/$CASE_ID"/opinion.md \
+         "$PRIVATE_DIR/$CASE_ID"/debate-opinion.md \
+         "$PRIVATE_DIR/$CASE_ID"/debate-transcript.md; do
   [ -f "$f" ] || continue
   AUDIT="${f%.md}.deliverable.audit.json"
   python3 "$PROJECT_ROOT/scripts/sanitize-check.py" \
@@ -101,7 +103,7 @@ for f in "$PROJECT_ROOT/output/$CASE_ID"/opinion.md \
   COUNT=$(python3 -c "import json; print(len(json.load(open('$AUDIT', encoding='utf-8'))['matches']))")
   if [ "$COUNT" -gt 0 ]; then
     echo '{"id":"evt_NNN","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestrator","type":"deliverable_injection_residue","data":{"file":"'"$(basename "$f")"'","match_count":'"$COUNT"',"audit":"'"$(basename "$AUDIT")"'"}}' \
-      >> "$PROJECT_ROOT/output/$CASE_ID/events.jsonl"
+      >> "$PRIVATE_DIR/$CASE_ID/events.jsonl"
   fi
 done
 ```
@@ -112,7 +114,7 @@ done
 
 ## Step 6: 클라이언트에게 전달
 
-최종 결과를 클라이언트에게 보고하세요:
+최종 결과를 클라이언트에게 보고하세요. 아래 `output/{CASE_ID}` 표기는 실제로는 `$PRIVATE_DIR/{CASE_ID}`를 뜻합니다. env 미설정 시 두 경로는 같습니다:
 
 ```
 📋 사건 {CASE_ID} 처리 완료

@@ -39,7 +39,8 @@
 ## 권장 실행
 
 ```bash
-python3 "$PROJECT_ROOT/scripts/generate-case-report.py" "$PROJECT_ROOT/output/$CASE_ID"
+PRIVATE_DIR="${LEGAL_ORCHESTRATOR_PRIVATE_DIR:-$PROJECT_ROOT/output}"
+python3 "$PROJECT_ROOT/scripts/generate-case-report.py" "$PRIVATE_DIR/$CASE_ID"
 ```
 
 샘플 케이스에 소급 적용할 때:
@@ -52,7 +53,7 @@ python3 scripts/generate-case-report.py samples/20260410-012238-391f
 
 ```bash
 ROOT="${PROJECT_ROOT:-.}"
-CASE_DIR="${CASE_DIR:-$ROOT/output/$CASE_ID}"  # 샘플 재생성 시 CASE_DIR=samples/<CASE_ID>
+CASE_DIR="${CASE_DIR:-${LEGAL_ORCHESTRATOR_PRIVATE_DIR:-$ROOT/output}/$CASE_ID}"  # 샘플 재생성 시 CASE_DIR=samples/<CASE_ID>
 CR="$CASE_DIR/case-report.md"
 if [ -f "$CR" ]; then
   python3 "$ROOT/scripts/sanitize-check.py" \

@@ -3,6 +3,8 @@
 이 스킬은 `complexity == "adversarial"`로 분류된 사건을 **Pattern 3 멀티라운드 토론**으로 처리합니다.
 단순 병렬 요약이 아니라, 독립 에이전트 2명이 서로의 주장을 읽고 **반론**하는 구조를 강제합니다.
 
+이 스킬의 모든 orchestrator bash 예시는 `PRIVATE_DIR="${LEGAL_ORCHESTRATOR_PRIVATE_DIR:-$PROJECT_ROOT/output}"`가 이미 설정되어 있다고 가정합니다. (`CLAUDE.md` Step 1)
+
 **핵심 원칙:**
 - 참여자는 항상 **2명**이다.
 - Round 1은 병렬, Round 2 이후는 순차로 진행한다.
@@ -19,6 +21,7 @@
 이 스킬에 진입할 때 다음이 이미 정해져 있어야 합니다:
 - `CASE_ID`
 - `PROJECT_ROOT`
+- `PRIVATE_DIR`
 - 참여자 2명 (`AGENT_A_ID`, `AGENT_B_ID`)
 - 토론 주제 (`TOPIC`)
 - 각 참여자의 관할권/도메인 역할
@@ -31,12 +34,12 @@
 
 참여자 축소 요청 예시:
 ```bash
-echo '{"id":"evt_NNN","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestrator","type":"user_prompt","data":{"question":"토론 참여자는 2개 캠프로만 처리할 수 있습니다. 어느 두 입장을 직접 대립시킬지 지정해주세요.","options":["A vs B","A vs C","B vs C"],"context":"pattern_3_requires_two_participants"}}' >> "$PROJECT_ROOT/output/$CASE_ID/events.jsonl"
+echo '{"id":"evt_NNN","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestrator","type":"user_prompt","data":{"question":"토론 참여자는 2개 캠프로만 처리할 수 있습니다. 어느 두 입장을 직접 대립시킬지 지정해주세요.","options":["A vs B","A vs C","B vs C"],"context":"pattern_3_requires_two_participants"}}' >> "$PRIVATE_DIR/$CASE_ID/events.jsonl"
 ```
 
 토론 시작 이벤트:
 ```bash
-echo '{"id":"evt_NNN","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestrator","type":"debate_initiated","data":{"topic":"TOPIC","framing":"POSITION_A vs POSITION_B","participants":["AGENT_A_ID","AGENT_B_ID"],"max_rounds":3,"case_id":"'"$CASE_ID"'"}}' >> "$PROJECT_ROOT/output/$CASE_ID/events.jsonl"
+echo '{"id":"evt_NNN","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestrator","type":"debate_initiated","data":{"topic":"TOPIC","framing":"POSITION_A vs POSITION_B","participants":["AGENT_A_ID","AGENT_B_ID"],"max_rounds":3,"case_id":"'"$CASE_ID"'"}}' >> "$PRIVATE_DIR/$CASE_ID/events.jsonl"
 ```
 
 ---
@@ -93,7 +96,7 @@ Agent B 프롬프트는 방향만 반대로 유지하고 동일한 구조를 사
 
 라운드 이벤트 예시:
 ```bash
-echo '{"id":"evt_NNN","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"AGENT_A_ID","type":"debate_round","data":{"round":1,"position":"opinion","agent_id":"AGENT_A_ID","summary":"2줄 요약","key_claims_count":N,"sources_count":N}}' >> "$PROJECT_ROOT/output/$CASE_ID/events.jsonl"
+echo '{"id":"evt_NNN","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"AGENT_A_ID","type":"debate_round","data":{"round":1,"position":"opinion","agent_id":"AGENT_A_ID","summary":"2줄 요약","key_claims_count":N,"sources_count":N}}' >> "$PRIVATE_DIR/$CASE_ID/events.jsonl"
 ```
 
 ---
@@ -165,7 +168,7 @@ Round 2 완료 후 오케스트레이터가 `conceded_points`를 읽고 **수렴
 
 판단 결과 이벤트:
 ```bash
-echo '{"id":"evt_NNN","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestrator","type":"debate_round3_decision","data":{"proceed":BOOL,"reason":"convergence|significant_disagreement","conceded_ratio":0.XX,"contested_claims":["claim1","claim2"]}}' >> "$PROJECT_ROOT/output/$CASE_ID/events.jsonl"
+echo '{"id":"evt_NNN","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestrator","type":"debate_round3_decision","data":{"proceed":BOOL,"reason":"convergence|significant_disagreement","conceded_ratio":0.XX,"contested_claims":["claim1","claim2"]}}' >> "$PRIVATE_DIR/$CASE_ID/events.jsonl"
 ```
 
 `proceed: false`이면 Round 3를 생략하고 바로 Verdict 단계로 넘어갑니다.
@@ -414,18 +417,18 @@ Revision cycle:
 
 ```bash
 python3 "$PROJECT_ROOT/scripts/md-to-docx.py" \
-  "$PROJECT_ROOT/output/$CASE_ID/debate-transcript.md" \
-  "$PROJECT_ROOT/output/$CASE_ID/debate-transcript.docx"
+  "$PRIVATE_DIR/$CASE_ID/debate-transcript.md" \
+  "$PRIVATE_DIR/$CASE_ID/debate-transcript.docx"
 
 python3 "$PROJECT_ROOT/scripts/md-to-docx.py" \
-  "$PROJECT_ROOT/output/$CASE_ID/debate-opinion.md" \
-  "$PROJECT_ROOT/output/$CASE_ID/debate-opinion.docx"
+  "$PRIVATE_DIR/$CASE_ID/debate-opinion.md" \
+  "$PRIVATE_DIR/$CASE_ID/debate-opinion.docx"
 ```
 
 DOCX 이벤트 2건:
 ```bash
-echo '{"id":"evt_NNN","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestrator","type":"docx_generated","data":{"tool":"md-to-docx.py","input":"debate-transcript.md","output":"debate-transcript.docx","size_bytes":SIZE}}' >> "$PROJECT_ROOT/output/$CASE_ID/events.jsonl"
-echo '{"id":"evt_NNN","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestrator","type":"docx_generated","data":{"tool":"md-to-docx.py","input":"debate-opinion.md","output":"debate-opinion.docx","size_bytes":SIZE}}' >> "$PROJECT_ROOT/output/$CASE_ID/events.jsonl"
+echo '{"id":"evt_NNN","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestrator","type":"docx_generated","data":{"tool":"md-to-docx.py","input":"debate-transcript.md","output":"debate-transcript.docx","size_bytes":SIZE}}' >> "$PRIVATE_DIR/$CASE_ID/events.jsonl"
+echo '{"id":"evt_NNN","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestrator","type":"docx_generated","data":{"tool":"md-to-docx.py","input":"debate-opinion.md","output":"debate-opinion.docx","size_bytes":SIZE}}' >> "$PRIVATE_DIR/$CASE_ID/events.jsonl"
 ```
 
 ---
@@ -435,7 +438,7 @@ echo '{"id":"evt_NNN","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestra
 토론 종료 이벤트를 기록한 뒤 [skills/deliver-output.md](./deliver-output.md)를 Read하고 그대로 따릅니다.
 
 ```bash
-echo '{"id":"evt_NNN","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestrator","type":"debate_concluded","data":{"topic":"TOPIC","participants":["AGENT_A_ID","AGENT_B_ID"],"rounds_completed":N,"verdict_summary":"1-2 문장","consensus_areas":["area1"],"disagreement_areas":["area1"]}}' >> "$PROJECT_ROOT/output/$CASE_ID/events.jsonl"
+echo '{"id":"evt_NNN","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestrator","type":"debate_concluded","data":{"topic":"TOPIC","participants":["AGENT_A_ID","AGENT_B_ID"],"rounds_completed":N,"verdict_summary":"1-2 문장","consensus_areas":["area1"],"disagreement_areas":["area1"]}}' >> "$PRIVATE_DIR/$CASE_ID/events.jsonl"
 ```
 
 deliver-output 단계로 넘길 때 다음 컨텍스트를 유지합니다:
@@ -461,7 +464,7 @@ deliver-output 단계로 넘길 때 다음 컨텍스트를 유지합니다:
 
 MCP fallback 검증 이벤트:
 ```bash
-echo '{"id":"evt_NNN","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestrator","type":"mcp_fallback_verification","data":{"trigger":"rate_limit","agent_id":"AGENT_ID","verified_claims":["claim1","claim2"],"method":"orchestrator_direct_mcp_verification"}}' >> "$PROJECT_ROOT/output/$CASE_ID/events.jsonl"
+echo '{"id":"evt_NNN","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestrator","type":"mcp_fallback_verification","data":{"trigger":"rate_limit","agent_id":"AGENT_ID","verified_claims":["claim1","claim2"],"method":"orchestrator_direct_mcp_verification"}}' >> "$PRIVATE_DIR/$CASE_ID/events.jsonl"
 ```
 
 Rate-limit fallback 시 verdict 프롬프트 주입 문구:

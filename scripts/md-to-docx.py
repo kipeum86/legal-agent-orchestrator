@@ -22,6 +22,7 @@ Designed for legal-writing-agent output (opinion.md). Handles:
 """
 from __future__ import annotations
 
+import os
 import re
 import sys
 from pathlib import Path
@@ -37,6 +38,26 @@ ASCII_FONT = "Times New Roman"
 CJK_FONT = "맑은 고딕"
 BODY_SIZE_PT = 11
 HEADING_SIZE = {1: 18, 2: 15, 3: 13, 4: 12, 5: 11.5}
+
+
+def _resolve_private_dir(project_root: Path) -> Path:
+    return Path(
+        os.environ.get("LEGAL_ORCHESTRATOR_PRIVATE_DIR", str(project_root / "output"))
+    ).expanduser()
+
+
+def _resolve_work_product_path(raw_arg: str, project_root: Path) -> Path:
+    path = Path(raw_arg).expanduser()
+    if path.is_absolute():
+        return path.resolve()
+    if path.parts and path.parts[0] in {"output", "samples", ".", ".."}:
+        return (project_root / path).resolve()
+
+    private_candidate = _resolve_private_dir(project_root) / path
+    if len(path.parts) >= 2 and private_candidate.parent.exists():
+        return private_candidate.resolve()
+
+    return (project_root / path).resolve()
 
 
 def set_run_font(run, size_pt: float = BODY_SIZE_PT, bold: bool = False, italic: bool = False, mono: bool = False) -> None:
@@ -325,8 +346,9 @@ def main() -> int:
     if len(sys.argv) != 3:
         print("Usage: md-to-docx.py <input.md> <output.docx>", file=sys.stderr)
         return 2
-    md = Path(sys.argv[1])
-    docx = Path(sys.argv[2])
+    project_root = Path.cwd().resolve()
+    md = _resolve_work_product_path(sys.argv[1], project_root)
+    docx = _resolve_work_product_path(sys.argv[2], project_root)
     if not md.exists():
         print(f"Input not found: {md}", file=sys.stderr)
         return 1

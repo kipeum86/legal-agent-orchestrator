@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 from collections import defaultdict
@@ -37,6 +38,21 @@ STATUS_META = {
     "partial": "◐ 부분 완료",
     "failed": "✕ 실패",
 }
+
+
+def _resolve_private_dir(project_root: Path) -> Path:
+    return Path(
+        os.environ.get("LEGAL_ORCHESTRATOR_PRIVATE_DIR", str(project_root / "output"))
+    ).expanduser()
+
+
+def _resolve_case_dir(case_arg: str, project_root: Path) -> Path:
+    raw = Path(case_arg).expanduser()
+    if raw.is_absolute():
+        return raw.resolve()
+    if len(raw.parts) == 1:
+        return (_resolve_private_dir(project_root) / raw).resolve()
+    return (project_root / raw).resolve()
 
 
 def read_text(path: Path) -> str | None:
@@ -1025,10 +1041,13 @@ def generate_case_report(case_dir: Path) -> tuple[Path | None, list[str]]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Generate a single narrative case-report.md for one case directory.")
-    parser.add_argument("case_dir", help="Path to output/{case-id} or samples/{case-id}")
+    parser.add_argument(
+        "case_dir",
+        help="Path to output/{case-id}, samples/{case-id}, or a bare CASE_ID resolved via LEGAL_ORCHESTRATOR_PRIVATE_DIR.",
+    )
     args = parser.parse_args()
 
-    case_dir = Path(args.case_dir).expanduser().resolve()
+    case_dir = _resolve_case_dir(args.case_dir, Path.cwd().resolve())
     report_path, warnings = generate_case_report(case_dir)
     for warning in warnings:
         print(f"[warn] {warning}", file=sys.stderr)

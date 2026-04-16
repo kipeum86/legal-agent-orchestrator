@@ -349,7 +349,7 @@ if [ ! -f "$TRANSLATION_CONFIG" ]; then
   "created": "orchestrator-auto",
   "user": {
     "name": "Orchestrator",
-    "affiliation": "Jinju Legal Orchestrator",
+    "affiliation": "Legal Agent Orchestrator",
     "role": "automated dispatch"
   },
   "preferences": {

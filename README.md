@@ -1,4 +1,4 @@
-# Jinju Legal Orchestrator · 진주 리걸 오케스트레이터
+# Legal Agent Orchestrator · 리걸 에이전트 오케스트레이터
 
 **한국어:** [README.ko.md](README.ko.md)
 
@@ -22,9 +22,9 @@ Every step is logged to `events.jsonl`, and the final delivery step folds the wh
 
 ---
 
-## Meet the Team — Jinju Legal Orchestrator Specialist Agents
+## Meet the Team — Legal Agent Orchestrator Specialist Agents
 
-This repository is the central coordinator for **Jinju Legal Orchestrator**, a fictional AI legal workflow system. Each of the eight specialists below lives in its own independent GitHub repository as a standalone Claude Code agent. When you run `./setup.sh` they are all cloned into `agents/` and ready to be dispatched.
+This repository is the central coordinator for **Legal Agent Orchestrator**, a fictional AI legal workflow system. Each of the eight specialists below lives in its own independent GitHub repository as a standalone Claude Code agent. When you run `./setup.sh` they are all cloned into `agents/` and ready to be dispatched.
 
 | Specialist | Agent repository | What they actually do | Phase |
 |----------|------------------|-----------------------|-------|
@@ -145,7 +145,7 @@ We inverted the tradeoff: **Claude Code as the runtime, agents preserved 100% in
 
 Most commercial legal AI products are black boxes. You get an answer; you don't know how.
 
-Jinju Legal Orchestrator is the opposite. Which specialist was assigned, which sources were consulted, what the fact-checker flagged, how revision cycles resolved — all visible in `events.jsonl`, one line per event.
+Legal Agent Orchestrator is the opposite. Which specialist was assigned, which sources were consulted, what the fact-checker flagged, how revision cycles resolved — all visible in `events.jsonl`, one line per event.
 
 Failure modes are in the permanent record too. If a mid-revision rate-limit error occurs, the orchestrator can trigger a meta-verification rescue instead of dying as a dead chat tab. Here it's a typed event in an append-only log. **That's what "the process is the product" means in practice.**
 
@@ -159,7 +159,7 @@ If you want a cheap legal chatbot, this is the wrong project. If you want a defe
 
 ### Comparison
 
-| Aspect | Single LLM | LangGraph / Agent SDK | **Jinju Legal Orchestrator** |
+| Aspect | Single LLM | LangGraph / Agent SDK | **Legal Agent Orchestrator** |
 |--------|-----------|----------------------|---------------------|
 | Multi-specialist reasoning | Prompt personas | Agents reimplemented in the framework | **Real Claude Code agents, 100% reused** |
 | Knowledge bases | Stuffed into context | Rebuilt for the framework | Each agent's native KB, untouched |
@@ -230,7 +230,7 @@ claude
 ```
 
 When Claude Code starts, it auto-loads:
-- **[CLAUDE.md](CLAUDE.md)** — the orchestrator system prompt that tells the main Claude session "you are the lead orchestrator of Jinju Legal Orchestrator, here is your workflow, here are your eight specialists, here are the skills you can invoke"
+- **[CLAUDE.md](CLAUDE.md)** — the orchestrator system prompt that tells the main Claude session "you are the lead orchestrator of Legal Agent Orchestrator, here is your workflow, here are your eight specialists, here are the skills you can invoke"
 - **[.mcp.json](.mcp.json)** — the MCP servers available (`korean-law` and `kordoc`); each subagent inherits these on dispatch
 - **`skills/*.md`** — markdown procedure documents the orchestrator executes as subroutines
 

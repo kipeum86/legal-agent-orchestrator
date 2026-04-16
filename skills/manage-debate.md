@@ -282,7 +282,7 @@ R3-B: {PROJECT_ROOT}/output/{CASE_ID}/debate-round-3-{AGENT_B_ID}-result.md
 |---|---|
 | **수 신** | 귀사 |
 | **참 조** | 법무·컴플라이언스 담당 |
-| **발 신** | Jinju Legal Orchestrator |
+| **발 신** | Legal Agent Orchestrator |
 | **제 목** | {TOPIC} — 토론 종합 판단 보고서 |
 
 ---
@@ -317,7 +317,7 @@ R3-B: {PROJECT_ROOT}/output/{CASE_ID}/debate-round-3-{AGENT_B_ID}-result.md
 |---|---|
 | **수 신** | 귀사 |
 | **참 조** | 법무·컴플라이언스 담당 |
-| **발 신** | Jinju Legal Orchestrator |
+| **발 신** | Legal Agent Orchestrator |
 | **제 목** | {TOPIC} — 토론 트랜스크립트 |
 
 ---

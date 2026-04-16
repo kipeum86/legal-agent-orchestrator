@@ -10,7 +10,7 @@
 - `result.md` 전문은 writing-agent가 최종 verdict 시점에만 직접 Read한다.
 - 최종 유저 deliverable은 `debate-opinion.docx` + `debate-transcript.docx` 2개다.
 
-`{{STYLE_GUIDE_BLOCK}}`와 `{{ERROR_CONTRACT_BLOCK}}`는 [skills/route-case.md](/Users/kpsfamily/코딩%20프로젝트/legal-agent-orchestrator/skills/route-case.md)의 Step 8.0 정의를 그대로 사용합니다.
+`{{STYLE_GUIDE_BLOCK}}`와 `{{ERROR_CONTRACT_BLOCK}}`는 [skills/route-case.md](./route-case.md)의 Step 8.0 정의를 그대로 사용합니다.
 
 ---
 
@@ -43,7 +43,7 @@ echo '{"id":"evt_NNN","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestra
 
 ### Step 1: Round 1 — 개시 의견 (병렬 디스패치)
 
-Round 1은 Pattern 1과 동일한 방식으로 **동시에** 2개 에이전트를 호출합니다. 호출 프로토콜과 `source_graded` 이벤트 로깅은 [CLAUDE.md](/Users/kpsfamily/코딩%20프로젝트/legal-agent-orchestrator/CLAUDE.md) Step 3을 따릅니다.
+Round 1은 Pattern 1과 동일한 방식으로 **동시에** 2개 에이전트를 호출합니다. 호출 프로토콜과 `source_graded` 이벤트 로깅은 [CLAUDE.md](../CLAUDE.md) Step 3을 따릅니다.
 
 Agent A 프롬프트 템플릿:
 ```text
@@ -424,7 +424,7 @@ echo '{"id":"evt_NNN","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestra
 
 ### Step 8: Conclusion + deliver-output 핸드오프
 
-토론 종료 이벤트를 기록한 뒤 [skills/deliver-output.md](/Users/kpsfamily/코딩%20프로젝트/legal-agent-orchestrator/skills/deliver-output.md)를 Read하고 그대로 따릅니다.
+토론 종료 이벤트를 기록한 뒤 [skills/deliver-output.md](./deliver-output.md)를 Read하고 그대로 따릅니다.
 
 ```bash
 echo '{"id":"evt_NNN","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestrator","type":"debate_concluded","data":{"topic":"TOPIC","participants":["AGENT_A_ID","AGENT_B_ID"],"rounds_completed":N,"verdict_summary":"1-2 문장","consensus_areas":["area1"],"disagreement_areas":["area1"]}}' >> "$PROJECT_ROOT/output/$CASE_ID/events.jsonl"

@@ -48,6 +48,25 @@ python3 "$PROJECT_ROOT/scripts/generate-case-report.py" "$PROJECT_ROOT/output/$C
 python3 scripts/generate-case-report.py samples/20260410-012238-391f
 ```
 
+생성 직후 `case-report.md`에도 동일한 인젝션 스캔을 수행합니다:
+
+```bash
+ROOT="${PROJECT_ROOT:-.}"
+CASE_DIR="${CASE_DIR:-$ROOT/output/$CASE_ID}"  # 샘플 재생성 시 CASE_DIR=samples/<CASE_ID>
+CR="$CASE_DIR/case-report.md"
+if [ -f "$CR" ]; then
+  python3 "$ROOT/scripts/sanitize-check.py" \
+    --in "$CR" --out /dev/null \
+    --audit "${CR%.md}.audit.json" \
+    --source "case-report"
+  COUNT=$(python3 -c "import json; print(len(json.load(open('${CR%.md}.audit.json', encoding='utf-8'))['matches']))")
+  if [ -f "$CASE_DIR/events.jsonl" ] && [ "$COUNT" -gt 0 ]; then
+    echo '{"id":"evt_NNN","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestrator","type":"deliverable_injection_residue","data":{"file":"case-report.md","match_count":'"$COUNT"',"audit":"case-report.audit.json"}}' \
+      >> "$CASE_DIR/events.jsonl"
+  fi
+fi
+```
+
 ---
 
 ## 검증 포인트

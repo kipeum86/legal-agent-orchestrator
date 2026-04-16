@@ -60,6 +60,12 @@ def set_run_font(run, size_pt: float = BODY_SIZE_PT, bold: bool = False, italic:
 INLINE_PATTERN = re.compile(
     r"(\*\*[^*\n]+?\*\*|`[^`\n]+?`|\*[^*\s][^*\n]*?\*)"
 )
+_ESCAPE_TAG_RE = re.compile(r"<escape>(.*?)</escape>", re.DOTALL)
+
+
+def _strip_escape_tags_for_render(md: str) -> str:
+    """Strip sanitizer wrappers before DOCX rendering while preserving the inner text."""
+    return _ESCAPE_TAG_RE.sub(r"\1", md)
 
 
 def add_inline_runs(para, text: str, base_bold: bool = False, size_pt: float = BODY_SIZE_PT) -> None:
@@ -223,7 +229,7 @@ def setup_document(doc: Document) -> None:
 
 
 def convert(md_path: Path, docx_path: Path) -> None:
-    text = md_path.read_text(encoding="utf-8")
+    text = _strip_escape_tags_for_render(md_path.read_text(encoding="utf-8"))
     lines = text.split("\n")
 
     doc = Document()

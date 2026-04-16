@@ -84,7 +84,33 @@ python3 "$PROJECT_ROOT/scripts/generate-case-report.py" "$PROJECT_ROOT/output/$C
 
 ---
 
-## Step 5: 클라이언트에게 전달
+## Step 5: 최종 인젝션 잔여물 스캔
+
+DOCX 생성 또는 최종 전달 직전에, 최종 opinion/transcript markdown에 injection 잔여물이 남아있지 않은지 확인합니다.
+
+```bash
+for f in "$PROJECT_ROOT/output/$CASE_ID"/opinion.md \
+         "$PROJECT_ROOT/output/$CASE_ID"/debate-opinion.md \
+         "$PROJECT_ROOT/output/$CASE_ID"/debate-transcript.md; do
+  [ -f "$f" ] || continue
+  AUDIT="${f%.md}.deliverable.audit.json"
+  python3 "$PROJECT_ROOT/scripts/sanitize-check.py" \
+    --in "$f" --out /dev/null \
+    --audit "$AUDIT" \
+    --source "deliverable:$(basename "$f")"
+  COUNT=$(python3 -c "import json; print(len(json.load(open('$AUDIT', encoding='utf-8'))['matches']))")
+  if [ "$COUNT" -gt 0 ]; then
+    echo '{"id":"evt_NNN","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestrator","type":"deliverable_injection_residue","data":{"file":"'"$(basename "$f")"'","match_count":'"$COUNT"',"audit":"'"$(basename "$AUDIT")"'"}}' \
+      >> "$PROJECT_ROOT/output/$CASE_ID/events.jsonl"
+  fi
+done
+```
+
+매치가 발견되면:
+- 모든 매치가 이미 `<escape>...</escape>` 태그 안에 있는 경우, 이는 Task 6에서 정상적으로 sanitize된 잔여물입니다. `scripts/md-to-docx.py`가 렌더 직전에 `<escape>` 프레임만 제거하므로 DOCX 생성은 계속할 수 있습니다.
+- `<escape>` 태그 밖의 문구가 매치되면 sanitizer 우회 가능성이 있으므로 사고로 취급합니다. `deliverable_injection_residue` 이벤트를 남기고, DOCX 생성 및 최종 전달을 중단한 뒤 사용자에게 보고합니다.
+
+## Step 6: 클라이언트에게 전달
 
 최종 결과를 클라이언트에게 보고하세요:
 

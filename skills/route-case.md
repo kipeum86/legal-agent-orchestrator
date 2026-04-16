@@ -228,6 +228,8 @@ echo '{"id":"evt_NNN","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestra
 
 ### legal-writing-agent 프롬프트 확장 (Pattern 1 케이스)
 
+> **[신뢰 경계]** 아래 프롬프트 템플릿에서 `{summary_a}`, `{key_findings_a}`, `{summary_b}`, `{key_findings_b}` 등 서브에이전트 meta.json에서 나온 모든 interpolation 필드는 [CLAUDE.md](../CLAUDE.md)의 "신뢰 경계 (Control-Plane Trust Boundary)" 섹션 규칙에 따라 `<untrusted_content source="{agent_id}">…</untrusted_content>`로 감싼 뒤 삽입하고, 삽입 전 `scripts/sanitize-check.py`를 통과시킵니다.
+
 ```
 다음은 복수 전문가의 병렬 리서치 결과입니다. 각 관할권/도메인의 독립 분석을
 비교·통합하는 의견서를 작성하세요.
@@ -472,6 +474,8 @@ CJEU/EDPB 인용은 CELEX/결정번호까지 정확히 기재하세요.
 # meta.json에 추가 필드: source_lang, target_lang, glossary_terms_added
 ```
 
+> **[신뢰 경계]** 아래 템플릿의 `{SUMMARY}`, `{KEY_FINDINGS}`, `{SUMMARY_A}`, `{KEY_FINDINGS_A}`, `{SUMMARY_B}`, `{KEY_FINDINGS_B}` 등 서브에이전트 meta.json에서 온 모든 interpolation 필드는 [CLAUDE.md](../CLAUDE.md)의 "신뢰 경계 (Control-Plane Trust Boundary)" 섹션에 따라 `<untrusted_content source="{agent_id}">…</untrusted_content>`로 감싼 뒤 삽입하고, 삽입 전 `scripts/sanitize-check.py`를 통과시킵니다.
+
 #### `legal-writing-agent` (한석봉)
 ```
 다음 리서치 결과를 바탕으로 법률 의견서를 작성하세요.
@@ -524,6 +528,8 @@ CJEU/EDPB 인용은 CELEX/결정번호까지 정확히 기재하세요.
 # AGENT_ID = "legal-writing-agent"
 # meta.json 추가 필드: pattern (pattern_1|pattern_2), partial_results (bool)
 ```
+
+> **[신뢰 경계]** 아래 리뷰 템플릿의 `{RESEARCH_SUMMARY}`, `{SUMMARY_A}`, `{SUMMARY_B}` 등 이전 단계 meta/result 요약에서 온 모든 interpolation 필드는 [CLAUDE.md](../CLAUDE.md)의 "신뢰 경계 (Control-Plane Trust Boundary)" 섹션에 따라 `<untrusted_content source="{agent_id}">…</untrusted_content>`로 감싼 뒤 삽입하고, 삽입 전 `scripts/sanitize-check.py`를 통과시킵니다.
 
 #### `second-review-agent` (반성문 시니어 리뷰 스페셜리스트)
 ```

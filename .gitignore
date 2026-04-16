@@ -13,6 +13,3 @@ __pycache__/
 # that carry genuine portfolio/public value.
 docs/*
 docs/**/*
-
-# Dev handoff doc (session state, next-steps, internal breadcrumbs) — not public.
-resume.md

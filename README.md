@@ -49,8 +49,8 @@ Send a legal question. The orchestrator routes it, the specialists do the work, 
 
 | Stage | Agent | What it did | Output |
 |-------|-------|-------------|--------|
-| **1. Research** | 김재식 · `general-legal-research` | Pulls primary sources from `korean-law` MCP — statute text, precedents, agency decisions, enforcement path | `research-result.md` |
-| **2. Drafting** | 한석봉 · `legal-writing-agent` | Produces the first opinion draft in Korean legal memorandum format | `opinion.md` |
+| **1. Research** | 김재식 · `general-legal-research` | Pulls primary sources from the relevant MCP and legal databases — statute text, precedents, regulator guidance, and enforcement path | `research-result.md` |
+| **2. Drafting** | 한석봉 · `legal-writing-agent` | Produces the first opinion draft in a structured legal memorandum format | `opinion.md` |
 | **3. Review** | 반성문 · `second-review-agent` | Runs verbatim source checks, identifies mismatches, and returns severity-ranked comments | `review-result.md` |
 | **4. Revision rescue** | `legal-writing-agent` + orchestrator | If revision stalls, the orchestrator can take over and verify citations directly against primary sources | `verbatim-verification.md` |
 | **5. Delivery** | orchestrator | Assembles the final bundle and generates client-facing files | `opinion.docx`, `case-report.md` |
@@ -101,11 +101,11 @@ flowchart TB
 
 | Pattern | Shape | When | Status |
 |---------|-------|------|--------|
-| **1 · Parallel research → merge** | `[A ∥ B] → writing → review` | Cross-domain or cross-jurisdiction that doesn't need debate (e.g. PIPA + GDPR combined compliance) | ✅ validated Phase 2.2 |
+| **1 · Parallel research → merge** | `[A ∥ B] → writing → review` | Cross-domain or cross-jurisdiction that doesn't need debate (e.g. GDPR + international game-regulation analysis for an EU market launch) | ✅ validated Phase 2.2 |
 | **2 · Sequential handoff** | `A → writing → review` | Single-jurisdiction or focused domain work (Phase 1 default) | ✅ validated Phase 1 E2E |
 | **3 · Multi-round debate** | `A → B rebuts → A counters → writing verdict → review` | Cross-jurisdiction questions where specialists are likely to disagree | 🚧 Phase 2.3 (skeleton) |
 
-Pattern 3 is the killer feature — two specialists from different jurisdictions, each with their own knowledge base, actually argue. No single LLM can genuinely produce that kind of depth because "role-playing a PIPA expert" and "role-playing a GDPR expert" come from the same priors. Two real agents genuinely don't share context.
+Pattern 3 is the killer feature — two specialists from different jurisdictions, each with their own knowledge base, actually argue. No single LLM can genuinely produce that kind of depth because "role-playing two different foreign-law specialists" still comes from the same priors. Two real agents genuinely don't share context.
 
 ---
 
@@ -241,13 +241,15 @@ You're now talking to the lead orchestrator. Ask a legal question in Korean or E
 Try one of these:
 
 ```
-확률형 아이템 공급 확률 정보공개 의무 — 해외 관계회사가 한국 이용자 대상
-게임을 운영할 때 국내대리인 지정 요건과 위반 시 리스크는?
+독일 본사의 SaaS 회사가 프랑스·이탈리아 사용자 데이터를 미국 subprocessors로
+이전하려고 합니다. SCC만으로 충분한가요, 추가 보호조치가 필요한가요?
 ```
 
 ```
-Our SaaS product is based in Seoul but has ~12% EU users. Do we need a
-GDPR Art.27 representative, and what happens if we don't appoint one?
+Our Delaware-incorporated AI health startup stores EU patient data in
+Ireland and wants to transfer model-training datasets to U.S.
+infrastructure. What transfer mechanism and supplementary measures are
+required after Schrems II?
 ```
 
 What happens next:

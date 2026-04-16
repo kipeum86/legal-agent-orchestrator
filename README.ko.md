@@ -49,8 +49,8 @@
 
 | 단계 | 에이전트 | 수행한 작업 | 산출물 |
 |------|---------|------------|--------|
-| **1. 리서치** | 김재식 · `general-legal-research` | `korean-law` MCP로 1차 소스, 판례, 행정 결정례, 집행 경로를 수집 | `research-result.md` |
-| **2. 드래프팅** | 한석봉 · `legal-writing-agent` | 한국형 법률 의견서 초안을 작성 | `opinion.md` |
+| **1. 리서치** | 김재식 · `general-legal-research` | 관련 MCP와 1차 법률 데이터베이스에서 법조문, 판례, 규제기관 가이드, 집행 경로를 수집 | `research-result.md` |
+| **2. 드래프팅** | 한석봉 · `legal-writing-agent` | 정형화된 법률 메모 형식으로 초안을 작성 | `opinion.md` |
 | **3. 리뷰** | 반성문 · `second-review-agent` | 블록 인용구를 verbatim 대조하고, severity 기준으로 코멘트를 반환 | `review-result.md` |
 | **4. 리비전 rescue** | `legal-writing-agent` + 오케스트레이터 | 리비전이 막히면 오케스트레이터가 직접 1차 소스를 재대조 | `verbatim-verification.md` |
 | **5. 최종 전달** | 오케스트레이터 | 최종 전달 묶음을 조립하고 클라이언트용 파일을 생성 | `opinion.docx`, `case-report.md` |
@@ -101,11 +101,11 @@ flowchart TB
 
 | 패턴 | 구조 | 언제 사용하나 | 상태 |
 |------|------|-------------|------|
-| **1 · 병렬 리서치 → 통합** | `[A ∥ B] → writing → review` | 토론까지는 필요 없는 다관할권·다도메인 (예: PIPA + GDPR 컴플라이언스 결합) | ✅ Phase 2.2 검증 |
+| **1 · 병렬 리서치 → 통합** | `[A ∥ B] → writing → review` | 토론까지는 필요 없는 다관할권·다도메인 (예: EU 시장 진출을 위한 GDPR + 국제 게임규제 결합 분석) | ✅ Phase 2.2 검증 |
 | **2 · 순차 핸드오프** | `A → writing → review` | 단일 관할권 또는 단일 도메인 (Phase 1 기본) | ✅ Phase 1 E2E 검증 |
 | **3 · 멀티라운드 토론** | `A → B 반론 → A 재반론 → writing verdict → review` | 전문가 간 의견 충돌 가능성이 있는 다관할권 질문 | 🚧 Phase 2.3 |
 
-Pattern 3이 킬러 피처입니다. 서로 다른 관할권의 두 전문가가 각자의 지식 베이스를 가진 채 **실제로 논쟁합니다**. 단일 LLM으로는 이를 구현할 수 없습니다 — "PIPA 전문가 롤플레이"와 "GDPR 전문가 롤플레이"가 같은 priors에서 나오기 때문입니다. 두 개의 독립 에이전트는 context가 실제로 공유되지 않습니다.
+Pattern 3이 킬러 피처입니다. 서로 다른 관할권의 두 전문가가 각자의 지식 베이스를 가진 채 **실제로 논쟁합니다**. 단일 LLM으로는 이를 구현할 수 없습니다 — "서로 다른 외국법 전문가 둘을 동시에 롤플레이"해도 결국 같은 priors에서 나오기 때문입니다. 두 개의 독립 에이전트는 context가 실제로 공유되지 않습니다.
 
 ---
 
@@ -238,16 +238,18 @@ Claude Code가 시작할 때 다음을 자동 로드합니다:
 
 ### 5. 첫 케이스 실행
 
-예시 쿼리:
+예시 쿼리 (한국어/영어):
 
 ```
-확률형 아이템 공급 확률 정보공개 의무 — 해외 관계회사가 한국 이용자 대상
-게임을 운영할 때 국내대리인 지정 요건과 위반 시 리스크는?
+독일 본사의 SaaS 회사가 프랑스·이탈리아 사용자 데이터를 미국 subprocessors로
+이전하려고 합니다. SCC만으로 충분한가요, 추가 보호조치가 필요한가요?
 ```
 
 ```
-의료기기 스타트업이 환자 음성 데이터를 AI 학습에 사용하려고 합니다.
-가명처리만으로 충분한가요, 별도 동의가 필요한가요?
+Our Delaware-incorporated AI health startup stores EU patient data in
+Ireland and wants to transfer model-training datasets to U.S.
+infrastructure. What transfer mechanism and supplementary measures are
+required after Schrems II?
 ```
 
 이후 벌어지는 일:

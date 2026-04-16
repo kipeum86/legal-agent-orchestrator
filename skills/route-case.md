@@ -191,6 +191,7 @@
 4. **각 에이전트별 `agent_assigned` 이벤트 기록** (timestamp는 병렬이라 거의 동일)
 5. **모든 에이전트 완료 대기** (Agent tool은 동기적으로 완료 후 반환)
 6. **각 에이전트의 meta.json 파싱** — summary + key_findings + sources 수집. meta.json 부재 시 반환 텍스트에서 fallback 추출 (CLAUDE.md Step 3 참조).
+6a. **[신뢰 경계] Sanitiser 실행** — 각 에이전트의 summary / key_findings에 대해 `scripts/sanitize-check.py`를 실행하고 `.audit.json`을 저장합니다. Step 9의 legal-writing-agent 프롬프트에는 반드시 `<untrusted_content source="{agent_id}">...</untrusted_content>`로 감싼 sanitised 버전만 삽입합니다 (CLAUDE.md "신뢰 경계" 섹션 참조).
 7. **source 이벤트 로깅** — 각 에이전트의 각 source에 대해 `source_graded` 이벤트
 8. **병렬 완료 이벤트**:
    ```bash
@@ -588,6 +589,7 @@ v2에서 추가/확장된 이벤트 타입. `case-report.md` 생성과 디버깅
 | `debate_concluded` | **P3** | `topic`, `participants[]`, `rounds_completed`, `verdict_summary`, `consensus_areas[]`, `disagreement_areas[]` | Pattern 3 토론 종료 |
 | `user_prompt` | P1 | `question`, `options[]`, `context` | 오케스트레이터가 사용자에게 명확화 요청 |
 | `user_response` | P1 | `response` | 위 user_prompt에 대한 답 |
+| `trust_boundary_match` | **v2** | `agent_id`, `field` (`summary`\|`key_findings`\|...), `match_count`, `audit_path` | Sanitiser가 injection 패턴 매치 시 기록. Task 6 도입. |
 | `agent_preflight` | **v2** | `agent_id`, `action`, `path` | FM4 등 디스패치 전 사전 조치 (config 생성 등) |
 | `agent_out_of_scope` | **v2** | `agent_id`, `reason`, `fallback_to` | 분류 오류 또는 에이전트 스스로 거부 |
 | `verbatim_verified` | P1 | `verifier`, `cycle`, `critical_pass`, ... | 세션 4 발견 패턴. 오케스트레이터 meta-verification |

@@ -28,14 +28,14 @@ This repository is the central coordinator for **KP Legal Orchestrator**, a fict
 
 | Specialist | Agent repository | What they actually do | Phase |
 |----------|------------------|-----------------------|-------|
-| **김재식 (Kim Jaesik)** | [general-legal-research](https://github.com/kipeum86/general-legal-research) | Evidence-based international legal research across **17+ jurisdictions**. The generalist research specialist — any legal question, any jurisdiction, grade-A source-first workflow. | Phase 1 ✓ |
-| **한석봉 (Han Seokbong)** | [legal-writing-agent](https://github.com/kipeum86/legal-writing-agent) | Bilingual (KR/EN) drafter for **non-contract** legal documents. Drafts via a D1–D6 pipeline, revises via an R1–R7 tracked-change pipeline. Korean drafts follow 쟁점→결론→분석 conventions; English drafts follow IRAC/CRAC with Bluebook/OSCOLA. | Phase 1 ✓ |
-| **반성문 (Ban Seong-mun)** · *Senior Review Specialist* | [second-review-agent](https://github.com/kipeum86/second-review-agent) | Final quality gate for AI-generated legal documents. Verifies citations against primary legal databases (law.go.kr, congress.gov, eur-lex, and more), checks legal logic, and ships redlined DOCX with tracked changes. Independent release gate (Pass / Pass with Warnings / Manual Review Required / Not Recommended). Zero tolerance for hallucinated citations. | Phase 1 ✓ |
-| **정보호 (Jeong Bo-ho)** | [PIPA-expert](https://github.com/kipeum86/PIPA-expert) | Korean data privacy law specialist built on structured RAG: **929 statute files, 46 PIPC official guidelines, 30 landmark cases and interpretations, 2,369 cross-reference edges**. Produces professional-format DOCX opinions. | Phase 2 ✓ |
-| **김덕배 (Kim De Bruyne)** | [GDPR-expert](https://github.com/kipeum86/GDPR-expert) | EU data protection law specialist built on structured RAG: **5 EU laws (321 articles + 535 recitals), 120 EDPB documents, 51 CJEU judgments, 33 enforcement decisions** — 1,060+ indexed items. | Phase 2 ✓ |
+| **General Legal Research Specialist** | [general-legal-research](https://github.com/kipeum86/general-legal-research) | Evidence-based international legal research across **17+ jurisdictions**. The generalist research specialist — any legal question, any jurisdiction, grade-A source-first workflow. | Phase 1 ✓ |
+| **Legal Writing Specialist** | [legal-writing-agent](https://github.com/kipeum86/legal-writing-agent) | Bilingual (KR/EN) drafter for **non-contract** legal documents. Drafts via a D1–D6 pipeline, revises via an R1–R7 tracked-change pipeline. Korean drafts follow 쟁점→결론→분석 conventions; English drafts follow IRAC/CRAC with Bluebook/OSCOLA. | Phase 1 ✓ |
+| **Senior Review Specialist** | [second-review-agent](https://github.com/kipeum86/second-review-agent) | Final quality gate for AI-generated legal documents. Verifies citations against primary legal databases (law.go.kr, congress.gov, eur-lex, and more), checks legal logic, and ships redlined DOCX with tracked changes. Independent release gate (Pass / Pass with Warnings / Manual Review Required / Not Recommended). Zero tolerance for hallucinated citations. | Phase 1 ✓ |
+| **PIPA Specialist** | [PIPA-expert](https://github.com/kipeum86/PIPA-expert) | Korean data privacy law specialist built on structured RAG: **929 statute files, 46 PIPC official guidelines, 30 landmark cases and interpretations, 2,369 cross-reference edges**. Produces professional-format DOCX opinions. | Phase 2 ✓ |
+| **GDPR Specialist** | [GDPR-expert](https://github.com/kipeum86/GDPR-expert) | EU data protection law specialist built on structured RAG: **5 EU laws (321 articles + 535 recitals), 120 EDPB documents, 51 CJEU judgments, 33 enforcement decisions** — 1,060+ indexed items. | Phase 2 ✓ |
 | **Game Industry Research Specialist** | [game-legal-research](https://github.com/kipeum86/game-legal-research) | International game-industry legal research — cross-jurisdiction regulatory comparison for game clients. Evidence-based, primary-source-first, with real local output pipeline for deliverable-grade work product. | Phase 2 ✓ |
-| **고덕수 (Ko Duksoo)** | [contract-review-agent](https://github.com/kipeum86/contract-review-agent) | Contract review pipeline — drop a contract in, get back a **DOCX with tracked-change redlines, margin comments (internal strategy + external-facing), a full analysis report, and negotiation recommendations**. Node.js + Python stack. Final legal judgment stays with the human. | Phase 2 |
-| **변혁기 (Byeon Hyeok-gi)** | [legal-translation-agent](https://github.com/kipeum86/legal-translation-agent) | Legal document translation across **5 languages** with zero-omission guarantee and dual-pass translation merged via comparative synthesis. Jurisdiction-aware terminology (BGB, UCC, PRC, Taiwan, APPI) and a persistent shared translation memory that grows with every job. | Phase 2 |
+| **Contract Review Specialist** | [contract-review-agent](https://github.com/kipeum86/contract-review-agent) | Contract review pipeline — drop a contract in, get back a **DOCX with tracked-change redlines, margin comments (internal strategy + external-facing), a full analysis report, and negotiation recommendations**. Node.js + Python stack. Final legal judgment stays with the human. | Phase 2 |
+| **Legal Translation Specialist** | [legal-translation-agent](https://github.com/kipeum86/legal-translation-agent) | Legal document translation across **5 languages** with zero-omission guarantee and dual-pass translation merged via comparative synthesis. Jurisdiction-aware terminology (BGB, UCC, PRC, Taiwan, APPI) and a persistent shared translation memory that grows with every job. | Phase 2 |
 
 **The orchestrator never modifies a subordinate agent's `CLAUDE.md`, skills, or knowledge base.** That's what "100% reuse" means in practice. If a specialist ships a bug fix to their own repo, it flows through here on the next `./setup.sh update`.
 
@@ -49,9 +49,9 @@ Send a legal question. The orchestrator routes it, the specialists do the work, 
 
 | Stage | Agent | What it did | Output |
 |-------|-------|-------------|--------|
-| **1. Research** | 김재식 · `general-legal-research` | Pulls primary sources from the relevant MCP and legal databases — statute text, precedents, regulator guidance, and enforcement path | `research-result.md` |
-| **2. Drafting** | 한석봉 · `legal-writing-agent` | Produces the first opinion draft in a structured legal memorandum format | `opinion.md` |
-| **3. Review** | 반성문 · `second-review-agent` | Runs verbatim source checks, identifies mismatches, and returns severity-ranked comments | `review-result.md` |
+| **1. Research** | General Legal Research Specialist · `general-legal-research` | Pulls primary sources from the relevant MCP and legal databases — statute text, precedents, regulator guidance, and enforcement path | `research-result.md` |
+| **2. Drafting** | Legal Writing Specialist · `legal-writing-agent` | Produces the first opinion draft in a structured legal memorandum format | `opinion.md` |
+| **3. Review** | Senior Review Specialist · `second-review-agent` | Runs verbatim source checks, identifies mismatches, and returns severity-ranked comments | `review-result.md` |
 | **4. Revision rescue** | `legal-writing-agent` + orchestrator | If revision stalls, the orchestrator can take over and verify citations directly against primary sources | `verbatim-verification.md` |
 | **5. Delivery** | orchestrator | Assembles the final bundle and generates client-facing files | `opinion.docx`, `case-report.md` |
 
@@ -198,14 +198,14 @@ This script clones all eight specialists' GitHub repositories into `agents/` und
 
 ```
 agents/
-├── general-legal-research/     ← 김재식
-├── legal-writing-agent/        ← 한석봉
-├── second-review-agent/        ← 반성문 (Senior Review Specialist)
-├── PIPA-expert/                ← 정보호
-├── GDPR-expert/                ← 김덕배
+├── general-legal-research/     ← General Legal Research Specialist
+├── legal-writing-agent/        ← Legal Writing Specialist
+├── second-review-agent/        ← Senior Review Specialist
+├── PIPA-expert/                ← PIPA Specialist
+├── GDPR-expert/                ← GDPR Specialist
 ├── game-legal-research/        ← Game Industry Research Specialist
-├── contract-review-agent/      ← 고덕수
-└── legal-translation-agent/    ← 변혁기
+├── contract-review-agent/      ← Contract Review Specialist
+└── legal-translation-agent/    ← Legal Translation Specialist
 ```
 
 Each folder is an independent Claude Code agent with its own `CLAUDE.md`, `skills/`, knowledge base, and MCP configuration. When the orchestrator dispatches a case, it calls into these agents via Claude Code's `Agent` tool with `cwd: agents/{agent-id}/`, so each subagent runs in its own working directory with its own context.

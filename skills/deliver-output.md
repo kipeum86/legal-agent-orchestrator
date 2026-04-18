@@ -38,7 +38,7 @@ ls -la "$PRIVATE_DIR/$CASE_ID/"
   "agents": [
     {
       "agent_id": "general-legal-research",
-      "agent_name": "김재식",
+      "agent_name": "범용 법률 리서치 스페셜리스트",
       "sources": []
     }
   ]
@@ -125,9 +125,9 @@ done
 - 참조 소스: output/{CASE_ID}/sources.json ({N}개 소스, Grade A: {n}개)
 
 👥 **참여 에이전트:**
-- 김재식 (리서치)
-- 한석봉 (작성)
-- 반성문 시니어 리뷰 스페셜리스트 (검토: {approved/revision_needed})
+- 범용 법률 리서치 스페셜리스트 (리서치)
+- 법률문서 작성 스페셜리스트 (작성)
+- 시니어 리뷰 스페셜리스트 (검토: {approved/revision_needed})
 
 📊 **파이프라인 이벤트 로그:** output/{CASE_ID}/events.jsonl
 ```
@@ -155,8 +155,8 @@ done
 👥 **참여 에이전트:**
 - {AGENT_A_NAME} (토론자)
 - {AGENT_B_NAME} (토론자)
-- 한석봉 (종합 판단 작성)
-- 반성문 시니어 리뷰 스페셜리스트 (검토: {approval status})
+- 법률문서 작성 스페셜리스트 (종합 판단 작성)
+- 시니어 리뷰 스페셜리스트 (검토: {approval status})
 
 📊 참조 소스: `output/{CASE_ID}/sources.json` ({N}개 소스)
 📊 이벤트 로그: `output/{CASE_ID}/events.jsonl`

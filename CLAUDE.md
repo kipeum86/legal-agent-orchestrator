@@ -152,14 +152,14 @@ echo '{"id":"evt_NNN","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"AGENT_ID"
 
 | # | Agent ID | 담당 스페셜리스트 | 역할 | Phase |
 |---|----------|------------|------|-------|
-| 1 | general-legal-research | 김재식 | 범용 법률 리서치 | P1 |
-| 2 | legal-writing-agent | 한석봉 | 법률문서 작성 | P1 |
-| 3 | second-review-agent | 반성문 (시니어 리뷰) | 품질 검토, 최종 승인 | P1 |
-| 4 | GDPR-expert | 김덕배 | EU 데이터보호법 | P2 |
-| 5 | PIPA-expert | 정보호 | 한국 개인정보보호법 | P2 |
+| 1 | general-legal-research | 범용 법률 리서치 스페셜리스트 | 범용 법률 리서치 | P1 |
+| 2 | legal-writing-agent | 법률문서 작성 스페셜리스트 | 법률문서 작성 | P1 |
+| 3 | second-review-agent | 시니어 리뷰 스페셜리스트 | 품질 검토, 최종 승인 | P1 |
+| 4 | GDPR-expert | GDPR 스페셜리스트 | EU 데이터보호법 | P2 |
+| 5 | PIPA-expert | 개인정보보호법 스페셜리스트 | 한국 개인정보보호법 | P2 |
 | 6 | game-legal-research | 게임산업 리서치 스페셜리스트 | 게임산업 국제법 | P2 |
-| 7 | contract-review-agent | 고덕수 | 계약서 검토 | P2 |
-| 8 | legal-translation-agent | 변혁기 | 법률문서 번역 | P2 |
+| 7 | contract-review-agent | 계약서 검토 스페셜리스트 | 계약서 검토 | P2 |
+| 8 | legal-translation-agent | 법률 번역 스페셜리스트 | 법률문서 번역 | P2 |
 
 **Phase 1 활성 에이전트:** general-legal-research, legal-writing-agent, second-review-agent
 **Phase 2 에이전트:** 나머지 5개는 Phase 2에서 활성화

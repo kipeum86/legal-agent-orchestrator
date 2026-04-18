@@ -28,14 +28,14 @@
 
 | 담당 스페셜리스트 | Agent 리포지토리 | 실제로 하는 일 | Phase |
 |------------|------------------|---------------|-------|
-| **김재식 (Kim Jaesik)** | [general-legal-research](https://github.com/kipeum86/general-legal-research) | **17+ 관할권**을 커버하는 증거 기반 국제 법률 리서치. 한국법뿐 아니라 어느 관할권의 어떤 법률 질문이든 받는 제너럴리스트 리서치 어소시엇. Grade A 1차 소스 우선 워크플로우. | Phase 1 ✓ |
-| **한석봉 (Han Seokbong)** | [legal-writing-agent](https://github.com/kipeum86/legal-writing-agent) | **한/영 이중 언어** 비계약 법률 문서 드래프터. 신규 작성 D1–D6 파이프라인, 리비전 R1–R7 tracked-change 파이프라인. 한국어 문서는 쟁점→결론→분석 관행, 영어 문서는 IRAC/CRAC + Bluebook/OSCOLA 관행 적용. | Phase 1 ✓ |
-| **반성문 (Ban Seong-mun)** · *시니어 리뷰 스페셜리스트* | [second-review-agent](https://github.com/kipeum86/second-review-agent) | AI 생성 법률 문서 최종 품질 게이트. 인용을 **여러 primary legal database**(law.go.kr, congress.gov, eur-lex 등)에 대해 verbatim 대조하고, 법적 논리와 작성 품질을 점검하며, tracked change가 들어간 redlined DOCX를 생성합니다. 독립 release 게이트(Pass / Pass with Warnings / Manual Review Required / Not Recommended). 환각 인용 zero tolerance. | Phase 1 ✓ |
-| **정보호 (Jeong Bo-ho)** | [PIPA-expert](https://github.com/kipeum86/PIPA-expert) | 한국 개인정보보호법 전문가. 구조화 RAG 기반: **법조문 929건, PIPC 공식 가이드라인 46건, landmark 판례·해석례 30건, cross-reference 엣지 2,369개**. 전문 형식의 DOCX 의견서 산출. | Phase 2 ✓ |
-| **김덕배 (Kim De Bruyne)** | [GDPR-expert](https://github.com/kipeum86/GDPR-expert) | EU 데이터보호법 전문가. 구조화 RAG 기반: **EU 법률 5개(조문 321 + recital 535), EDPB 문서 120건, CJEU 판결 51건, enforcement 결정 33건** — 인덱스 아이템 1,060+. | Phase 2 ✓ |
+| **범용 법률 리서치 스페셜리스트** | [general-legal-research](https://github.com/kipeum86/general-legal-research) | **17+ 관할권**을 커버하는 증거 기반 국제 법률 리서치. 한국법뿐 아니라 어느 관할권의 어떤 법률 질문이든 받는 제너럴리스트 리서치 어소시엇. Grade A 1차 소스 우선 워크플로우. | Phase 1 ✓ |
+| **법률문서 작성 스페셜리스트** | [legal-writing-agent](https://github.com/kipeum86/legal-writing-agent) | **한/영 이중 언어** 비계약 법률 문서 드래프터. 신규 작성 D1–D6 파이프라인, 리비전 R1–R7 tracked-change 파이프라인. 한국어 문서는 쟁점→결론→분석 관행, 영어 문서는 IRAC/CRAC + Bluebook/OSCOLA 관행 적용. | Phase 1 ✓ |
+| **시니어 리뷰 스페셜리스트** | [second-review-agent](https://github.com/kipeum86/second-review-agent) | AI 생성 법률 문서 최종 품질 게이트. 인용을 **여러 primary legal database**(law.go.kr, congress.gov, eur-lex 등)에 대해 verbatim 대조하고, 법적 논리와 작성 품질을 점검하며, tracked change가 들어간 redlined DOCX를 생성합니다. 독립 release 게이트(Pass / Pass with Warnings / Manual Review Required / Not Recommended). 환각 인용 zero tolerance. | Phase 1 ✓ |
+| **개인정보보호법 스페셜리스트** | [PIPA-expert](https://github.com/kipeum86/PIPA-expert) | 한국 개인정보보호법 전문가. 구조화 RAG 기반: **법조문 929건, PIPC 공식 가이드라인 46건, landmark 판례·해석례 30건, cross-reference 엣지 2,369개**. 전문 형식의 DOCX 의견서 산출. | Phase 2 ✓ |
+| **GDPR 스페셜리스트** | [GDPR-expert](https://github.com/kipeum86/GDPR-expert) | EU 데이터보호법 전문가. 구조화 RAG 기반: **EU 법률 5개(조문 321 + recital 535), EDPB 문서 120건, CJEU 판결 51건, enforcement 결정 33건** — 인덱스 아이템 1,060+. | Phase 2 ✓ |
 | **게임산업 리서치 스페셜리스트** | [game-legal-research](https://github.com/kipeum86/game-legal-research) | 국제 게임 산업 법률 리서치. 게임 클라이언트 자문을 위한 다관할권 규제 비교. 증거 기반, 1차 소스 우선, deliverable 수준 결과물 로컬 출력 파이프라인 보유. | Phase 2 ✓ |
-| **고덕수 (Ko Duksoo)** | [contract-review-agent](https://github.com/kipeum86/contract-review-agent) | 계약서 검토 파이프라인 — 계약서를 drop하면 **tracked-change redline이 들어간 DOCX, 여백 코멘트(internal strategy + external-facing), 전체 분석 리포트, 협상 권고**가 반환됩니다. Node.js + Python 스택. 최종 법률 판단은 사람이 합니다. | Phase 2 |
-| **변혁기 (Byeon Hyeok-gi)** | [legal-translation-agent](https://github.com/kipeum86/legal-translation-agent) | **5개 언어** 법률 문서 번역. zero-omission 보장, dual-pass 번역을 comparative synthesis로 병합. 관할권 인식 용어(BGB, UCC, PRC, Taiwan, APPI) 준수, 매 작업마다 성장하는 shared 번역 메모리. | Phase 2 |
+| **계약서 검토 스페셜리스트** | [contract-review-agent](https://github.com/kipeum86/contract-review-agent) | 계약서 검토 파이프라인 — 계약서를 drop하면 **tracked-change redline이 들어간 DOCX, 여백 코멘트(internal strategy + external-facing), 전체 분석 리포트, 협상 권고**가 반환됩니다. Node.js + Python 스택. 최종 법률 판단은 사람이 합니다. | Phase 2 |
+| **법률 번역 스페셜리스트** | [legal-translation-agent](https://github.com/kipeum86/legal-translation-agent) | **5개 언어** 법률 문서 번역. zero-omission 보장, dual-pass 번역을 comparative synthesis로 병합. 관할권 인식 용어(BGB, UCC, PRC, Taiwan, APPI) 준수, 매 작업마다 성장하는 shared 번역 메모리. | Phase 2 |
 
 **오케스트레이터는 하위 에이전트의 `CLAUDE.md`, skills, 지식 베이스를 절대 수정하지 않습니다.** 이것이 "100% 재활용"의 실천입니다. 어느 스페셜리스트가 자기 리포에 버그 픽스를 올리면 다음 `./setup.sh update` 한 번으로 자동 반영됩니다.
 
@@ -49,9 +49,9 @@
 
 | 단계 | 에이전트 | 수행한 작업 | 산출물 |
 |------|---------|------------|--------|
-| **1. 리서치** | 김재식 · `general-legal-research` | 관련 MCP와 1차 법률 데이터베이스에서 법조문, 판례, 규제기관 가이드, 집행 경로를 수집 | `research-result.md` |
-| **2. 드래프팅** | 한석봉 · `legal-writing-agent` | 정형화된 법률 메모 형식으로 초안을 작성 | `opinion.md` |
-| **3. 리뷰** | 반성문 · `second-review-agent` | 블록 인용구를 verbatim 대조하고, severity 기준으로 코멘트를 반환 | `review-result.md` |
+| **1. 리서치** | 범용 법률 리서치 스페셜리스트 · `general-legal-research` | 관련 MCP와 1차 법률 데이터베이스에서 법조문, 판례, 규제기관 가이드, 집행 경로를 수집 | `research-result.md` |
+| **2. 드래프팅** | 법률문서 작성 스페셜리스트 · `legal-writing-agent` | 정형화된 법률 메모 형식으로 초안을 작성 | `opinion.md` |
+| **3. 리뷰** | 시니어 리뷰 스페셜리스트 · `second-review-agent` | 블록 인용구를 verbatim 대조하고, severity 기준으로 코멘트를 반환 | `review-result.md` |
 | **4. 리비전 rescue** | `legal-writing-agent` + 오케스트레이터 | 리비전이 막히면 오케스트레이터가 직접 1차 소스를 재대조 | `verbatim-verification.md` |
 | **5. 최종 전달** | 오케스트레이터 | 최종 전달 묶음을 조립하고 클라이언트용 파일을 생성 | `opinion.docx`, `case-report.md` |
 
@@ -198,14 +198,14 @@ cd legal-agent-orchestrator
 
 ```
 agents/
-├── general-legal-research/     ← 김재식
-├── legal-writing-agent/        ← 한석봉
-├── second-review-agent/        ← 반성문 (시니어 리뷰 스페셜리스트)
-├── PIPA-expert/                ← 정보호
-├── GDPR-expert/                ← 김덕배
+├── general-legal-research/     ← 범용 법률 리서치 스페셜리스트
+├── legal-writing-agent/        ← 법률문서 작성 스페셜리스트
+├── second-review-agent/        ← 시니어 리뷰 스페셜리스트
+├── PIPA-expert/                ← 개인정보보호법 스페셜리스트
+├── GDPR-expert/                ← GDPR 스페셜리스트
 ├── game-legal-research/        ← 게임산업 리서치 스페셜리스트
-├── contract-review-agent/      ← 고덕수
-└── legal-translation-agent/    ← 변혁기
+├── contract-review-agent/      ← 계약서 검토 스페셜리스트
+└── legal-translation-agent/    ← 법률 번역 스페셜리스트
 ```
 
 각 폴더는 자체 `CLAUDE.md`, `skills/`, 지식 베이스, MCP 설정을 가진 **독립된 Claude Code 에이전트**입니다. 오케스트레이터가 케이스를 처리할 때 Claude Code의 `Agent` tool로 이 에이전트들을 `cwd: agents/{agent-id}/`로 호출하므로, 각 서브에이전트는 자기 작업 디렉토리에서 자기 context로 동작합니다.

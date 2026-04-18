@@ -15,14 +15,14 @@ from zoneinfo import ZoneInfo
 KST = ZoneInfo("Asia/Seoul")
 
 TEAM = {
-    "general-legal-research": {"name": "김재식", "role": "범용 법률 리서치"},
-    "legal-writing-agent": {"name": "한석봉", "role": "법률문서 작성"},
-    "second-review-agent": {"name": "반성문", "role": "품질 검토, 최종 승인"},
-    "GDPR-expert": {"name": "김덕배", "role": "EU 데이터보호법 (GDPR)"},
-    "PIPA-expert": {"name": "정보호", "role": "한국 개인정보보호법"},
+    "general-legal-research": {"name": "범용 법률 리서치 스페셜리스트", "role": "범용 법률 리서치"},
+    "legal-writing-agent": {"name": "법률문서 작성 스페셜리스트", "role": "법률문서 작성"},
+    "second-review-agent": {"name": "시니어 리뷰 스페셜리스트", "role": "품질 검토, 최종 승인"},
+    "GDPR-expert": {"name": "GDPR 스페셜리스트", "role": "EU 데이터보호법 (GDPR)"},
+    "PIPA-expert": {"name": "개인정보보호법 스페셜리스트", "role": "한국 개인정보보호법"},
     "game-legal-research": {"name": "게임산업 리서치 스페셜리스트", "role": "게임산업 국제법"},
-    "contract-review-agent": {"name": "고덕수", "role": "계약서 검토"},
-    "legal-translation-agent": {"name": "변혁기", "role": "법률문서 번역"},
+    "contract-review-agent": {"name": "계약서 검토 스페셜리스트", "role": "계약서 검토"},
+    "legal-translation-agent": {"name": "법률 번역 스페셜리스트", "role": "법률문서 번역"},
 }
 
 EVENT_ALIASES = {
@@ -783,7 +783,7 @@ def render_review_section(
     approval = normalize_status(str(review_meta.get("approval") or ""))
     comments = review_meta.get("comments")
     findings = [item for item in comments if isinstance(item, dict)] if isinstance(comments, list) else []
-    lines.append("- 리뷰어: 반성문")
+    lines.append("- 리뷰어: 시니어 리뷰 스페셜리스트")
     lines.append(f"- 판정: {STATUS_META.get(approval, approval)}")
     lines.append(f"- 총 코멘트: {len(findings)}건")
     lines.append("")

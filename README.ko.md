@@ -1,4 +1,4 @@
-# 리걸 에이전트 오케스트레이터 · Legal Agent Orchestrator
+# KP 리걸 오케스트레이터 · Legal Agent Orchestrator
 
 **English:** [README.md](README.md)
 
@@ -33,7 +33,7 @@
 | **반성문 (Ban Seong-mun)** · *시니어 리뷰 스페셜리스트* | [second-review-agent](https://github.com/lowtidebuild/second-review-agent) | AI 생성 법률 문서 최종 품질 게이트. 인용을 **여러 primary legal database**(law.go.kr, congress.gov, eur-lex 등)에 대해 verbatim 대조하고, 법적 논리와 작성 품질을 점검하며, tracked change가 들어간 redlined DOCX를 생성합니다. 독립 release 게이트(Pass / Pass with Warnings / Manual Review Required / Not Recommended). 환각 인용 zero tolerance. | Phase 1 ✓ |
 | **정보호 (Jeong Bo-ho)** | [PIPA-expert](https://github.com/lowtidebuild/PIPA-expert) | 한국 개인정보보호법 전문가. 구조화 RAG 기반: **법조문 929건, PIPC 공식 가이드라인 46건, landmark 판례·해석례 30건, cross-reference 엣지 2,369개**. 전문 형식의 DOCX 의견서 산출. | Phase 2 ✓ |
 | **김덕배 (Kim De Bruyne)** | [GDPR-expert](https://github.com/lowtidebuild/GDPR-expert) | EU 데이터보호법 전문가. 구조화 RAG 기반: **EU 법률 5개(조문 321 + recital 535), EDPB 문서 120건, CJEU 판결 51건, enforcement 결정 33건** — 인덱스 아이템 1,060+. | Phase 2 ✓ |
-| **심진주 (Sim Jinju)** | [game-legal-research](https://github.com/lowtidebuild/game-legal-research) | 국제 게임 산업 법률 리서치. 게임 클라이언트 자문을 위한 다관할권 규제 비교. 증거 기반, 1차 소스 우선, deliverable 수준 결과물 로컬 출력 파이프라인 보유. | Phase 2 ✓ |
+| **게임산업 리서치 스페셜리스트** | [game-legal-research](https://github.com/lowtidebuild/game-legal-research) | 국제 게임 산업 법률 리서치. 게임 클라이언트 자문을 위한 다관할권 규제 비교. 증거 기반, 1차 소스 우선, deliverable 수준 결과물 로컬 출력 파이프라인 보유. | Phase 2 ✓ |
 | **고덕수 (Ko Duksoo)** | [contract-review-agent](https://github.com/lowtidebuild/contract-review-agent) | 계약서 검토 파이프라인 — 계약서를 drop하면 **tracked-change redline이 들어간 DOCX, 여백 코멘트(internal strategy + external-facing), 전체 분석 리포트, 협상 권고**가 반환됩니다. Node.js + Python 스택. 최종 법률 판단은 사람이 합니다. | Phase 2 |
 | **변혁기 (Byeon Hyeok-gi)** | [legal-translation-agent](https://github.com/lowtidebuild/legal-translation-agent) | **5개 언어** 법률 문서 번역. zero-omission 보장, dual-pass 번역을 comparative synthesis로 병합. 관할권 인식 용어(BGB, UCC, PRC, Taiwan, APPI) 준수, 매 작업마다 성장하는 shared 번역 메모리. | Phase 2 |
 
@@ -203,7 +203,7 @@ agents/
 ├── second-review-agent/        ← 반성문 (시니어 리뷰 스페셜리스트)
 ├── PIPA-expert/                ← 정보호
 ├── GDPR-expert/                ← 김덕배
-├── game-legal-research/        ← 심진주
+├── game-legal-research/        ← 게임산업 리서치 스페셜리스트
 ├── contract-review-agent/      ← 고덕수
 └── legal-translation-agent/    ← 변혁기
 ```

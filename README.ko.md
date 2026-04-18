@@ -1,4 +1,4 @@
-# 리걸 에이전트 오케스트레이터 · Legal Agent Orchestrator
+# KP 리걸 오케스트레이터 · KP Legal Orchestrator
 
 **English:** [README.md](README.md)
 
@@ -22,9 +22,9 @@
 
 ---
 
-## 팀 소개 — Legal Agent Orchestrator 에이전트
+## 팀 소개 — KP Legal Orchestrator 에이전트
 
-이 저장소는 가상의 AI 법률 워크플로우 시스템 **Legal Agent Orchestrator**의 중앙 오케스트레이터입니다. 아래 8명의 스페셜리스트는 각자 독립된 GitHub 리포지토리에 standalone Claude Code 에이전트로 존재합니다. `./setup.sh`를 실행하면 이들 전부가 `agents/` 아래로 clone되어 바로 디스패치할 수 있는 상태가 됩니다.
+이 저장소는 가상의 AI 법률 워크플로우 시스템 **KP Legal Orchestrator**의 중앙 오케스트레이터입니다. 아래 8명의 스페셜리스트는 각자 독립된 GitHub 리포지토리에 standalone Claude Code 에이전트로 존재합니다. `./setup.sh`를 실행하면 이들 전부가 `agents/` 아래로 clone되어 바로 디스패치할 수 있는 상태가 됩니다.
 
 | 담당 스페셜리스트 | Agent 리포지토리 | 실제로 하는 일 | Phase |
 |------------|------------------|---------------|-------|
@@ -33,7 +33,7 @@
 | **반성문 (Ban Seong-mun)** · *시니어 리뷰 스페셜리스트* | [second-review-agent](https://github.com/kipeum86/second-review-agent) | AI 생성 법률 문서 최종 품질 게이트. 인용을 **여러 primary legal database**(law.go.kr, congress.gov, eur-lex 등)에 대해 verbatim 대조하고, 법적 논리와 작성 품질을 점검하며, tracked change가 들어간 redlined DOCX를 생성합니다. 독립 release 게이트(Pass / Pass with Warnings / Manual Review Required / Not Recommended). 환각 인용 zero tolerance. | Phase 1 ✓ |
 | **정보호 (Jeong Bo-ho)** | [PIPA-expert](https://github.com/kipeum86/PIPA-expert) | 한국 개인정보보호법 전문가. 구조화 RAG 기반: **법조문 929건, PIPC 공식 가이드라인 46건, landmark 판례·해석례 30건, cross-reference 엣지 2,369개**. 전문 형식의 DOCX 의견서 산출. | Phase 2 ✓ |
 | **김덕배 (Kim De Bruyne)** | [GDPR-expert](https://github.com/kipeum86/GDPR-expert) | EU 데이터보호법 전문가. 구조화 RAG 기반: **EU 법률 5개(조문 321 + recital 535), EDPB 문서 120건, CJEU 판결 51건, enforcement 결정 33건** — 인덱스 아이템 1,060+. | Phase 2 ✓ |
-| **심진주 (Sim Jinju)** | [game-legal-research](https://github.com/kipeum86/game-legal-research) | 국제 게임 산업 법률 리서치. 게임 클라이언트 자문을 위한 다관할권 규제 비교. 증거 기반, 1차 소스 우선, deliverable 수준 결과물 로컬 출력 파이프라인 보유. | Phase 2 ✓ |
+| **게임산업 리서치 스페셜리스트** | [game-legal-research](https://github.com/kipeum86/game-legal-research) | 국제 게임 산업 법률 리서치. 게임 클라이언트 자문을 위한 다관할권 규제 비교. 증거 기반, 1차 소스 우선, deliverable 수준 결과물 로컬 출력 파이프라인 보유. | Phase 2 ✓ |
 | **고덕수 (Ko Duksoo)** | [contract-review-agent](https://github.com/kipeum86/contract-review-agent) | 계약서 검토 파이프라인 — 계약서를 drop하면 **tracked-change redline이 들어간 DOCX, 여백 코멘트(internal strategy + external-facing), 전체 분석 리포트, 협상 권고**가 반환됩니다. Node.js + Python 스택. 최종 법률 판단은 사람이 합니다. | Phase 2 |
 | **변혁기 (Byeon Hyeok-gi)** | [legal-translation-agent](https://github.com/kipeum86/legal-translation-agent) | **5개 언어** 법률 문서 번역. zero-omission 보장, dual-pass 번역을 comparative synthesis로 병합. 관할권 인식 용어(BGB, UCC, PRC, Taiwan, APPI) 준수, 매 작업마다 성장하는 shared 번역 메모리. | Phase 2 |
 
@@ -145,7 +145,7 @@ flowchart LR
 
 상용 법률 AI 제품은 대체로 블랙박스입니다. 답은 받지만 어떻게 나왔는지 알 수 없습니다.
 
-Legal Agent Orchestrator는 정반대입니다. 어느 스페셜리스트가 배정됐는지, 어떤 소스를 참조했는지, 팩트체커가 무엇을 지적했는지, 리비전 사이클이 어떻게 해소됐는지 — 전부 `events.jsonl`에 이벤트 단위로 기록됩니다.
+KP Legal Orchestrator는 정반대입니다. 어느 스페셜리스트가 배정됐는지, 어떤 소스를 참조했는지, 팩트체커가 무엇을 지적했는지, 리비전 사이클이 어떻게 해소됐는지 — 전부 `events.jsonl`에 이벤트 단위로 기록됩니다.
 
 실패 모드까지 영구 기록에 남습니다. 예를 들어 리비전 도중 rate limit 에러가 발생하면, 오케스트레이터가 직접 메타 검증 rescue를 수행할 수 있습니다. 단일 LLM 시스템에서는 "모델 에러"로 끝났을 것이 여기서는 append-only 로그의 typed 이벤트로 남습니다. **그것이 "프로세스 자체가 프로덕트"의 실전 의미입니다.**
 
@@ -159,7 +159,7 @@ Legal Agent Orchestrator는 정반대입니다. 어느 스페셜리스트가 배
 
 ### 비교표
 
-| 측면 | 단일 LLM | LangGraph / Agent SDK | **Legal Agent Orchestrator** |
+| 측면 | 단일 LLM | LangGraph / Agent SDK | **KP Legal Orchestrator** |
 |------|---------|----------------------|-------------------|
 | 멀티 전문가 추론 | 프롬프트 페르소나 | 프레임워크에 에이전트 재구현 | **진짜 Claude Code 에이전트, 100% 재활용** |
 | 지식 베이스 | 컨텍스트에 꾸겨 넣기 | 프레임워크용으로 재구축 | 각 에이전트의 네이티브 KB 그대로 |
@@ -203,7 +203,7 @@ agents/
 ├── second-review-agent/        ← 반성문 (시니어 리뷰 스페셜리스트)
 ├── PIPA-expert/                ← 정보호
 ├── GDPR-expert/                ← 김덕배
-├── game-legal-research/        ← 심진주
+├── game-legal-research/        ← 게임산업 리서치 스페셜리스트
 ├── contract-review-agent/      ← 고덕수
 └── legal-translation-agent/    ← 변혁기
 ```
@@ -230,7 +230,7 @@ claude
 ```
 
 Claude Code가 시작할 때 다음을 자동 로드합니다:
-- **[CLAUDE.md](CLAUDE.md)** — 오케스트레이터 시스템 프롬프트. 메인 Claude 세션에게 "당신은 Legal Agent Orchestrator의 리드 오케스트레이터이고, 이것이 워크플로우이고, 소속 스페셜리스트 8명이고, 호출할 수 있는 스킬들입니다"라고 지시합니다
+- **[CLAUDE.md](CLAUDE.md)** — 오케스트레이터 시스템 프롬프트. 메인 Claude 세션에게 "당신은 KP Legal Orchestrator의 리드 오케스트레이터이고, 이것이 워크플로우이고, 소속 스페셜리스트 8명이고, 호출할 수 있는 스킬들입니다"라고 지시합니다
 - **[.mcp.json](.mcp.json)** — 사용 가능한 MCP 서버 설정 (`korean-law` 및 `kordoc`); 디스패치 시 각 서브에이전트가 이를 상속합니다
 - **`skills/*.md`** — 오케스트레이터가 서브루틴처럼 실행하는 markdown 절차 문서입니다
 

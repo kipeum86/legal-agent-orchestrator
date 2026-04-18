@@ -64,7 +64,7 @@
 | `second-review-agent` | 반성문 (시니어 리뷰 스페셜리스트) | — (review) | — | 품질 검토, 승인/수정 결정 | — |
 | `GDPR-expert` | 김덕배 | data_protection | **EU** | GDPR, ePrivacy, EU AI Act, Data Act, Data Governance Act | Grade A 1,027 + CJEU 51 + EDPB 120 |
 | `PIPA-expert` | 정보호 | data_protection | **KR** | 한국 개인정보보호법, 시행령, PIPC 가이드라인, 처분례 | Grade A 929 + PIPC 가이드 46 |
-| `game-legal-research` | 심진주 | game_regulation | **국제 (KR 포함)** | 게임산업 국제 법률 리서치, cross-jurisdiction | 9단계 리서치 파이프라인 |
+| `game-legal-research` | 게임산업 리서치 스페셜리스트 | game_regulation | **국제 (KR 포함)** | 게임산업 국제 법률 리서치, cross-jurisdiction | 9단계 리서치 파이프라인 |
 | `contract-review-agent` | 고덕수 | contract | — | 계약서 ingest/review/draft/rereview, redline 처리 | 라이브러리 + 5 WF |
 | `legal-translation-agent` | 변혁기 | translation | — | 5개 언어 법률문서 번역, 용어집 관리 | 다국어 용어집 |
 
@@ -349,7 +349,7 @@ if [ ! -f "$TRANSLATION_CONFIG" ]; then
   "created": "orchestrator-auto",
   "user": {
     "name": "Orchestrator",
-    "affiliation": "Legal Agent Orchestrator",
+    "affiliation": "KP Legal Orchestrator",
     "role": "automated dispatch"
   },
   "preferences": {
@@ -415,7 +415,7 @@ CJEU/EDPB 인용은 CELEX/결정번호까지 정확히 기재하세요.
 # AGENT_ID = "GDPR-expert"
 ```
 
-#### `game-legal-research` (심진주)
+#### `game-legal-research` (게임산업 리서치 스페셜리스트)
 ```
 다음 게임산업 법률 질문을 리서치하세요: {질문}
 

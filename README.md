@@ -1,4 +1,4 @@
-# Legal Agent Orchestrator · 리걸 에이전트 오케스트레이터
+# KP Legal Orchestrator · KP 리걸 오케스트레이터
 
 **한국어:** [README.ko.md](README.ko.md)
 
@@ -22,9 +22,9 @@ Every step is logged to `events.jsonl`, and the final delivery step folds the wh
 
 ---
 
-## Meet the Team — Legal Agent Orchestrator Specialist Agents
+## Meet the Team — KP Legal Orchestrator Specialist Agents
 
-This repository is the central coordinator for **Legal Agent Orchestrator**, a fictional AI legal workflow system. Each of the eight specialists below lives in its own independent GitHub repository as a standalone Claude Code agent. When you run `./setup.sh` they are all cloned into `agents/` and ready to be dispatched.
+This repository is the central coordinator for **KP Legal Orchestrator**, a fictional AI legal workflow system. Each of the eight specialists below lives in its own independent GitHub repository as a standalone Claude Code agent. When you run `./setup.sh` they are all cloned into `agents/` and ready to be dispatched.
 
 | Specialist | Agent repository | What they actually do | Phase |
 |----------|------------------|-----------------------|-------|
@@ -33,7 +33,7 @@ This repository is the central coordinator for **Legal Agent Orchestrator**, a f
 | **반성문 (Ban Seong-mun)** · *Senior Review Specialist* | [second-review-agent](https://github.com/kipeum86/second-review-agent) | Final quality gate for AI-generated legal documents. Verifies citations against primary legal databases (law.go.kr, congress.gov, eur-lex, and more), checks legal logic, and ships redlined DOCX with tracked changes. Independent release gate (Pass / Pass with Warnings / Manual Review Required / Not Recommended). Zero tolerance for hallucinated citations. | Phase 1 ✓ |
 | **정보호 (Jeong Bo-ho)** | [PIPA-expert](https://github.com/kipeum86/PIPA-expert) | Korean data privacy law specialist built on structured RAG: **929 statute files, 46 PIPC official guidelines, 30 landmark cases and interpretations, 2,369 cross-reference edges**. Produces professional-format DOCX opinions. | Phase 2 ✓ |
 | **김덕배 (Kim De Bruyne)** | [GDPR-expert](https://github.com/kipeum86/GDPR-expert) | EU data protection law specialist built on structured RAG: **5 EU laws (321 articles + 535 recitals), 120 EDPB documents, 51 CJEU judgments, 33 enforcement decisions** — 1,060+ indexed items. | Phase 2 ✓ |
-| **심진주 (Sim Jinju)** | [game-legal-research](https://github.com/kipeum86/game-legal-research) | International game-industry legal research — cross-jurisdiction regulatory comparison for game clients. Evidence-based, primary-source-first, with real local output pipeline for deliverable-grade work product. | Phase 2 ✓ |
+| **Game Industry Research Specialist** | [game-legal-research](https://github.com/kipeum86/game-legal-research) | International game-industry legal research — cross-jurisdiction regulatory comparison for game clients. Evidence-based, primary-source-first, with real local output pipeline for deliverable-grade work product. | Phase 2 ✓ |
 | **고덕수 (Ko Duksoo)** | [contract-review-agent](https://github.com/kipeum86/contract-review-agent) | Contract review pipeline — drop a contract in, get back a **DOCX with tracked-change redlines, margin comments (internal strategy + external-facing), a full analysis report, and negotiation recommendations**. Node.js + Python stack. Final legal judgment stays with the human. | Phase 2 |
 | **변혁기 (Byeon Hyeok-gi)** | [legal-translation-agent](https://github.com/kipeum86/legal-translation-agent) | Legal document translation across **5 languages** with zero-omission guarantee and dual-pass translation merged via comparative synthesis. Jurisdiction-aware terminology (BGB, UCC, PRC, Taiwan, APPI) and a persistent shared translation memory that grows with every job. | Phase 2 |
 
@@ -145,7 +145,7 @@ We inverted the tradeoff: **Claude Code as the runtime, agents preserved 100% in
 
 Most commercial legal AI products are black boxes. You get an answer; you don't know how.
 
-Legal Agent Orchestrator is the opposite. Which specialist was assigned, which sources were consulted, what the fact-checker flagged, how revision cycles resolved — all visible in `events.jsonl`, one line per event.
+KP Legal Orchestrator is the opposite. Which specialist was assigned, which sources were consulted, what the fact-checker flagged, how revision cycles resolved — all visible in `events.jsonl`, one line per event.
 
 Failure modes are in the permanent record too. If a mid-revision rate-limit error occurs, the orchestrator can trigger a meta-verification rescue instead of dying as a dead chat tab. Here it's a typed event in an append-only log. **That's what "the process is the product" means in practice.**
 
@@ -159,7 +159,7 @@ If you want a cheap legal chatbot, this is the wrong project. If you want a defe
 
 ### Comparison
 
-| Aspect | Single LLM | LangGraph / Agent SDK | **Legal Agent Orchestrator** |
+| Aspect | Single LLM | LangGraph / Agent SDK | **KP Legal Orchestrator** |
 |--------|-----------|----------------------|---------------------|
 | Multi-specialist reasoning | Prompt personas | Agents reimplemented in the framework | **Real Claude Code agents, 100% reused** |
 | Knowledge bases | Stuffed into context | Rebuilt for the framework | Each agent's native KB, untouched |
@@ -203,7 +203,7 @@ agents/
 ├── second-review-agent/        ← 반성문 (Senior Review Specialist)
 ├── PIPA-expert/                ← 정보호
 ├── GDPR-expert/                ← 김덕배
-├── game-legal-research/        ← 심진주
+├── game-legal-research/        ← Game Industry Research Specialist
 ├── contract-review-agent/      ← 고덕수
 └── legal-translation-agent/    ← 변혁기
 ```
@@ -230,7 +230,7 @@ claude
 ```
 
 When Claude Code starts, it auto-loads:
-- **[CLAUDE.md](CLAUDE.md)** — the orchestrator system prompt that tells the main Claude session "you are the lead orchestrator of Legal Agent Orchestrator, here is your workflow, here are your eight specialists, here are the skills you can invoke"
+- **[CLAUDE.md](CLAUDE.md)** — the orchestrator system prompt that tells the main Claude session "you are the lead orchestrator of KP Legal Orchestrator, here is your workflow, here are your eight specialists, here are the skills you can invoke"
 - **[.mcp.json](.mcp.json)** — the MCP servers available (`korean-law` and `kordoc`); each subagent inherits these on dispatch
 - **`skills/*.md`** — markdown procedure documents the orchestrator executes as subroutines
 

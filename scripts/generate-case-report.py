@@ -20,7 +20,7 @@ TEAM = {
     "second-review-agent": {"name": "반성문", "role": "품질 검토, 최종 승인"},
     "GDPR-expert": {"name": "김덕배", "role": "EU 데이터보호법 (GDPR)"},
     "PIPA-expert": {"name": "정보호", "role": "한국 개인정보보호법"},
-    "game-legal-research": {"name": "심진주", "role": "게임산업 국제법"},
+    "game-legal-research": {"name": "게임산업 리서치 스페셜리스트", "role": "게임산업 국제법"},
     "contract-review-agent": {"name": "고덕수", "role": "계약서 검토"},
     "legal-translation-agent": {"name": "변혁기", "role": "법률문서 번역"},
 }

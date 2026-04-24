@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "agents": {
+    "general-legal-research": {
+      "repo": "https://github.com/lowtidebuild/general-legal-research.git",
+      "ref": "main",
+      "commit": "254ab74f78a26aa0d9668805e14c86be5b21b48c"
+    },
+    "legal-writing-agent": {
+      "repo": "https://github.com/lowtidebuild/legal-writing-agent.git",
+      "ref": "main",
+      "commit": "0ce4b713cbe27a0c42b0b8b00eb443e73a6d5cf1"
+    },
+    "second-review-agent": {
+      "repo": "https://github.com/lowtidebuild/second-review-agent.git",
+      "ref": "main",
+      "commit": "4e7425cabb539cf9123fee7e5d5bf7ca967af017"
+    },
+    "GDPR-expert": {
+      "repo": "https://github.com/lowtidebuild/GDPR-expert.git",
+      "ref": "main",
+      "commit": "d88e0d010409c9aa73c9851e028d38ce73da5b8b"
+    },
+    "PIPA-expert": {
+      "repo": "https://github.com/lowtidebuild/PIPA-expert.git",
+      "ref": "main",
+      "commit": "6ce53dd17c50cc727dbe934d56ec5f2c46e11315"
+    },
+    "game-legal-research": {
+      "repo": "https://github.com/lowtidebuild/game-legal-research.git",
+      "ref": "main",
+      "commit": "8de187c25741350d5ceaf7c5dc210855ec8bdd9c"
+    },
+    "contract-review-agent": {
+      "repo": "https://github.com/lowtidebuild/contract-review-agent.git",
+      "ref": "main",
+      "commit": "d2b97aa33f13ad0e7fbf14e8d72063cbcf1e3adc"
+    },
+    "legal-translation-agent": {
+      "repo": "https://github.com/lowtidebuild/legal-translation-agent.git",
+      "ref": "security/hardening-pass-1",
+      "commit": "e86b65201d4121ce9d96083f99332bb1bee1d778"
+    }
+  }
+}

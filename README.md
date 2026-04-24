@@ -37,7 +37,7 @@ This repository is the central coordinator for **Legal Agent Orchestrator**, a f
 | **Contract Review Specialist** | [contract-review-agent](https://github.com/lowtidebuild/contract-review-agent) | Contract review pipeline — drop a contract in, get back a **DOCX with tracked-change redlines, margin comments (internal strategy + external-facing), a full analysis report, and negotiation recommendations**. Node.js + Python stack. Final legal judgment stays with the human. | Phase 2 |
 | **Legal Translation Specialist** | [legal-translation-agent](https://github.com/lowtidebuild/legal-translation-agent) | Legal document translation across **5 languages** with zero-omission guarantee and dual-pass translation merged via comparative synthesis. Jurisdiction-aware terminology (BGB, UCC, PRC, Taiwan, APPI) and a persistent shared translation memory that grows with every job. | Phase 2 |
 
-**The orchestrator never modifies a subordinate agent's `CLAUDE.md`, skills, or knowledge base.** That's what "100% reuse" means in practice. If a specialist ships a bug fix to their own repo, it flows through here on the next `./setup.sh update`.
+**The orchestrator never modifies a subordinate agent's `CLAUDE.md`, skills, or knowledge base.** That's what "100% reuse" means in practice. Subordinate agents are pinned by `agents.lock`; when a specialist ships a bug fix, update the lock intentionally with `./setup.sh update-lock` and commit the changed lockfile.
 
 > `setup.sh` only clones the repositories used directly by this orchestrator. Standalone projects outside this workflow are not included.
 
@@ -194,7 +194,7 @@ What you have now: the orchestrator itself — `CLAUDE.md` (the lead orchestrato
 ./setup.sh
 ```
 
-This script clones all eight specialists' GitHub repositories into `agents/` under their Agent ID names:
+This script clones all eight specialists' GitHub repositories into `agents/` under their Agent ID names and checks each one out at the exact commit recorded in `agents.lock`:
 
 ```
 agents/
@@ -211,8 +211,9 @@ agents/
 Each folder is an independent Claude Code agent with its own `CLAUDE.md`, `skills/`, knowledge base, and MCP configuration. When the orchestrator dispatches a case, it calls into these agents via Claude Code's `Agent` tool with `cwd: agents/{agent-id}/`, so each subagent runs in its own working directory with its own context.
 
 Other `setup.sh` commands:
-- `./setup.sh update` — pull the latest commit for every already-cloned agent
-- `./setup.sh status` — show branch + latest commit for each agent
+- `./setup.sh update` — re-sync every agent to the commit pinned in `agents.lock`
+- `./setup.sh update-lock` — advance `agents.lock` to the current remote ref for each agent; review and commit the lockfile intentionally
+- `./setup.sh status` — show each agent's current commit, dirty state, and drift from `agents.lock`
 - `./setup.sh link` — **development mode**: if you already have the agent repositories checked out under `~/코딩 프로젝트/`, create symlinks instead of fresh clones so your local edits flow through immediately
 
 ### 3. Set your Korean Open Law API key

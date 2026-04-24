@@ -37,7 +37,7 @@
 | **계약서 검토 스페셜리스트** | [contract-review-agent](https://github.com/lowtidebuild/contract-review-agent) | 계약서 검토 파이프라인 — 계약서를 drop하면 **tracked-change redline이 들어간 DOCX, 여백 코멘트(internal strategy + external-facing), 전체 분석 리포트, 협상 권고**가 반환됩니다. Node.js + Python 스택. 최종 법률 판단은 사람이 합니다. | Phase 2 |
 | **법률 번역 스페셜리스트** | [legal-translation-agent](https://github.com/lowtidebuild/legal-translation-agent) | **5개 언어** 법률 문서 번역. zero-omission 보장, dual-pass 번역을 comparative synthesis로 병합. 관할권 인식 용어(BGB, UCC, PRC, Taiwan, APPI) 준수, 매 작업마다 성장하는 shared 번역 메모리. | Phase 2 |
 
-**오케스트레이터는 하위 에이전트의 `CLAUDE.md`, skills, 지식 베이스를 절대 수정하지 않습니다.** 이것이 "100% 재활용"의 실천입니다. 어느 스페셜리스트가 자기 리포에 버그 픽스를 올리면 다음 `./setup.sh update` 한 번으로 자동 반영됩니다.
+**오케스트레이터는 하위 에이전트의 `CLAUDE.md`, skills, 지식 베이스를 절대 수정하지 않습니다.** 이것이 "100% 재활용"의 실천입니다. 하위 에이전트는 `agents.lock`으로 고정됩니다. 어느 스페셜리스트가 자기 리포에 버그 픽스를 올리면 `./setup.sh update-lock`으로 lock을 의도적으로 갱신하고, 변경된 lockfile을 커밋합니다.
 
 > `setup.sh`는 이 오케스트레이터가 직접 사용하는 리포지토리만 clone합니다. 이 워크플로우 밖의 standalone 프로젝트는 포함되지 않습니다.
 
@@ -194,7 +194,7 @@ cd legal-agent-orchestrator
 ./setup.sh
 ```
 
-이 스크립트가 8명의 스페셜리스트 각자의 GitHub 리포지토리를 `agents/` 아래에 Agent ID 이름으로 clone합니다:
+이 스크립트가 8명의 스페셜리스트 각자의 GitHub 리포지토리를 `agents/` 아래에 Agent ID 이름으로 clone하고, `agents.lock`에 기록된 정확한 commit으로 checkout합니다:
 
 ```
 agents/
@@ -211,8 +211,9 @@ agents/
 각 폴더는 자체 `CLAUDE.md`, `skills/`, 지식 베이스, MCP 설정을 가진 **독립된 Claude Code 에이전트**입니다. 오케스트레이터가 케이스를 처리할 때 Claude Code의 `Agent` tool로 이 에이전트들을 `cwd: agents/{agent-id}/`로 호출하므로, 각 서브에이전트는 자기 작업 디렉토리에서 자기 context로 동작합니다.
 
 `setup.sh`의 다른 명령:
-- `./setup.sh update` — 이미 클론된 에이전트 각각의 최신 커밋을 pull합니다
-- `./setup.sh status` — 각 에이전트의 브랜치 + 최신 커밋을 표시합니다
+- `./setup.sh update` — 이미 클론된 에이전트를 `agents.lock`에 고정된 commit으로 다시 동기화합니다
+- `./setup.sh update-lock` — 각 에이전트의 현재 remote ref 최신 commit으로 `agents.lock`을 갱신합니다. 변경 내용을 검토한 뒤 의도적으로 커밋합니다
+- `./setup.sh status` — 각 에이전트의 현재 commit, dirty 상태, lock 대비 drift를 표시합니다
 - `./setup.sh link` — **개발 모드**: `~/코딩 프로젝트/` 아래에 이미 에이전트 리포들을 체크아웃해놓았다면, 새 clone 대신 심볼릭 링크를 만들어서 로컬 수정이 즉시 반영되도록 합니다
 
 ### 3. 법제처 Open API 키 설정

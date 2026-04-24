@@ -167,7 +167,7 @@ Agent A 반론 프롬프트 템플릿:
 
 ### Step 3: Round 3 진행 여부 판단
 
-Round 2 완료 후 오케스트레이터가 `conceded_points`를 읽고 **수렴 여부**를 판단합니다.
+Round 2 완료 후 오케스트레이터가 deterministic script로 `conceded_points`를 읽고 **수렴 여부**를 판단합니다. 같은 Round 1/2 meta 파일로 재실행하면 같은 `proceed` 값을 반환해야 합니다.
 
 판단 규칙:
 1. `ratio_A = conceded_points_A_R2 / max(1, key_claims_B_R1)`
@@ -175,16 +175,28 @@ Round 2 완료 후 오케스트레이터가 `conceded_points`를 읽고 **수렴
 3. `conceded_ratio = (ratio_A + ratio_B) / 2`
 4. `conceded_ratio >= 0.5`이면 `convergence`로 판단하고 Round 3를 건너뜁니다.
 5. `conceded_ratio < 0.5`이면 `significant_disagreement`로 판단하고 Round 3를 진행합니다.
+6. meta 누락 또는 malformed면 `reason = "insufficient_meta"`, `proceed = true`로 fallback합니다.
 
-판단 결과 이벤트:
+판단 실행:
+```bash
+python3 "$PROJECT_ROOT/scripts/decide-debate-round3.py" "$OUTPUT_DIR" \
+  --out "$OUTPUT_DIR/debate-round3-decision.json"
+```
+
+판단 결과 이벤트 기록:
 ```bash
 python3 "$PROJECT_ROOT/scripts/log-event.py" "$OUTPUT_DIR/events.jsonl" \
   --agent orchestrator \
   --type debate_round3_decision \
-  --data-json "$(python3 -c 'import json, sys; print(json.dumps({"proceed":sys.argv[1].lower()=="true","reason":sys.argv[2],"conceded_ratio":float(sys.argv[3]),"contested_claims":["claim1","claim2"]}, ensure_ascii=False))' "$PROCEED_ROUND3" "$ROUND3_REASON" "$CONCEDED_RATIO")"
+  --data-json "$(python3 -c 'import json, sys; data=json.load(open(sys.argv[1], encoding="utf-8")); data.pop("case_id", None); print(json.dumps(data, ensure_ascii=False))' "$OUTPUT_DIR/debate-round3-decision.json")"
 ```
 
-`proceed: false`이면 Round 3를 생략하고 바로 Verdict 단계로 넘어갑니다.
+분기 변수:
+```bash
+PROCEED_ROUND3="$(python3 -c 'import json, sys; print("true" if json.load(open(sys.argv[1], encoding="utf-8"))["proceed"] else "false")' "$OUTPUT_DIR/debate-round3-decision.json")"
+```
+
+`proceed: false`이면 Round 3를 생략하고 바로 Verdict 단계로 넘어갑니다. LLM은 contested claim 문구를 보조 요약할 수 있지만, `proceed` boolean은 반드시 `decide-debate-round3.py` 결과를 우선합니다.
 
 ---
 

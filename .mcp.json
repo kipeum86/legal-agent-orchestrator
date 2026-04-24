@@ -2,14 +2,14 @@
   "mcpServers": {
     "korean-law": {
       "command": "npx",
-      "args": ["-y", "korean-law-mcp@latest"],
+      "args": ["-y", "korean-law-mcp@3.5.4"],
       "env": {
         "LAW_OC": "${LAW_OC}"
       }
     },
     "kordoc": {
       "command": "npx",
-      "args": ["-y", "kordoc"]
+      "args": ["-y", "kordoc@2.5.2"]
     }
   }
 }

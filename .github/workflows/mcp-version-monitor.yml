@@ -1,0 +1,68 @@
+name: MCP Version Monitor
+
+on:
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check-mcp-versions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate pinned MCP packages
+        run: python3 scripts/check-mcp-pins.py .mcp.json
+
+      - name: Query latest MCP package versions
+        run: python3 scripts/check-mcp-pins.py .mcp.json --latest-json > mcp-latest.json
+
+      - name: Build issue body
+        run: python3 scripts/check-mcp-pins.py --markdown-report mcp-latest.json > mcp-version-report.md
+
+      - name: Detect updates
+        id: updates
+        run: |
+          if [ -s mcp-version-report.md ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create update issue
+        if: steps.updates.outputs.available == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const title = 'MCP package update available';
+            const body = fs.readFileSync('mcp-version-report.md', 'utf8');
+            const {owner, repo} = context.repo;
+            const existing = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${owner}/${repo} is:issue is:open in:title "${title}"`
+            });
+            if (existing.data.total_count === 0) {
+              await github.rest.issues.create({
+                owner,
+                repo,
+                title,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: existing.data.items[0].number,
+                body
+              });
+            }

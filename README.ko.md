@@ -216,6 +216,16 @@ agents/
 - `./setup.sh status` — 각 에이전트의 현재 commit, dirty 상태, lock 대비 drift를 표시합니다
 - `./setup.sh link` — **개발 모드**: `~/코딩 프로젝트/` 아래에 이미 에이전트 리포들을 체크아웃해놓았다면, 새 clone 대신 심볼릭 링크를 만들어서 로컬 수정이 즉시 반영되도록 합니다
 
+### Smoke checks
+
+오케스트레이터 변경을 커밋하기 전에는 [CONTRIBUTING.md](CONTRIBUTING.md)의 최소 검증 명령을 실행합니다:
+
+```bash
+python3 -m unittest
+python3 scripts/sanitize-check.py --self-test
+python3 scripts/smoke-check.py
+```
+
 ### 3. 법제처 Open API 키 설정
 
 ```bash

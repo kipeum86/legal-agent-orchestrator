@@ -216,6 +216,16 @@ Other `setup.sh` commands:
 - `./setup.sh status` — show each agent's current commit, dirty state, and drift from `agents.lock`
 - `./setup.sh link` — **development mode**: if you already have the agent repositories checked out under `~/코딩 프로젝트/`, create symlinks instead of fresh clones so your local edits flow through immediately
 
+### Smoke checks
+
+Before committing orchestrator changes, run the checks in [CONTRIBUTING.md](CONTRIBUTING.md):
+
+```bash
+python3 -m unittest
+python3 scripts/sanitize-check.py --self-test
+python3 scripts/smoke-check.py
+```
+
 ### 3. Set your Korean Open Law API key
 
 ```bash

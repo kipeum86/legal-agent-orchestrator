@@ -49,11 +49,11 @@ Send a legal question. The orchestrator routes it, the specialists do the work, 
 
 | Stage | Agent | What it did | Output |
 |-------|-------|-------------|--------|
-| **1. Research** | General Legal Research Specialist · `general-legal-research` | Pulls primary sources from the relevant MCP and legal databases — statute text, precedents, regulator guidance, and enforcement path | `research-result.md` |
+| **1. Research** | General Legal Research Specialist · `general-legal-research` | Pulls primary sources from the relevant MCP and legal databases — statute text, precedents, regulator guidance, and enforcement path | `{agent}-result.md`, `{agent}-meta.json` |
 | **2. Drafting** | Legal Writing Specialist · `legal-writing-agent` | Produces the first opinion draft in a structured legal memorandum format | `opinion.md` |
-| **3. Review** | Senior Review Specialist · `second-review-agent` | Runs verbatim source checks, identifies mismatches, and returns severity-ranked comments | `review-result.md` |
+| **3. Review** | Senior Review Specialist · `second-review-agent` | Runs verbatim source checks, identifies mismatches, and returns severity-ranked comments | `review-result.md`, `review-meta.json` |
 | **4. Revision rescue** | `legal-writing-agent` + orchestrator | If revision stalls, the orchestrator can take over and verify citations directly against primary sources | `verbatim-verification.md` |
-| **5. Delivery** | orchestrator | Assembles the final bundle and generates client-facing files | `opinion.docx`, `case-report.md` |
+| **5. Delivery** | orchestrator | Validates the case folder, gates delivery on review approval, merges sources, and generates client-facing files | `opinion.docx`, `sources.json`, `case-report.md` |
 
 **Result:** audited sources, a typed event log, review findings, and a final deliverable bundle.
 
@@ -103,9 +103,9 @@ flowchart TB
 |---------|-------|------|--------|
 | **1 · Parallel research → merge** | `[A ∥ B] → writing → review` | Cross-domain or cross-jurisdiction that doesn't need debate (e.g. GDPR + international game-regulation analysis for an EU market launch) | ✅ validated Phase 2.2 |
 | **2 · Sequential handoff** | `A → writing → review` | Single-jurisdiction or focused domain work (Phase 1 default) | ✅ validated Phase 1 E2E |
-| **3 · Multi-round debate** | `A → B rebuts → A counters → writing verdict → review` | Cross-jurisdiction questions where specialists are likely to disagree | 🚧 Phase 2.3 (skeleton) |
+| **3 · Multi-round debate** | `[A ∥ B] → rebuttal rounds → deterministic transcript → writing verdict → review` | Cross-jurisdiction questions where specialists are likely to disagree | ✅ control plane validated |
 
-Pattern 3 is the killer feature — two specialists from different jurisdictions, each with their own knowledge base, actually argue. No single LLM can genuinely produce that kind of depth because "role-playing two different foreign-law specialists" still comes from the same priors. Two real agents genuinely don't share context.
+Pattern 3 is the killer feature — two specialists from different jurisdictions, each with their own knowledge base, actually argue. No single LLM can genuinely produce that kind of depth because "role-playing two different foreign-law specialists" still comes from the same priors. Two real agents genuinely don't share context. The orchestration control plane now builds the debate transcript deterministically from round files and decides whether Round 3 is needed from recorded concessions, so the debate shape is reproducible instead of improvised.
 
 ---
 
@@ -264,21 +264,24 @@ required after Schrems II?
 ```
 
 What happens next:
-1. The orchestrator classifies the question (jurisdiction × domain × task), picks a pipeline, creates `output/{CASE_ID}/`, and starts appending to `events.jsonl`.
+1. The orchestrator classifies the question (jurisdiction × domain × task), picks a pipeline, creates `$OUTPUT_DIR`, and starts appending to `events.jsonl`. By default `$OUTPUT_DIR` is `output/{CASE_ID}/`; if `LEGAL_ORCHESTRATOR_PRIVATE_DIR` is set, case files are written there instead.
 2. It dispatches the first subagent via `Agent` tool. You'll see the subagent run in a nested context — calling MCP, reading its KB, writing results.
-3. Control returns to the orchestrator, which reads the subagent's `{agent}-meta.json` summary and dispatches the next agent in the pipeline.
-4. When all agents finish, `skills/deliver-output.md` assembles `opinion.md`, converts it to `opinion.docx`, and generates `case-report.md`.
+3. Control returns to the orchestrator, which reads the subagent's compact `{agent}-meta.json` summary, issue map, and graded sources before dispatching the next agent in the pipeline.
+4. When all agents finish, `skills/deliver-output.md` validates the case folder, checks senior-review approval, merges `sources.json`, assembles `opinion.md`, converts it to `opinion.docx`, and generates `case-report.md`.
 
 Expect 5–15 minutes of wall-clock time per case. The orchestrator is not trying to minimize latency — it's trying to minimize the number of things you have to manually double-check afterwards.
 
 ### 6. Find your results
 
 ```
-output/{CASE_ID}/
+$OUTPUT_DIR/  # defaults to output/{CASE_ID}/
 ├── events.jsonl            ← full timeline, one event per line
 ├── {agent}-result.md       ← each subagent's detailed analysis
-├── {agent}-meta.json       ← each subagent's 2000-token summary + graded sources
+├── {agent}-meta.json       ← compact summary + issue map + graded sources
+├── sources.json            ← merged source table with grade distribution
 ├── opinion.md              ← final opinion in markdown
+├── debate-opinion.md       ← Pattern 3 verdict, when debate is used
+├── debate-transcript.md    ← deterministic debate transcript, when debate is used
 ├── case-report.md          ← single-file narrative case archive
 └── opinion.docx            ← final opinion as DOCX (client-ready)
 ```
@@ -290,8 +293,10 @@ The orchestrator does not ship a web viewer anymore. Instead, every completed ca
 Generate it manually for a completed live case:
 
 ```bash
-python3 "$PROJECT_ROOT/scripts/generate-case-report.py" "$PROJECT_ROOT/output/$CASE_ID"
+python3 "$PROJECT_ROOT/scripts/generate-case-report.py" "$OUTPUT_DIR"
 ```
+
+You can also pass a bare case ID. In that form, the script resolves it under `LEGAL_ORCHESTRATOR_PRIVATE_DIR` when set, otherwise under `output/`.
 
 `skills/deliver-output.md` now calls this automatically at the final delivery step, so completed cases should end with:
 
@@ -334,15 +339,31 @@ On Claude Code Max: zero marginal dollars. On metered API pricing: roughly $3–
 legal-agent-orchestrator/
 ├── CLAUDE.md                           # orchestrator system prompt
 ├── .mcp.json                           # MCP server config (korean-law + kordoc)
-├── setup.sh                            # clones the 8 subordinate agents
+├── agents.lock                         # pinned subordinate-agent commits
+├── setup.sh                            # clone, update, link, and status commands for subordinate agents
+├── CONTRIBUTING.md                     # local smoke-check workflow
+├── MCP_VERSION_CHANGELOG.md            # MCP pin and smoke-test history
 ├── skills/
 │   ├── route-case.md                   # classification + pipeline selection
 │   ├── deliver-output.md               # final assembly + case-report generation handoff
 │   ├── generate-case-report.md         # single-file case archive generation
-│   └── manage-debate.md                # Phase 2.3 debate (skeleton)
+│   ├── manage-debate.md                # Pattern 3 debate orchestration
+│   └── prompt-templates/               # reusable dispatch prompt blocks
 ├── scripts/
+│   ├── log-event.py                    # typed events.jsonl writer
+│   ├── select-route.py                 # deterministic routing helper
+│   ├── validate-case.py                # event/meta contract validation
+│   ├── merge-sources.py                # sources.json generation
+│   ├── finalize-case.py                # review approval gate + final_output event
+│   ├── build-debate-transcript.py      # deterministic Pattern 3 transcript builder
+│   ├── decide-debate-round3.py         # deterministic Round 3 decision
+│   ├── sanitize-check.py               # trust-boundary and deliverable residue scan
 │   ├── md-to-docx.py                   # DOCX conversion (dual-font Korean style guide §11)
-│   └── generate-case-report.py         # narrative case-report.md generator
+│   ├── generate-case-report.py         # narrative case-report.md generator
+│   ├── smoke-check.py                  # clean-tree smoke checks
+│   └── acceptance-check.py             # remediation acceptance checks
+├── schemas/                            # JSON schemas for events, meta, routing, review
+├── tests/                              # unit tests and fixture cases
 ├── agents/                             # 8 subordinate agents (gitignored, populated by setup.sh)
 ├── output/                             # live case artifacts (gitignored)
 └── docs/

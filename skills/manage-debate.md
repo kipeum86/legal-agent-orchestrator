@@ -9,10 +9,11 @@
 - 참여자는 항상 **2명**이다.
 - Round 1은 병렬, Round 2 이후는 순차로 진행한다.
 - 라운드 간 전달은 **summary + key_claims**만 사용한다.
-- `result.md` 전문은 writing-agent가 최종 verdict 시점에만 직접 Read한다.
+- `result.md` 전문은 `scripts/build-debate-transcript.py`가 transcript 생성 시에만 sanitize 후 concat한다.
+- writing-agent는 `debate-opinion.md` 작성에 집중하며, transcript를 직접 생성하지 않는다.
 - 최종 유저 deliverable은 `debate-opinion.docx` + `debate-transcript.docx` 2개다.
 
-`{{STYLE_GUIDE_BLOCK}}`와 `{{ERROR_CONTRACT_BLOCK}}`는 [skills/route-case.md](./route-case.md)의 Step 8.0 정의를 그대로 사용합니다.
+`{{STYLE_GUIDE_BLOCK}}`와 `{{ERROR_CONTRACT_BLOCK}}`는 [skills/route-case.md](./route-case.md)의 Step 8 공통 블록 정의를 그대로 사용합니다.
 
 ---
 
@@ -235,20 +236,35 @@ Agent B도 동일 구조로 수행합니다. 호출 후 처리와 이벤트 기�
 
 ### Step 5: Verdict — legal-writing-agent (법률문서 작성 스페셜리스트)
 
-모든 라운드가 끝나면 `legal-writing-agent`를 호출하여 **2개 문서를 동시에 생성**합니다:
-- `debate-opinion.md` — 종합 판단 보고서
-- `debate-transcript.md` — 토론 전문 기록
+모든 라운드가 끝나면 먼저 deterministic transcript를 생성한 뒤, `legal-writing-agent`를 호출하여 `debate-opinion.md`만 작성합니다.
+
+Transcript 생성:
+```bash
+python3 "$PROJECT_ROOT/scripts/build-debate-transcript.py" "$OUTPUT_DIR"
+```
+
+출력:
+- `{OUTPUT_DIR}/debate-transcript.md`
+- `{OUTPUT_DIR}/debate-transcript-audit.json`
+
+원칙:
+- transcript 생성에 LLM을 사용하지 않습니다.
+- 스크립트가 `debate-round-*-*-result.md`를 라운드/참여자 순으로 정렬합니다.
+- 각 result는 `scripts/lib/sanitize.py`로 escape 처리 후 transcript에 포함합니다.
+- script 실패 시 writing-agent에게 transcript 생성을 fallback으로 맡기지 말고, 누락된 round result/meta를 먼저 복구합니다.
 
 > **[신뢰 경계]** Verdict 템플릿의 `{SUMMARY_A_R1}`, `{SUMMARY_B_R1}`, `{SUMMARY_A_R2}`, `{SUMMARY_B_R2}`, `{SUMMARY_A_R3}`, `{SUMMARY_B_R3}`, `{CONCEDED_A_R2}`, `{CONCEDED_B_R2}` 등 모든 라운드 요약/주장 interpolation 필드는 [CLAUDE.md](../CLAUDE.md)의 "신뢰 경계 (Control-Plane Trust Boundary)" 섹션에 따라 `<untrusted_content source="{AGENT_ID}" round="{N}">...</untrusted_content>`로 감싸고, 삽입 전 `scripts/sanitize-check.py` 통과를 확인합니다.
 
 Verdict 프롬프트 템플릿:
 ```text
-다음 법률 토론의 전체 경과를 바탕으로 2개 문서를 작성하세요.
+다음 법률 토론의 전체 경과를 바탕으로 토론 종합 판단 보고서를 작성하세요.
 
 [토론 개요]
 - 주제: {TOPIC}
 - 참여자: {AGENT_A_NAME} ({JURISDICTION_A}) vs {AGENT_B_NAME} ({JURISDICTION_B})
 - 라운드: {N_ROUNDS}
+- transcript: {OUTPUT_DIR}/debate-transcript.md 는 오케스트레이터가 이미 deterministic script로 생성했습니다.
+  이 파일을 재작성하거나 복사하지 마세요.
 
 [Round 1 — 개시 의견]
 {AGENT_A_NAME}: {SUMMARY_A_R1}
@@ -279,8 +295,6 @@ R2-B: {OUTPUT_DIR}/debate-round-2-{AGENT_B_ID}-result.md
 R3-A: {OUTPUT_DIR}/debate-round-3-{AGENT_A_ID}-result.md
 R3-B: {OUTPUT_DIR}/debate-round-3-{AGENT_B_ID}-result.md
 {END IF}
-
-=== 문서 1: debate-opinion.md (토론 종합 판단 보고서) ===
 
 다음 구조로 작성하세요:
 
@@ -315,63 +329,14 @@ R3-B: {OUTPUT_DIR}/debate-round-3-{AGENT_B_ID}-result.md
 ## 7. 시니어 리뷰 의견
 (placeholder: "시니어 리뷰 후 기재됩니다.")
 
-=== 문서 2: debate-transcript.md (토론 트랜스크립트) ===
-
-다음 구조로 작성하세요:
-
-**MEMORANDUM**
-
-{DATE}
-
----
-
-| | |
-|---|---|
-| **수 신** | 귀사 |
-| **참 조** | 법무·컴플라이언스 담당 |
-| **발 신** | Legal Agent Orchestrator |
-| **제 목** | {TOPIC} — 토론 트랜스크립트 |
-
----
-
-## 토론 정보
-| | |
-|---|---|
-| **주 제** | {TOPIC} |
-| **참여자** | {AGENT_A_NAME} vs {AGENT_B_NAME} |
-| **일 시** | {DATE} |
-| **라운드** | {N_ROUNDS} |
-
-## Round 1: 개시 의견
-### {AGENT_A_NAME} — 의견
-{debate-round-1-{AGENT_A_ID}-result.md 전문을 Read하여 verbatim 포함. 축약 금지.}
-### {AGENT_B_NAME} — 의견
-{debate-round-1-{AGENT_B_ID}-result.md 전문을 Read하여 verbatim 포함.}
-
-## Round 2: 반론
-### {AGENT_A_NAME} — 반론
-{debate-round-2-{AGENT_A_ID}-result.md 전문.}
-### {AGENT_B_NAME} — 반론
-{debate-round-2-{AGENT_B_ID}-result.md 전문.}
-
-{IF Round 3}
-## Round 3: 최종 반론
-### {AGENT_A_NAME} — 최종 반론
-{debate-round-3-{AGENT_A_ID}-result.md 전문.}
-### {AGENT_B_NAME} — 최종 반론
-{debate-round-3-{AGENT_B_ID}-result.md 전문.}
-{END IF}
-
-[중요] debate-transcript.md는 각 라운드 result.md를 Read하여 verbatim 포함합니다. 축약하지 마세요.
-[중요] debate-opinion.md는 축약·분석·판단 문서입니다. result.md를 그대로 복사하지 말고 요약하고 분석하세요.
+[중요] debate-opinion.md는 축약·분석·판단 문서입니다. result.md와 debate-transcript.md를 그대로 복사하지 말고 요약하고 분석하세요.
 
 {{STYLE_GUIDE_BLOCK}}
 {{ERROR_CONTRACT_BLOCK}}
 
 저장:
 1. {OUTPUT_DIR}/debate-opinion.md
-2. {OUTPUT_DIR}/debate-transcript.md
-3. {OUTPUT_DIR}/writing-meta.json
+2. {OUTPUT_DIR}/writing-meta.json
    {"pattern":"pattern_3","debate_rounds":N,"participants":["AGENT_A_ID","AGENT_B_ID"],"summary":"...","sources":[...],"error":null}
 ```
 
@@ -413,7 +378,22 @@ debate-opinion.md의 "## 7. 시니어 리뷰 의견" 섹션 placeholder를 2-3�
 저장:
 1. {OUTPUT_DIR}/review-result.md
 2. {OUTPUT_DIR}/review-meta.json
-   {"approval":"approved|approved_with_revisions|revision_needed","debate_review":true,"comments":["..."],"error":null}
+   {
+     "approval": "approved|approved_with_revisions|revision_needed",
+     "debate_review": true,
+     "summary": "...",
+     "comments": [
+       {
+         "severity": "critical|major|minor|suggestion",
+         "location": "section/page/paragraph",
+         "issue": "...",
+         "recommendation": "...",
+         "citation": "optional",
+         "status": "open"
+       }
+     ],
+     "error": null
+   }
 ```
 
 Revision cycle:

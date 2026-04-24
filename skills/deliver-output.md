@@ -113,10 +113,12 @@ for f in "$OUTPUT_DIR"/opinion.md \
          "$OUTPUT_DIR"/debate-transcript.md; do
   [ -f "$f" ] || continue
   AUDIT="${f%.md}.deliverable.audit.json"
+  STATUS=0
   python3 "$PROJECT_ROOT/scripts/sanitize-check.py" \
     --in "$f" --out /dev/null \
     --audit "$AUDIT" \
-    --source "deliverable:$(basename "$f")"
+    --source "deliverable:$(basename "$f")" \
+    --fail-on-unescaped || STATUS=$?
   COUNT=$(python3 -c "import json; print(len(json.load(open('$AUDIT', encoding='utf-8'))['matches']))")
   if [ "$COUNT" -gt 0 ]; then
     python3 "$PROJECT_ROOT/scripts/log-event.py" "$OUTPUT_DIR/events.jsonl" \
@@ -124,12 +126,19 @@ for f in "$OUTPUT_DIR"/opinion.md \
       --type deliverable_injection_residue \
       --data-json "$(python3 -c 'import json, sys; print(json.dumps({"file":sys.argv[1],"match_count":int(sys.argv[2]),"audit":sys.argv[3]}, ensure_ascii=False))' "$(basename "$f")" "$COUNT" "$(basename "$AUDIT")")"
   fi
+  if [ "$STATUS" -eq 3 ]; then
+    echo "Unescaped instruction-like text detected in $(basename "$f"); aborting delivery."
+    exit 3
+  elif [ "$STATUS" -ne 0 ]; then
+    exit "$STATUS"
+  fi
 done
 ```
 
 매치가 발견되면:
-- 모든 매치가 이미 `<escape>...</escape>` 태그 안에 있는 경우, 이는 Task 6에서 정상적으로 sanitize된 잔여물입니다. `scripts/md-to-docx.py`가 렌더 직전에 `<escape>` 프레임만 제거하므로 DOCX 생성은 계속할 수 있습니다.
-- `<escape>` 태그 밖의 문구가 매치되면 sanitizer 우회 가능성이 있으므로 사고로 취급합니다. `deliverable_injection_residue` 이벤트를 남기고, DOCX 생성 및 최종 전달을 중단한 뒤 사용자에게 보고합니다.
+- 모든 매치가 이미 `<escape>...</escape>` 태그 안에 있는 경우, 이는 정상적으로 sanitize된 잔여물입니다. `scripts/md-to-docx.py`는 기본 렌더에서 escape 내부 원문을 `[Sanitized instruction-like text omitted]`로 치환합니다.
+- `<escape>` 태그 밖의 문구가 매치되면 `sanitize-check.py --fail-on-unescaped`가 exit 3으로 실패합니다. sanitizer 우회 가능성이 있으므로 사고로 취급하고, `deliverable_injection_residue` 이벤트를 남긴 뒤 DOCX 생성 및 최종 전달을 중단하여 사용자에게 보고합니다.
+- 감사용 DOCX에서 escape 내부 원문을 보존해야 할 때만 `scripts/md-to-docx.py --preserve-escaped-text`를 명시적으로 사용합니다.
 
 ---
 

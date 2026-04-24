@@ -32,12 +32,26 @@ _PATTERN_STRINGS: tuple[str, ...] = (
 _COMPILED_PATTERNS: Final[tuple[re.Pattern[str], ...]] = tuple(
     re.compile(pattern, re.IGNORECASE) for pattern in _PATTERN_STRINGS
 )
+_ESCAPE_BLOCK_RE: Final[re.Pattern[str]] = re.compile(r"<escape>.*?</escape>", re.DOTALL)
 
 
 def _context_snippet(text: str, start: int, end: int) -> str:
     left = max(0, start - _CONTEXT_WINDOW)
     right = min(len(text), end + _CONTEXT_WINDOW)
     return text[left:right]
+
+
+def _escape_inner_ranges(text: str) -> list[tuple[int, int]]:
+    ranges: list[tuple[int, int]] = []
+    for match in _ESCAPE_BLOCK_RE.finditer(text):
+        inner_start = match.start() + len("<escape>")
+        inner_end = match.end() - len("</escape>")
+        ranges.append((inner_start, inner_end))
+    return ranges
+
+
+def _is_inside_range(start: int, end: int, ranges: list[tuple[int, int]]) -> bool:
+    return any(start >= range_start and end <= range_end for range_start, range_end in ranges)
 
 
 def sanitize(text: str | None, *, source: str) -> tuple[str, list[dict[str, object]]]:
@@ -49,6 +63,7 @@ def sanitize(text: str | None, *, source: str) -> tuple[str, list[dict[str, obje
             f"sanitize(): input length {len(text)} exceeds MAX_INPUT_LENGTH={MAX_INPUT_LENGTH}"
         )
 
+    escape_ranges = _escape_inner_ranges(text)
     raw_matches: list[dict[str, object]] = []
     for pattern in _COMPILED_PATTERNS:
         for match in pattern.finditer(text):
@@ -60,6 +75,7 @@ def sanitize(text: str | None, *, source: str) -> tuple[str, list[dict[str, obje
                     "end": match.end(),
                     "source": source,
                     "context": _context_snippet(text, match.start(), match.end()),
+                    "escaped": _is_inside_range(match.start(), match.end(), escape_ranges),
                 }
             )
 
@@ -80,7 +96,8 @@ def sanitize(text: str | None, *, source: str) -> tuple[str, list[dict[str, obje
         filtered_matches.append(match)
 
     sanitised = text
-    for match in sorted(filtered_matches, key=lambda item: int(item["start"]), reverse=True):
+    unescaped_matches = [match for match in filtered_matches if not bool(match["escaped"])]
+    for match in sorted(unescaped_matches, key=lambda item: int(item["start"]), reverse=True):
         start = int(match["start"])
         end = int(match["end"])
         original = sanitised[start:end]

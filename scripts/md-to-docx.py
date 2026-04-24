@@ -22,6 +22,7 @@ Designed for legal-writing-agent output (opinion.md). Handles:
 """
 from __future__ import annotations
 
+import argparse
 import os
 import re
 import sys
@@ -82,11 +83,13 @@ INLINE_PATTERN = re.compile(
     r"(\*\*[^*\n]+?\*\*|`[^`\n]+?`|\*[^*\s][^*\n]*?\*)"
 )
 _ESCAPE_TAG_RE = re.compile(r"<escape>(.*?)</escape>", re.DOTALL)
+ESCAPED_OMISSION_TEXT = "[Sanitized instruction-like text omitted]"
 
 
-def _strip_escape_tags_for_render(md: str) -> str:
-    """Strip sanitizer wrappers before DOCX rendering while preserving the inner text."""
-    return _ESCAPE_TAG_RE.sub(r"\1", md)
+def _render_escape_tags(md: str, *, preserve_escaped_text: bool = False) -> str:
+    """Render sanitizer wrappers according to the delivery policy."""
+    replacement = r"\1" if preserve_escaped_text else ESCAPED_OMISSION_TEXT
+    return _ESCAPE_TAG_RE.sub(replacement, md)
 
 
 def add_inline_runs(para, text: str, base_bold: bool = False, size_pt: float = BODY_SIZE_PT) -> None:
@@ -249,8 +252,11 @@ def setup_document(doc: Document) -> None:
     rFonts.set(qn("w:cs"), ASCII_FONT)
 
 
-def convert(md_path: Path, docx_path: Path) -> None:
-    text = _strip_escape_tags_for_render(md_path.read_text(encoding="utf-8"))
+def convert(md_path: Path, docx_path: Path, *, preserve_escaped_text: bool = False) -> None:
+    text = _render_escape_tags(
+        md_path.read_text(encoding="utf-8"),
+        preserve_escaped_text=preserve_escaped_text,
+    )
     lines = text.split("\n")
 
     doc = Document()
@@ -342,17 +348,23 @@ def convert(md_path: Path, docx_path: Path) -> None:
     doc.save(docx_path)
 
 
-def main() -> int:
-    if len(sys.argv) != 3:
-        print("Usage: md-to-docx.py <input.md> <output.docx>", file=sys.stderr)
-        return 2
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Convert legal-opinion Markdown to DOCX.")
+    parser.add_argument("input_md")
+    parser.add_argument("output_docx")
+    parser.add_argument(
+        "--preserve-escaped-text",
+        action="store_true",
+        help="Preserve text inside <escape> tags instead of omitting it from the rendered DOCX.",
+    )
+    args = parser.parse_args(argv)
     project_root = Path.cwd().resolve()
-    md = _resolve_work_product_path(sys.argv[1], project_root)
-    docx = _resolve_work_product_path(sys.argv[2], project_root)
+    md = _resolve_work_product_path(args.input_md, project_root)
+    docx = _resolve_work_product_path(args.output_docx, project_root)
     if not md.exists():
         print(f"Input not found: {md}", file=sys.stderr)
         return 1
-    convert(md, docx)
+    convert(md, docx, preserve_escaped_text=args.preserve_escaped_text)
     size = docx.stat().st_size
     print(f"Saved {docx} ({size:,} bytes)")
     return 0

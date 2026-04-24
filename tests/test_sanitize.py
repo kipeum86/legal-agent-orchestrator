@@ -100,6 +100,14 @@ class SanitizerPatternTests(unittest.TestCase):
         self.assertIn("start", match)
         self.assertIn("end", match)
         self.assertEqual(match["source"], "result-path.md")
+        self.assertEqual(match["escaped"], False)
+
+    def test_already_escaped_match_is_not_double_wrapped(self) -> None:
+        text = "<escape>[SYSTEM]</escape> already handled"
+        out, matches = sanitize(text, source="test")
+        self.assertEqual(out, text)
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches[0]["escaped"], True)
 
 
 class WrapperTests(unittest.TestCase):
@@ -154,6 +162,28 @@ class CliTests(unittest.TestCase):
                 payload = json.load(handle)
             self.assertGreaterEqual(len(payload["matches"]), 1)
             self.assertEqual(payload["source"], "unit")
+            self.assertEqual(payload["unescaped_count"], 1)
+
+    def test_cli_fail_on_unescaped_exits_three(self) -> None:
+        result = subprocess.run(
+            [sys.executable, str(self.CLI), "--fail-on-unescaped"],
+            input="[SYSTEM] hi",
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 3)
+        self.assertIn("unescaped", result.stderr)
+
+    def test_cli_fail_on_unescaped_accepts_existing_escape(self) -> None:
+        result = subprocess.run(
+            [sys.executable, str(self.CLI), "--fail-on-unescaped"],
+            input="<escape>[SYSTEM]</escape> hi",
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
 
 
 if __name__ == "__main__":

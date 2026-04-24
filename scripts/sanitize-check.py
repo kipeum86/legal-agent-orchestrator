@@ -18,6 +18,10 @@ def _self_test() -> int:
     out, matches = sanitize(sample, source="self-test")
     assert "<escape>[SYSTEM]</escape>" in out, out
     assert any("이전" in str(match["match"]) for match in matches), matches
+    assert any(match["escaped"] is False for match in matches), matches
+    preserved, preserved_matches = sanitize("<escape>[SYSTEM]</escape>", source="self-test")
+    assert preserved == "<escape>[SYSTEM]</escape>", preserved
+    assert preserved_matches[0]["escaped"] is True, preserved_matches
     print("OK - sanitize() roundtrip on EN+KO fixture passed.")
     return 0
 
@@ -29,6 +33,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--audit", dest="audit_path", type=Path, default=None, help="Audit JSON.")
     parser.add_argument("--source", default="cli", help="Source label for audit JSON.")
     parser.add_argument("--self-test", action="store_true", help="Run smoke test and exit.")
+    parser.add_argument(
+        "--fail-on-unescaped",
+        action="store_true",
+        help="Exit 3 if any matched instruction-like text was not already inside <escape> tags.",
+    )
     args = parser.parse_args(argv)
 
     if args.self_test:
@@ -51,11 +60,16 @@ def main(argv: list[str] | None = None) -> int:
         sys.stdout.write(out)
 
     if args.audit_path is not None:
-        payload = {"source": args.source, "matches": matches}
+        unescaped_count = sum(1 for match in matches if not bool(match.get("escaped")))
+        payload = {"source": args.source, "matches": matches, "unescaped_count": unescaped_count}
         args.audit_path.write_text(
             json.dumps(payload, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
+
+    if args.fail_on_unescaped and any(not bool(match.get("escaped")) for match in matches):
+        print("sanitize-check: unescaped instruction-like text detected", file=sys.stderr)
+        return 3
 
     return 0
 

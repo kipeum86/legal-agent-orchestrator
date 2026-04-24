@@ -4,6 +4,34 @@
 
 이 문서는 직전 엔지니어링/프롬프트 감사에서 지적된 문제를 하나씩 수정 가능한 작업 단위로 쪼갠 실행 계획이다. 목표는 새로운 기능을 늘리는 것이 아니라, 현재 오케스트레이터가 이미 약속한 품질, 감사 가능성, 재현성, 토큰 효율을 실제 런타임에서 보장하게 만드는 것이다.
 
+## 실행 완료 상태
+
+상태: **완료**
+
+최종 acceptance gate:
+- `python3 scripts/acceptance-check.py --json`
+- 결과: `engineering-audit-acceptance-report.md` 기준 **12/12 PASS**
+
+운영 smoke:
+- `python3 -m unittest`
+- `python3 scripts/sanitize-check.py --self-test`
+- `python3 scripts/smoke-check.py`
+
+구현 추적:
+
+| 범위 | 주요 산출물 | 검증 |
+|---|---|---|
+| Phase 0-1 기반 계약 | `OUTPUT_DIR` 계약, tracked `legal-writing-formatting-guide.md`, public fixtures | `scripts/smoke-check.py`, `tests/test_generate_case_report.py` |
+| Phase 2 이벤트/schema | `scripts/log-event.py`, `schemas/*.schema.json`, `scripts/validate-case.py` | `tests/test_log_event.py`, `tests/test_validate_case.py` |
+| Phase 3 결정적 조립 | `scripts/merge-sources.py`, `scripts/finalize-case.py`, case-report meta discovery | `tests/test_merge_sources.py`, `tests/test_finalize_case.py`, `tests/test_generate_case_report.py` |
+| Phase 4 라우팅 안정화 | `schemas/routing.schema.json`, `scripts/select-route.py`, `scripts/lib/routing.py` | `tests/test_routing.py` |
+| Phase 5 토큰/토론 효율 | `skills/prompt-templates/`, `scripts/build-debate-transcript.py`, `scripts/decide-debate-round3.py` | `tests/test_prompt_templates.py`, `tests/test_build_debate_transcript.py`, `tests/test_decide_debate_round3.py` |
+| Phase 6 안전성 강화 | `sanitize-check.py --fail-on-unescaped`, DOCX escape omission policy | `tests/test_sanitize.py`, `tests/test_md_to_docx_escape_policy.py` |
+| Phase 7 재현성 | `agents.lock`, `scripts/agent-lock.py`, pinned `.mcp.json`, MCP monitor workflow | `tests/test_agent_lock.py`, `tests/test_mcp_pins.py` |
+| 최종 수락 | `scripts/acceptance-check.py`, `engineering-audit-acceptance-report.md` | `tests/test_acceptance_check.py` |
+
+이 문서의 아래 섹션들은 원래 실행 계획을 보존한다. 향후 회귀나 scope 변경이 생기면 위 acceptance gate를 먼저 갱신한 뒤 해당 Phase 항목을 수정한다.
+
 ## 원칙
 
 1. 하위 agent 레포의 `CLAUDE.md`, skills, KB는 수정하지 않는다.

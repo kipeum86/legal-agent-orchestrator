@@ -15,6 +15,7 @@ from typing import Any
 GRADES = {"A", "B", "C", "D"}
 REVIEW_APPROVALS = {"approved", "approved_with_revisions", "revision_needed"}
 REVIEW_SEVERITIES = {"critical", "major", "minor", "suggestion"}
+ROUTING_COMPLEXITIES = {"simple", "compound", "multi_domain", "adversarial"}
 
 
 def read_json(path: Path) -> Any | None:
@@ -72,6 +73,16 @@ def validate_events(case_dir: Path) -> tuple[list[str], list[str]]:
 
         data = require_mapping(event.get("data"), f"{label}.data", errors)
         event_type = str(event.get("type") or "")
+        if event_type == "case_classified":
+            for key in ("jurisdictions", "domains", "tasks", "complexity", "confidence", "pipeline", "pattern"):
+                if key not in data:
+                    errors.append(f"{label}: case_classified.data missing {key}")
+            for key in ("jurisdictions", "domains", "tasks", "pipeline"):
+                if key in data and not isinstance(data.get(key), list):
+                    errors.append(f"{label}: case_classified.data.{key} must be an array")
+            complexity = str(data.get("complexity") or "")
+            if complexity and complexity not in ROUTING_COMPLEXITIES:
+                errors.append(f"{label}: invalid complexity {complexity}")
         if event_type == "source_graded":
             for key in ("agent_id", "source", "grade", "citation"):
                 if not str(data.get(key) or "").strip():

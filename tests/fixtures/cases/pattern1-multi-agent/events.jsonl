@@ -1,5 +1,5 @@
 {"id":"evt_001","ts":"2026-04-24T00:00:00Z","agent":"orchestrator","type":"case_received","data":{"query":"합성 개인정보 비교 질의","case_id":"pattern1-multi-agent"}}
-{"id":"evt_002","ts":"2026-04-24T00:00:01Z","agent":"orchestrator","type":"case_classified","data":{"jurisdiction":["KR","EU"],"domain":"data_protection","task":"research","complexity":"multi_domain","pipeline":["PIPA-expert","GDPR-expert","legal-writing-agent","second-review-agent"],"pattern":"pattern_1"}}
+{"id":"evt_002","ts":"2026-04-24T00:00:01Z","agent":"orchestrator","type":"case_classified","data":{"jurisdictions":["KR","EU"],"domains":["data_protection"],"tasks":["research"],"complexity":"multi_domain","confidence":1.0,"ambiguity":[],"pipeline":["PIPA-expert","GDPR-expert","legal-writing-agent","second-review-agent"],"pattern":"pattern_1"}}
 {"id":"evt_003","ts":"2026-04-24T00:00:02Z","agent":"PIPA-expert","type":"agent_assigned","data":{"agent_id":"PIPA-expert","name":"개인정보보호법 스페셜리스트","role":"한국 개인정보보호법"}}
 {"id":"evt_004","ts":"2026-04-24T00:00:03Z","agent":"GDPR-expert","type":"agent_assigned","data":{"agent_id":"GDPR-expert","name":"GDPR 스페셜리스트","role":"EU 데이터보호법"}}
 {"id":"evt_005","ts":"2026-04-24T00:00:04Z","agent":"PIPA-expert","type":"source_graded","data":{"agent_id":"PIPA-expert","source":"개인정보 보호법","grade":"A","citation":"제28조의8","relevance":"합성 fixture"}}

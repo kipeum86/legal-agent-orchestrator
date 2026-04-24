@@ -247,6 +247,14 @@ def shorten(text: str, limit: int = 96) -> str:
     return compact[: limit - 3].rstrip() + "..."
 
 
+def list_text(value: Any) -> list[str]:
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if str(item).strip()]
+    if isinstance(value, str) and value.strip():
+        return [value.strip()]
+    return []
+
+
 def derive_summary(
     research_meta: dict[str, Any] | None,
     writing_meta: dict[str, Any] | None,
@@ -453,14 +461,21 @@ def render_single_event(event: dict[str, Any], pattern: int) -> tuple[str, list[
         if isinstance(pipeline, list) and pipeline:
             pipeline_names = " → ".join(agent_name(str(agent), None) for agent in pipeline)
             bullets.append(f"- 파이프라인: {pipeline_names}")
-        jurisdiction = data.get("jurisdiction")
-        if isinstance(jurisdiction, list) and jurisdiction:
-            bullets.append(f"- 관할: {', '.join(str(item) for item in jurisdiction)}")
-        domain = str(data.get("domain") or "").strip()
-        task = str(data.get("task") or "").strip()
-        if domain or task:
-            labels = [label for label in (domain, task) if label]
+        jurisdictions = list_text(data.get("jurisdictions")) or list_text(data.get("jurisdiction"))
+        if jurisdictions:
+            bullets.append(f"- 관할: {', '.join(jurisdictions)}")
+        domains = list_text(data.get("domains")) or list_text(data.get("domain"))
+        tasks = list_text(data.get("tasks")) or list_text(data.get("task"))
+        labels = []
+        if domains:
+            labels.append(f"domains={'+'.join(domains)}")
+        if tasks:
+            labels.append(f"tasks={'+'.join(tasks)}")
+        if labels:
             bullets.append(f"- 작업 유형: {' / '.join(labels)}")
+        confidence = data.get("confidence")
+        if isinstance(confidence, (int, float)):
+            bullets.append(f"- 분류 신뢰도: {confidence:.2f}")
         return heading, bullets
 
     if event_type == "agent_assigned":

@@ -1,0 +1,115 @@
+[
+  {
+    "name": "kr_game_research",
+    "classification": {
+      "jurisdictions": ["KR"],
+      "domains": ["game_regulation"],
+      "tasks": ["research"],
+      "complexity": "simple",
+      "confidence": 0.95,
+      "ambiguity": []
+    },
+    "expected_pattern": "pattern_2",
+    "expected_pipeline": ["game-legal-research", "legal-writing-agent", "second-review-agent"],
+    "expected_route_mode": "game_regulation"
+  },
+  {
+    "name": "kr_eu_data_parallel",
+    "classification": {
+      "jurisdictions": ["KR", "EU"],
+      "domains": ["data_protection"],
+      "tasks": ["research"],
+      "complexity": "multi_domain",
+      "confidence": 0.95,
+      "ambiguity": []
+    },
+    "expected_pattern": "pattern_1",
+    "expected_pipeline": ["PIPA-expert", "GDPR-expert", "legal-writing-agent", "second-review-agent"],
+    "expected_parallel_agents": ["PIPA-expert", "GDPR-expert"]
+  },
+  {
+    "name": "nda_contract_drafting",
+    "classification": {
+      "jurisdictions": [],
+      "domains": ["contract"],
+      "tasks": ["drafting"],
+      "complexity": "compound",
+      "confidence": 0.9,
+      "ambiguity": []
+    },
+    "expected_pattern": "pattern_2",
+    "expected_pipeline": ["contract-review-agent", "second-review-agent"],
+    "expected_route_mode": "contract_drafting_wf5"
+  },
+  {
+    "name": "contract_review_then_translation",
+    "classification": {
+      "jurisdictions": [],
+      "domains": ["contract", "translation"],
+      "tasks": ["contract_review", "translation"],
+      "complexity": "compound",
+      "confidence": 0.9,
+      "ambiguity": []
+    },
+    "expected_pattern": "pattern_2",
+    "expected_pipeline": ["contract-review-agent", "legal-translation-agent", "second-review-agent"],
+    "expected_route_mode": "contract_review_then_translation"
+  },
+  {
+    "name": "game_data_kr_eu_parallel",
+    "classification": {
+      "jurisdictions": ["KR", "EU"],
+      "domains": ["game_regulation", "data_protection"],
+      "tasks": ["drafting"],
+      "complexity": "multi_domain",
+      "confidence": 0.9,
+      "ambiguity": []
+    },
+    "expected_pattern": "pattern_1",
+    "expected_pipeline": ["game-legal-research", "PIPA-expert", "GDPR-expert", "legal-writing-agent", "second-review-agent"],
+    "expected_parallel_agents": ["game-legal-research", "PIPA-expert", "GDPR-expert"]
+  },
+  {
+    "name": "contract_data_kr_parallel",
+    "classification": {
+      "jurisdictions": ["KR"],
+      "domains": ["contract", "data_protection"],
+      "tasks": ["contract_review"],
+      "complexity": "multi_domain",
+      "confidence": 0.9,
+      "ambiguity": []
+    },
+    "expected_pattern": "pattern_1",
+    "expected_pipeline": ["contract-review-agent", "PIPA-expert", "legal-writing-agent", "second-review-agent"],
+    "expected_parallel_agents": ["contract-review-agent", "PIPA-expert"],
+    "expected_route_mode": "contract_and_data_protection"
+  },
+  {
+    "name": "translation_only",
+    "classification": {
+      "jurisdictions": [],
+      "domains": ["translation"],
+      "tasks": ["translation"],
+      "complexity": "simple",
+      "confidence": 0.95,
+      "ambiguity": []
+    },
+    "expected_pattern": "pattern_2",
+    "expected_pipeline": ["legal-translation-agent"],
+    "expected_route_mode": "translation_only"
+  },
+  {
+    "name": "briefing_out_of_scope",
+    "classification": {
+      "jurisdictions": [],
+      "domains": ["game_regulation"],
+      "tasks": ["briefing"],
+      "complexity": "simple",
+      "confidence": 0.95,
+      "ambiguity": []
+    },
+    "expected_pattern": "out_of_scope",
+    "expected_pipeline": [],
+    "expected_route_mode": "briefing_not_orchestrated"
+  }
+]

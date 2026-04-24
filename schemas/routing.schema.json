@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Legal Agent Orchestrator Routing Classification",
+  "type": "object",
+  "required": ["jurisdictions", "domains", "tasks", "complexity", "confidence"],
+  "properties": {
+    "jurisdictions": {
+      "type": "array",
+      "items": {
+        "enum": ["KR", "EU", "US", "JP", "international", "multi", "other"]
+      }
+    },
+    "domains": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "enum": ["general", "data_protection", "game_regulation", "contract", "translation"]
+      }
+    },
+    "tasks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "enum": ["research", "drafting", "contract_review", "translation", "debate", "briefing"]
+      }
+    },
+    "complexity": {
+      "enum": ["simple", "compound", "multi_domain", "adversarial"]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "ambiguity": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": true
+}

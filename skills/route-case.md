@@ -16,10 +16,12 @@
 
 ```json
 {
-  "jurisdiction": ["KR", "EU", "US", "JP", "international", "multi"],
-  "domain": "general | data_protection | game_regulation | contract | translation",
-  "task": "research | drafting | contract_review | translation | debate",
-  "complexity": "simple | compound | multi_domain | adversarial"
+  "jurisdictions": ["KR", "EU"],
+  "domains": ["data_protection"],
+  "tasks": ["research"],
+  "complexity": "simple | compound | multi_domain | adversarial",
+  "confidence": 0.0,
+  "ambiguity": []
 }
 ```
 
@@ -27,31 +29,33 @@
 
 | 차원 | 값 | 의미 |
 |------|-----|------|
-| **jurisdiction** | `KR`, `EU`, `US`, `JP`, `international`, `multi` | 적용 법역. 복수 가능 (배열). `international`은 특정 국가 아닌 국제 규제 (예: UNCITRAL). `multi`는 3개 이상. |
-| **domain** | `general`, `data_protection`, `game_regulation`, `contract`, `translation` | 법적 분야. `general`은 분류 모호 또는 도메인 특화되지 않은 일반 법률 질문. |
-| **task** | `research`, `drafting`, `contract_review`, `translation`, `debate` | 사용자가 원하는 작업 유형. `drafting`은 의견서/문서 작성. `contract_review`는 계약서 특화 검토. |
+| **jurisdictions** | `KR`, `EU`, `US`, `JP`, `international`, `multi`, `other` | 적용 법역 배열. `international`은 특정 국가 아닌 국제 규제, `multi`는 3개 이상으로 아직 축소되지 않은 상태. |
+| **domains** | `general`, `data_protection`, `game_regulation`, `contract`, `translation` | 법적 분야 배열. 복합 사건은 `contract+translation` 문자열 대신 `["contract","translation"]`로 기록. |
+| **tasks** | `research`, `drafting`, `contract_review`, `translation`, `debate`, `briefing` | 사용자가 원하는 작업 유형 배열. 복합 요청은 배열로 기록. |
 | **complexity** | `simple`, `compound`, `multi_domain`, `adversarial` | 실행 패턴 결정. `simple`=에이전트 1개, `compound`=파이프라인 순차, `multi_domain`=병렬 멀티 전문가(Pattern 1), `adversarial`=토론(Pattern 3) |
+| **confidence** | `0.0`~`1.0` | 분류 신뢰도. 낮으면 `ambiguity`를 채우고 fallback 또는 사용자 명확화 질문. |
+| **ambiguity** | 문자열 배열 | 모호한 차원 또는 추가 확인 필요 사항. |
 
 ### Few-shot 예시
 
-| 질문 | jurisdiction | domain | task | complexity | 파이프라인 |
+| 질문 | jurisdictions | domains | tasks | complexity | 파이프라인 |
 |------|-------------|--------|------|-----------|-----------|
-| "한국 게임산업법의 확률형 아이템 규제" | `["KR"]` | `game_regulation` | `research` | `simple` | game-legal-research → writing → review |
-| "개인정보보호법 제28조의2 해석" | `["KR"]` | `data_protection` | `research` | `simple` | PIPA-expert → writing → review |
-| "EU GDPR Article 28 DPA 해석" | `["EU"]` | `data_protection` | `research` | `simple` | GDPR-expert → writing → review |
-| "한국과 EU의 국외이전 규제 비교" | `["KR","EU"]` | `data_protection` | `research` | `multi_domain` | **[PIPA ∥ GDPR]** → writing → review |
-| "한국 SaaS가 EU 유저 데이터 처리할 때 GDPR 컴플라이언스" | `["KR","EU"]` | `data_protection` | `research` | `multi_domain` | **[PIPA ∥ GDPR]** → writing → review |
-| "미국 CCPA와 한국 PIPA의 동의 요건 차이" | `["US","KR"]` | `data_protection` | `research` | `multi_domain` | **[general-legal-research ∥ PIPA]** → writing → review *(US 전문가 부재 → general이 US 커버)* |
-| "일본 게임사가 한국 출시할 때 규제" | `["JP","KR"]` | `game_regulation` | `research` | `simple` | game-legal-research → writing → review *(game-legal-research가 국제 게임 규제 전문이라 JP+KR 단일 에이전트로 충분)* |
-| "확률형 아이템 규제가 EU 소비자법과 어떻게 상호작용하는지" | `["KR","EU"]` | `game_regulation` | `research` | `multi_domain` | **[game-legal-research ∥ GDPR]** → writing → review |
-| "이 계약서 검토해줘" | — | `contract` | `contract_review` | `simple` | contract-review-agent → review |
-| "NDA 초안 작성해줘" | — | `contract` | `drafting` | `compound` | contract-review-agent(WF5) → review |
-| "법률 의견서를 작성해줘" (도메인 모호) | — | `general` | `drafting` | `compound` | general-legal-research → writing → review |
-| "이 문서를 영어로 번역해줘" | — | `translation` | `translation` | `simple` | legal-translation-agent (단독) |
-| "계약서를 검토하고 리스크 조항을 영어로 번역" | — | `contract`+`translation` | `contract_review`+`translation` | `compound` | contract-review-agent → legal-translation-agent → review |
-| "한국 게임사의 EU 진출 시 GDPR 컴플라이언스 종합 의견서" | `["KR","EU"]` | `game_regulation`+`data_protection` | `drafting` | `multi_domain` | **[game-legal-research ∥ GDPR]** → writing → review |
-| "양측 의견을 들려줘" / "논쟁 보고 싶다" | `multi` | (상황) | `debate` | `adversarial` | Pattern 3 → `manage-debate.md` |
-| "이 분야 최신 동향" | — | — | `briefing` | — | **라우팅 대상 아님** — briefing 도구는 독립 Python 앱. 사용자에게 안내: "뉴스 브리핑은 별도 `game-legal-briefing` / `game-policy-briefing` 도구로 운영됩니다." |
+| "한국 게임산업법의 확률형 아이템 규제" | `["KR"]` | `["game_regulation"]` | `["research"]` | `simple` | game-legal-research → writing → review |
+| "개인정보보호법 제28조의2 해석" | `["KR"]` | `["data_protection"]` | `["research"]` | `simple` | PIPA-expert → writing → review |
+| "EU GDPR Article 28 DPA 해석" | `["EU"]` | `["data_protection"]` | `["research"]` | `simple` | GDPR-expert → writing → review |
+| "한국과 EU의 국외이전 규제 비교" | `["KR","EU"]` | `["data_protection"]` | `["research"]` | `multi_domain` | **[PIPA ∥ GDPR]** → writing → review |
+| "한국 SaaS가 EU 유저 데이터 처리할 때 GDPR 컴플라이언스" | `["KR","EU"]` | `["data_protection"]` | `["research"]` | `multi_domain` | **[PIPA ∥ GDPR]** → writing → review |
+| "미국 CCPA와 한국 PIPA의 동의 요건 차이" | `["US","KR"]` | `["data_protection"]` | `["research"]` | `multi_domain` | **[general-legal-research ∥ PIPA]** → writing → review *(US 전문가 부재 → general이 US 커버)* |
+| "일본 게임사가 한국 출시할 때 규제" | `["JP","KR"]` | `["game_regulation"]` | `["research"]` | `simple` | game-legal-research → writing → review *(game-legal-research가 국제 게임 규제 전문이라 JP+KR 단일 에이전트로 충분)* |
+| "확률형 아이템 규제가 EU 소비자법과 어떻게 상호작용하는지" | `["KR","EU"]` | `["game_regulation","data_protection"]` | `["research"]` | `multi_domain` | **[game-legal-research ∥ GDPR]** → writing → review |
+| "이 계약서 검토해줘" | `[]` | `["contract"]` | `["contract_review"]` | `simple` | contract-review-agent → review |
+| "NDA 초안 작성해줘" | `[]` | `["contract"]` | `["drafting"]` | `compound` | contract-review-agent(WF5) → review |
+| "법률 의견서를 작성해줘" (도메인 모호) | `[]` | `["general"]` | `["drafting"]` | `compound` | general-legal-research → writing → review |
+| "이 문서를 영어로 번역해줘" | `[]` | `["translation"]` | `["translation"]` | `simple` | legal-translation-agent (단독) |
+| "계약서를 검토하고 리스크 조항을 영어로 번역" | `[]` | `["contract","translation"]` | `["contract_review","translation"]` | `compound` | contract-review-agent → legal-translation-agent → review |
+| "한국 게임사의 EU 진출 시 GDPR 컴플라이언스 종합 의견서" | `["KR","EU"]` | `["game_regulation","data_protection"]` | `["drafting"]` | `multi_domain` | **[game-legal-research ∥ PIPA ∥ GDPR]** → writing → review |
+| "양측 의견을 들려줘" / "논쟁 보고 싶다" | `["multi"]` | 상황별 배열 | `["debate"]` | `adversarial` | Pattern 3 → `manage-debate.md` |
+| "이 분야 최신 동향" | `[]` | 상황별 배열 | `["briefing"]` | `simple` | **라우팅 대상 아님** — briefing 도구는 독립 Python 앱. |
 
 ---
 
@@ -74,49 +78,65 @@
 
 ## Step 3: 라우팅 트리
 
-분류 결과로부터 파이프라인을 결정합니다. **우선순위는 위에서 아래로**, 첫 매치되는 규칙을 적용하세요.
+분류 결과로부터 파이프라인을 결정합니다. 가능하면 deterministic selector를 먼저 사용하세요:
+
+```bash
+python3 "$PROJECT_ROOT/scripts/select-route.py" "$OUTPUT_DIR/classification.json" \
+  > "$OUTPUT_DIR/route-selection.json"
+```
+
+`route-selection.json`의 `pipeline`, `pattern`, `parallel_agents`, `route_mode`를 실행 계약의 정본으로 사용합니다. 수동 판단이 필요한 경우에도 아래 라우팅 트리를 같은 배열 기반 조건으로 적용하세요. **우선순위는 위에서 아래로**, 첫 매치되는 규칙을 적용하세요.
 
 ```
 질문 입력
   │
-  ├─ task == "translation"
-  │   → legal-translation-agent (단독)
+  ├─ "briefing" in tasks
+  │   → 라우팅 대상 아님. 독립 briefing 도구 안내
   │
-  ├─ task == "drafting" && domain == "contract"
-  │   → contract-review-agent (WF5 drafting 모드) → second-review
-  │
-  ├─ task == "contract_review" || domain == "contract"
-  │   → contract-review-agent → second-review
-  │
-  ├─ complexity == "adversarial" (토론 명시 요청)
+  ├─ complexity == "adversarial" || "debate" in tasks
   │   → skills/manage-debate.md 참조 (Pattern 3 멀티라운드 토론)
   │   → 참여자 2명은 아래 Debate 참여자 매트릭스 참조
   │
+  ├─ "translation" in tasks && "contract" in domains
+  │   → contract-review-agent → legal-translation-agent → second-review
+  │
+  ├─ "translation" in tasks && domains ⊆ {"translation", "general"}
+  │   → legal-translation-agent (단독)
+  │
+  ├─ "drafting" in tasks && "contract" in domains
+  │   → contract-review-agent (WF5 drafting 모드) → second-review
+  │
+  ├─ domains ⊇ {contract, data_protection}
+  │   → [contract-review-agent ∥ 개인정보 관할권 전문가] → legal-writing → second-review
+  │
+  ├─ "contract_review" in tasks || domains == ["contract"]
+  │   → contract-review-agent → second-review
+  │
   ├─ complexity == "multi_domain" (복수 관할권/도메인 — Pattern 1, 최대 3 에이전트)
   │   │
-  │   ├─ domain == "data_protection"
-  │   │   → jurisdiction에 따른 병렬 조합 (아래 "Multi_domain 매트릭스" 참조)
+  │   ├─ "data_protection" in domains
+  │   │   → jurisdictions에 따른 병렬 조합 (아래 "Multi_domain 매트릭스" 참조)
   │   │
-  │   ├─ domain == "contract" && (다관할권 계약법)
+  │   ├─ "contract" in domains && (다관할권 계약법)
   │   │   → [contract-review-agent ∥ general-legal-research] → legal-writing → second-review
   │   │
-  │   ├─ domain ⊇ {game_regulation, data_protection}
+  │   ├─ domains ⊇ {game_regulation, data_protection}
   │   │   → 아래 매트릭스의 game+data 행 참조
   │   │
-  │   └─ domain == "game_regulation" (jurisdiction 복수)
+  │   └─ domains == ["game_regulation"] (jurisdictions 복수)
   │       → game-legal-research 단독 (cross-jurisdiction은 본래 설계 목적)
   │       → legal-writing → second-review
   │
-  ├─ domain == "data_protection" (단일 관할권)
-  │   ├─ jurisdiction == ["KR"] → PIPA-expert → legal-writing → second-review
-  │   ├─ jurisdiction == ["EU"] → GDPR-expert → legal-writing → second-review
-  │   └─ jurisdiction == ["US"|기타] → general-legal-research → legal-writing → second-review
+  ├─ "data_protection" in domains (단일 관할권)
+  │   ├─ jurisdictions == ["KR"] → PIPA-expert → legal-writing → second-review
+  │   ├─ jurisdictions == ["EU"] → GDPR-expert → legal-writing → second-review
+  │   └─ jurisdictions == ["US"|기타] → general-legal-research → legal-writing → second-review
   │
-  ├─ domain == "game_regulation" (어떤 관할권이든)
+  ├─ "game_regulation" in domains (어떤 관할권이든)
   │   → game-legal-research → legal-writing → second-review
   │   (도메인 특화 원칙: 게임 도메인은 항상 game-legal-research. KR 단일 게임법 질문도 포함)
   │
-  ├─ task == "research" && domain == "general"
+  ├─ "research" in tasks && domains == ["general"]
   │   → general-legal-research → legal-writing → second-review
   │
   └─ 분류 모호 (fallback)
@@ -290,7 +310,7 @@ python3 "$PROJECT_ROOT/scripts/log-event.py" "$OUTPUT_DIR/events.jsonl" \
 python3 "$PROJECT_ROOT/scripts/log-event.py" "$OUTPUT_DIR/events.jsonl" \
   --agent orchestrator \
   --type case_classified \
-  --data-json '{"jurisdiction":["KR"],"domain":"DOMAIN","task":"TASK","complexity":"COMPLEXITY","pipeline":["AGENT1","AGENT2","AGENT3"],"pattern":"pattern_1"}'
+  --data-json "$(python3 -c 'import json, sys; route=json.load(open(sys.argv[1], encoding="utf-8")); data=dict(route["classification"]); data.update({"pipeline":route.get("pipeline",[]),"pattern":route.get("pattern"),"route_mode":route.get("route_mode"),"parallel_agents":route.get("parallel_agents",[])}); print(json.dumps(data, ensure_ascii=False))' "$OUTPUT_DIR/route-selection.json")"
 ```
 
 그런 다음 CLAUDE.md의 Step 3(에이전트 디스패치)으로 돌아가서 파이프라인의 각 에이전트를 순서대로(또는 병렬로) 호출하세요.
@@ -624,7 +644,7 @@ v2에서 추가/확장된 이벤트 타입. `case-report.md` 생성과 디버깅
 | Event type | Phase | data 필수 필드 | 용도 |
 |------------|-------|---------------|------|
 | `case_received` | P1 | `query`, `case_id` | 사건 접수 |
-| `case_classified` | P1 | `jurisdiction[]`, `domain`, `task`, `complexity`, `pipeline[]`, `pattern` | 분류 결과. **v2 추가:** `ambiguity` (선택) |
+| `case_classified` | P1 | `jurisdictions[]`, `domains[]`, `tasks[]`, `complexity`, `confidence`, `pipeline[]`, `pattern` | 배열 기반 분류 결과. `ambiguity[]`, `route_mode`, `parallel_agents[]` 선택 |
 | `agent_assigned` | P1 | `agent_id`, `name`, `role` | 에이전트 디스패치 |
 | `source_graded` | P1 | `agent_id`, `source`, `grade`, `citation` | 각 에이전트의 소스 등급 평가 |
 | `agent_completed` | P1 | `agent_id`, `sources_count`, `result_path` | 에이전트 작업 완료 |

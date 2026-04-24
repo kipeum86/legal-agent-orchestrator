@@ -26,6 +26,48 @@
   "allOf": [
     {
       "if": {
+        "properties": { "type": { "const": "case_classified" } }
+      },
+      "then": {
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["jurisdictions", "domains", "tasks", "complexity", "confidence", "pipeline", "pattern"],
+            "properties": {
+              "jurisdictions": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "domains": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "tasks": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "complexity": {
+                "enum": ["simple", "compound", "multi_domain", "adversarial"]
+              },
+              "confidence": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "pipeline": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "pattern": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
         "properties": { "type": { "const": "source_graded" } }
       },
       "then": {

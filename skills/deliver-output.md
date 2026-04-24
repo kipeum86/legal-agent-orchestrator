@@ -8,10 +8,10 @@
 
 ## Step 1: 결과물 확인
 
-기본 work-product 디렉토리(`$PRIVATE_DIR/{CASE_ID}`; env 미설정 시 `output/{CASE_ID}`와 동일)의 파일을 확인하세요:
+기본 work-product 디렉토리(`$OUTPUT_DIR`; env 미설정 시 `output/{CASE_ID}`와 동일)의 파일을 확인하세요:
 
 ```bash
-ls -la "$PRIVATE_DIR/$CASE_ID/"
+ls -la "$OUTPUT_DIR/"
 ```
 
 **필수 파일:**
@@ -26,7 +26,7 @@ ls -la "$PRIVATE_DIR/$CASE_ID/"
 각 에이전트의 meta.json에서 sources를 추출하여 통합 sources.json을 생성하세요:
 
 ```bash
-# sources.json 생성은 수동으로: 각 *-meta.json을 Read하여 sources 배열을 추출하고 병합
+python3 "$PROJECT_ROOT/scripts/merge-sources.py" "$OUTPUT_DIR"
 ```
 
 **sources.json 형식:**
@@ -45,10 +45,7 @@ ls -la "$PRIVATE_DIR/$CASE_ID/"
 }
 ```
 
-각 meta.json을 Read하여 sources 배열을 추출하고, 위 형식으로 병합한 뒤 파일로 저장:
-```bash
-# Write tool로 $PRIVATE_DIR/$CASE_ID/sources.json에 저장
-```
+`merge-sources.py`는 모든 `*-meta.json`과 `events.jsonl`의 `source_graded` 이벤트를 함께 읽고, 같은 agent 안에서 `(title, citation)` 기준으로 중복을 제거합니다. 수동 작성 대신 이 스크립트를 사용해야 `agent_id`, grade 분포, citation 필드가 일관됩니다.
 
 ---
 
@@ -57,43 +54,66 @@ ls -la "$PRIVATE_DIR/$CASE_ID/"
 파이프라인 완료 이벤트를 기록하세요:
 
 ```bash
-echo '{"id":"evt_final","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestrator","type":"final_output","data":{"file_path":"'"$PRIVATE_DIR"'/'"$CASE_ID"'/opinion.md","format":"markdown","summary":"FINAL_SUMMARY","total_sources":N,"grade_distribution":{"A":0,"B":0,"C":0,"D":0}}}' >> "$PRIVATE_DIR/$CASE_ID/events.jsonl"
+python3 "$PROJECT_ROOT/scripts/log-event.py" "$OUTPUT_DIR/events.jsonl" \
+  --agent orchestrator \
+  --type final_output \
+  --final \
+  --data-json "$(python3 -c 'import json, sys; sources=json.load(open(sys.argv[1], encoding="utf-8")); print(json.dumps({"case_id":sys.argv[2],"file_path":sys.argv[3],"format":"markdown","summary":"FINAL_SUMMARY","total_sources":sources.get("total_sources",0),"grade_distribution":sources.get("grade_distribution",{})}, ensure_ascii=False))' "$OUTPUT_DIR/sources.json" "$CASE_ID" "$OUTPUT_DIR/opinion.md")"
 ```
 
 <!-- IF pattern == pattern_3 (토론) -->
 ```bash
-echo '{"id":"evt_final","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestrator","type":"final_output","data":{"case_id":"'"$CASE_ID"'","pattern":"pattern_3","primary_deliverable":"'"$PRIVATE_DIR"'/'"$CASE_ID"'/debate-opinion.docx","deliverables":["'"$PRIVATE_DIR"'/'"$CASE_ID"'/debate-opinion.docx","'"$PRIVATE_DIR"'/'"$CASE_ID"'/debate-transcript.docx","'"$PRIVATE_DIR"'/'"$CASE_ID"'/sources.json"],"summary":"VERDICT_SUMMARY","total_sources":N,"grade_distribution":{"A":0,"B":0,"C":0,"D":0}}}' >> "$PRIVATE_DIR/$CASE_ID/events.jsonl"
+python3 "$PROJECT_ROOT/scripts/log-event.py" "$OUTPUT_DIR/events.jsonl" \
+  --agent orchestrator \
+  --type final_output \
+  --final \
+  --data-json "$(python3 -c 'import json, sys; sources=json.load(open(sys.argv[1], encoding="utf-8")); print(json.dumps({"case_id":sys.argv[2],"pattern":"pattern_3","primary_deliverable":sys.argv[3],"deliverables":[sys.argv[3],sys.argv[4],sys.argv[5]],"summary":"VERDICT_SUMMARY","total_sources":sources.get("total_sources",0),"grade_distribution":sources.get("grade_distribution",{})}, ensure_ascii=False))' "$OUTPUT_DIR/sources.json" "$CASE_ID" "$OUTPUT_DIR/debate-opinion.docx" "$OUTPUT_DIR/debate-transcript.docx" "$OUTPUT_DIR/sources.json")"
 ```
 <!-- END IF -->
 
 ---
 
-## Step 4: case-report.md 생성
+## Step 4: 산출물 계약 검증
+
+최종 전달 전에 case directory의 구조적 오류를 점검하세요. `warn` 모드는 경고와 오류를 모두 보고하지만 파이프라인을 즉시 중단하지 않습니다.
+
+```bash
+python3 "$PROJECT_ROOT/scripts/validate-case.py" "$OUTPUT_DIR" --mode warn \
+  > "$OUTPUT_DIR/case-validation.json"
+```
+
+`case-validation.json`의 `errors`가 비어 있지 않다면:
+- 누락된 필수 필드(`citation`, `summary`, `sources`, review comment object 등)를 가능한 경우 보정합니다.
+- 보정할 수 없는 경우 최종 전달 메시지에 구조적 오류를 명시합니다.
+
+---
+
+## Step 5: case-report.md 생성
 
 최종 전달 직전에 반드시 `case-report.md`를 생성하세요.
 
 ```bash
-python3 "$PROJECT_ROOT/scripts/generate-case-report.py" "$PRIVATE_DIR/$CASE_ID"
+python3 "$PROJECT_ROOT/scripts/generate-case-report.py" "$OUTPUT_DIR"
 ```
 
 생성 후 확인:
 
 ```bash
-[ -f "$PRIVATE_DIR/$CASE_ID/case-report.md" ]
+[ -f "$OUTPUT_DIR/case-report.md" ]
 ```
 
 `events.jsonl`이 없는 smoke test 디렉토리라면 생성이 skip될 수 있습니다. 이 경우에도 파이프라인 자체를 실패로 처리하지는 않습니다.
 
 ---
 
-## Step 5: 최종 인젝션 잔여물 스캔
+## Step 6: 최종 인젝션 잔여물 스캔
 
 DOCX 생성 또는 최종 전달 직전에, 최종 opinion/transcript markdown에 injection 잔여물이 남아있지 않은지 확인합니다.
 
 ```bash
-for f in "$PRIVATE_DIR/$CASE_ID"/opinion.md \
-         "$PRIVATE_DIR/$CASE_ID"/debate-opinion.md \
-         "$PRIVATE_DIR/$CASE_ID"/debate-transcript.md; do
+for f in "$OUTPUT_DIR"/opinion.md \
+         "$OUTPUT_DIR"/debate-opinion.md \
+         "$OUTPUT_DIR"/debate-transcript.md; do
   [ -f "$f" ] || continue
   AUDIT="${f%.md}.deliverable.audit.json"
   python3 "$PROJECT_ROOT/scripts/sanitize-check.py" \
@@ -102,8 +122,10 @@ for f in "$PRIVATE_DIR/$CASE_ID"/opinion.md \
     --source "deliverable:$(basename "$f")"
   COUNT=$(python3 -c "import json; print(len(json.load(open('$AUDIT', encoding='utf-8'))['matches']))")
   if [ "$COUNT" -gt 0 ]; then
-    echo '{"id":"evt_NNN","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestrator","type":"deliverable_injection_residue","data":{"file":"'"$(basename "$f")"'","match_count":'"$COUNT"',"audit":"'"$(basename "$AUDIT")"'"}}' \
-      >> "$PRIVATE_DIR/$CASE_ID/events.jsonl"
+    python3 "$PROJECT_ROOT/scripts/log-event.py" "$OUTPUT_DIR/events.jsonl" \
+      --agent orchestrator \
+      --type deliverable_injection_residue \
+      --data-json "$(python3 -c 'import json, sys; print(json.dumps({"file":sys.argv[1],"match_count":int(sys.argv[2]),"audit":sys.argv[3]}, ensure_ascii=False))' "$(basename "$f")" "$COUNT" "$(basename "$AUDIT")")"
   fi
 done
 ```
@@ -112,9 +134,9 @@ done
 - 모든 매치가 이미 `<escape>...</escape>` 태그 안에 있는 경우, 이는 Task 6에서 정상적으로 sanitize된 잔여물입니다. `scripts/md-to-docx.py`가 렌더 직전에 `<escape>` 프레임만 제거하므로 DOCX 생성은 계속할 수 있습니다.
 - `<escape>` 태그 밖의 문구가 매치되면 sanitizer 우회 가능성이 있으므로 사고로 취급합니다. `deliverable_injection_residue` 이벤트를 남기고, DOCX 생성 및 최종 전달을 중단한 뒤 사용자에게 보고합니다.
 
-## Step 6: 클라이언트에게 전달
+## Step 7: 클라이언트에게 전달
 
-최종 결과를 클라이언트에게 보고하세요. 아래 `output/{CASE_ID}` 표기는 실제로는 `$PRIVATE_DIR/{CASE_ID}`를 뜻합니다. env 미설정 시 두 경로는 같습니다:
+최종 결과를 클라이언트에게 보고하세요. 아래 `output/{CASE_ID}` 표기는 실제로는 `$OUTPUT_DIR`를 뜻합니다. env 미설정 시 두 경로는 같습니다:
 
 ```
 📋 사건 {CASE_ID} 처리 완료

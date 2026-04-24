@@ -1,0 +1,21 @@
+{
+  "summary": "단일 리서치 합성 요약.",
+  "issue_map": [
+    {
+      "issue": "공서양속",
+      "answer": "민법 제103조가 기준입니다.",
+      "authority_ids": ["general_src_001"],
+      "confidence": "high"
+    }
+  ],
+  "key_findings": ["민법 합성 핵심 발견"],
+  "sources": [
+    {
+      "id": "general_src_001",
+      "title": "민법",
+      "grade": "A",
+      "citation": "제103조"
+    }
+  ],
+  "error": null
+}

@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Legal Agent Orchestrator Event",
+  "type": "object",
+  "required": ["id", "ts", "agent", "type", "data"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^evt_(final|[0-9]{3,})$"
+    },
+    "ts": {
+      "type": "string"
+    },
+    "agent": {
+      "type": "string",
+      "minLength": 1
+    },
+    "type": {
+      "type": "string",
+      "minLength": 1
+    },
+    "data": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "type": { "const": "source_graded" } }
+      },
+      "then": {
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["agent_id", "source", "grade", "citation"],
+            "properties": {
+              "agent_id": { "type": "string" },
+              "source": { "type": "string" },
+              "grade": { "enum": ["A", "B", "C", "D"] },
+              "citation": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "summary": "단일 리서치 결과를 반영한 합성 의견서입니다.",
+  "issue_map": [],
+  "key_findings": ["민법 제103조를 기준으로 검토합니다."],
+  "sources": [],
+  "pattern": "pattern_2",
+  "partial_results": false,
+  "error": null
+}

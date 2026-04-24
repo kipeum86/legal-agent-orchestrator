@@ -1,0 +1,22 @@
+{
+  "summary": "EU processor 쟁점을 합성 데이터로 요약합니다.",
+  "issue_map": [
+    {
+      "issue": "Processor terms",
+      "answer": "Article 28 processor clauses are required.",
+      "authority_ids": ["gdpr_src_001"],
+      "confidence": "high"
+    }
+  ],
+  "key_findings": ["GDPR 합성 핵심 발견"],
+  "sources": [
+    {
+      "id": "gdpr_src_001",
+      "title": "GDPR",
+      "grade": "A",
+      "citation": "Article 28",
+      "pinpoint": "Article 28(3)"
+    }
+  ],
+  "error": null
+}

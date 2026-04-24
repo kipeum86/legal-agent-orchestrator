@@ -1,0 +1,9 @@
+{
+  "summary": "PIPA와 GDPR 결과를 통합한 합성 의견서입니다.",
+  "issue_map": [],
+  "key_findings": ["양 법역 모두 계약상 통제 장치가 필요합니다."],
+  "sources": [],
+  "pattern": "pattern_1",
+  "partial_results": false,
+  "error": null
+}

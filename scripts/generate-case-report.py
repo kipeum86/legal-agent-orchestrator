@@ -278,12 +278,50 @@ def derive_key_findings(
     return []
 
 
+def agent_id_from_meta_filename(path: Path) -> str:
+    name = path.name
+    if name == "research-meta.json":
+        return "general-legal-research"
+    if name == "writing-meta.json":
+        return "legal-writing-agent"
+    if name == "review-meta.json":
+        return "second-review-agent"
+    if name.endswith("-meta.json"):
+        return name[: -len("-meta.json")]
+    return path.stem
+
+
 def load_meta_bundle(case_dir: Path) -> dict[str, dict[str, Any] | None]:
-    return {
-        "general-legal-research": read_json(case_dir / "research-meta.json"),
-        "legal-writing-agent": read_json(case_dir / "writing-meta.json"),
-        "second-review-agent": read_json(case_dir / "review-meta.json"),
+    bundle: dict[str, dict[str, Any] | None] = {}
+    for meta_path in sorted(case_dir.glob("*-meta.json")):
+        payload = read_json(meta_path)
+        if isinstance(payload, dict):
+            bundle[agent_id_from_meta_filename(meta_path)] = payload
+
+    # Legacy aliases remain supported for old case folders.
+    legacy_paths = {
+        "general-legal-research": case_dir / "research-meta.json",
+        "legal-writing-agent": case_dir / "writing-meta.json",
+        "second-review-agent": case_dir / "review-meta.json",
     }
+    for agent_id, path in legacy_paths.items():
+        if agent_id not in bundle:
+            payload = read_json(path)
+            if isinstance(payload, dict):
+                bundle[agent_id] = payload
+    return bundle
+
+
+def select_primary_research_meta(meta_bundle: dict[str, dict[str, Any] | None]) -> dict[str, Any] | None:
+    preferred = meta_bundle.get("general-legal-research")
+    if isinstance(preferred, dict):
+        return preferred
+    for agent_id, meta in meta_bundle.items():
+        if agent_id in {"legal-writing-agent", "second-review-agent"}:
+            continue
+        if isinstance(meta, dict):
+            return meta
+    return None
 
 
 def collect_sources(
@@ -919,9 +957,9 @@ def generate_case_report(case_dir: Path) -> tuple[Path | None, list[str]]:
         return None, warnings
 
     meta_bundle = load_meta_bundle(case_dir)
-    research_meta = meta_bundle["general-legal-research"]
-    writing_meta = meta_bundle["legal-writing-agent"]
-    review_meta = meta_bundle["second-review-agent"]
+    research_meta = select_primary_research_meta(meta_bundle)
+    writing_meta = meta_bundle.get("legal-writing-agent")
+    review_meta = meta_bundle.get("second-review-agent")
     sources_json = read_json(case_dir / "sources.json")
 
     final_output_event = next((event for event in reversed(events) if event.get("type") == "final_output"), None)

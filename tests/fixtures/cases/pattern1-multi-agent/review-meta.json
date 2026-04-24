@@ -1,0 +1,14 @@
+{
+  "approval": "approved",
+  "summary": "합성 리뷰 승인.",
+  "comments": [
+    {
+      "severity": "minor",
+      "location": "1. 결론",
+      "issue": "표현을 더 간결히 할 수 있습니다.",
+      "recommendation": "문장을 축약합니다.",
+      "status": "open"
+    }
+  ],
+  "error": null
+}

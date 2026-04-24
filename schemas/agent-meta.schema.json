@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Legal Agent Orchestrator Agent Meta",
+  "type": "object",
+  "required": ["summary", "key_findings", "sources", "error"],
+  "properties": {
+    "summary": { "type": "string" },
+    "issue_map": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["issue", "answer"],
+        "properties": {
+          "issue": { "type": "string" },
+          "answer": { "type": "string" },
+          "authority_ids": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "confidence": { "enum": ["high", "medium", "low"] }
+        }
+      }
+    },
+    "key_findings": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["title", "grade", "citation"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "grade": { "enum": ["A", "B", "C", "D"] },
+          "citation": { "type": "string" },
+          "pinpoint": { "type": "string" },
+          "url_or_access": { "type": "string" }
+        }
+      }
+    },
+    "error": {
+      "type": ["object", "null"]
+    }
+  }
+}

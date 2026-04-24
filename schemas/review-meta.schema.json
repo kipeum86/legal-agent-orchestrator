@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Legal Agent Orchestrator Review Meta",
+  "type": "object",
+  "required": ["approval", "comments"],
+  "properties": {
+    "approval": {
+      "enum": ["approved", "approved_with_revisions", "revision_needed"]
+    },
+    "summary": { "type": "string" },
+    "comments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["severity", "location", "issue", "recommendation"],
+        "properties": {
+          "severity": { "enum": ["critical", "major", "minor", "suggestion"] },
+          "location": { "type": "string" },
+          "issue": { "type": "string" },
+          "recommendation": { "type": "string" },
+          "citation": { "type": "string" },
+          "status": { "type": "string" }
+        }
+      }
+    },
+    "error": {
+      "type": ["object", "null"]
+    }
+  }
+}

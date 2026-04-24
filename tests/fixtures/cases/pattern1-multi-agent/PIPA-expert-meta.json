@@ -1,0 +1,22 @@
+{
+  "summary": "한국 개인정보 처리위탁 쟁점을 합성 데이터로 요약합니다.",
+  "issue_map": [
+    {
+      "issue": "처리위탁",
+      "answer": "위탁자 관리 감독과 계약상 필수사항이 필요합니다.",
+      "authority_ids": ["pipa_src_001"],
+      "confidence": "high"
+    }
+  ],
+  "key_findings": ["PIPA 합성 핵심 발견"],
+  "sources": [
+    {
+      "id": "pipa_src_001",
+      "title": "개인정보 보호법",
+      "grade": "A",
+      "citation": "제28조의8",
+      "pinpoint": "제1항"
+    }
+  ],
+  "error": null
+}

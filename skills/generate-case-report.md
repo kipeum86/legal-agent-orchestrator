@@ -40,7 +40,7 @@
 
 ```bash
 PRIVATE_DIR="${LEGAL_ORCHESTRATOR_PRIVATE_DIR:-$PROJECT_ROOT/output}"
-python3 "$PROJECT_ROOT/scripts/generate-case-report.py" "$PRIVATE_DIR/$CASE_ID"
+python3 "$PROJECT_ROOT/scripts/generate-case-report.py" "$OUTPUT_DIR"
 ```
 
 샘플 케이스에 소급 적용할 때:
@@ -62,8 +62,10 @@ if [ -f "$CR" ]; then
     --source "case-report"
   COUNT=$(python3 -c "import json; print(len(json.load(open('${CR%.md}.audit.json', encoding='utf-8'))['matches']))")
   if [ -f "$CASE_DIR/events.jsonl" ] && [ "$COUNT" -gt 0 ]; then
-    echo '{"id":"evt_NNN","ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","agent":"orchestrator","type":"deliverable_injection_residue","data":{"file":"case-report.md","match_count":'"$COUNT"',"audit":"case-report.audit.json"}}' \
-      >> "$CASE_DIR/events.jsonl"
+    python3 "$ROOT/scripts/log-event.py" "$CASE_DIR/events.jsonl" \
+      --agent orchestrator \
+      --type deliverable_injection_residue \
+      --data-json "$(python3 -c 'import json, sys; print(json.dumps({"file":"case-report.md","match_count":int(sys.argv[1]),"audit":"case-report.audit.json"}, ensure_ascii=False))' "$COUNT")"
   fi
 fi
 ```

@@ -1,10 +1,8 @@
 #!/bin/bash
-# setup.sh — 에이전트 자동 클론 및 lock commit 동기화
-# 사용법: ./setup.sh              (agents.lock 기준 클론/checkout)
-#         ./setup.sh update       (agents.lock 기준 재동기화)
-#         ./setup.sh update-lock  (현재 ref의 최신 commit으로 agents.lock 갱신)
-#         ./setup.sh status       (lock 대비 각 에이전트 상태 확인)
-#         ./setup.sh link         (로컬 레포 심볼릭 링크 — 개발용)
+# setup.sh — 8명의 하위 에이전트를 항상 최신 main으로 동기화 (shallow clone)
+# 사용법: ./setup.sh           (clone 또는 최신 main으로 fast-forward)
+#         ./setup.sh update    (alias for default — 모든 에이전트 최신 main 동기화)
+#         ./setup.sh link      (개발용: 로컬 레포를 심볼릭 링크로 연결)
 
 set -euo pipefail
 
@@ -14,11 +12,10 @@ cd "$ROOT_DIR"
 GITHUB_USER="lowtidebuild"
 AGENTS_DIR="agents"
 LOCAL_BASE="$HOME/코딩 프로젝트"
-LOCK_FILE="agents.lock"
+DEFAULT_BRANCH="main"
 
-# Legal Agent Orchestrator가 관리하는 에이전트 8명 — 오케스트레이터가 실제로 호출하는 대상.
-# briefing 계열(game-legal-briefing, game-policy-briefing)은 독립 Python
-# 앱이라 이 오케스트레이터가 호출하지 않으므로 클론 대상에서 제외.
+# Legal Agent Orchestrator가 호출하는 8명의 하위 에이전트.
+# 각 에이전트는 자체 GitHub 리포의 main 브랜치를 따라가며, 항상 최신 버전이 반영됩니다.
 REPOS=(
   "general-legal-research"
   "legal-writing-agent"
@@ -32,18 +29,35 @@ REPOS=(
 
 mkdir -p "$AGENTS_DIR"
 
+sync_one() {
+  local repo="$1"
+  local target="$AGENTS_DIR/$repo"
+  local url="https://github.com/$GITHUB_USER/$repo.git"
+
+  if [ -L "$target" ]; then
+    echo "🔗 $repo (symlink, skipped)"
+    return
+  fi
+
+  if [ -d "$target/.git" ]; then
+    git -C "$target" fetch --depth 1 origin "$DEFAULT_BRANCH"
+    git -C "$target" reset --hard "origin/$DEFAULT_BRANCH"
+    echo "⬆️  $repo synced to latest $DEFAULT_BRANCH"
+  elif [ -e "$target" ]; then
+    echo "⚠️  $target exists but is not a git repo — skipping" >&2
+    return 1
+  else
+    git clone --depth 1 --branch "$DEFAULT_BRANCH" --single-branch "$url" "$target"
+    echo "📥 $repo cloned (shallow, $DEFAULT_BRANCH only)"
+  fi
+}
+
 case "${1:-setup}" in
   setup|update)
-    python3 "$ROOT_DIR/scripts/agent-lock.py" sync \
-      --lock "$ROOT_DIR/$LOCK_FILE" \
-      --agents-dir "$ROOT_DIR/$AGENTS_DIR"
-    echo "✅ All agents synced to $LOCK_FILE."
-    ;;
-  update-lock)
-    python3 "$ROOT_DIR/scripts/agent-lock.py" update-lock \
-      --lock "$ROOT_DIR/$LOCK_FILE" \
-      --agents-dir "$ROOT_DIR/$AGENTS_DIR"
-    echo "✅ $LOCK_FILE updated. Review and commit it intentionally."
+    for repo in "${REPOS[@]}"; do
+      sync_one "$repo"
+    done
+    echo "✅ All 8 subordinate agents are at latest $DEFAULT_BRANCH."
     ;;
   link)
     # 로컬 개발용: 기존 레포를 심볼릭 링크로 연결
@@ -61,13 +75,8 @@ case "${1:-setup}" in
     done
     echo "✅ Done linking."
     ;;
-  status)
-    python3 "$ROOT_DIR/scripts/agent-lock.py" status \
-      --lock "$ROOT_DIR/$LOCK_FILE" \
-      --agents-dir "$ROOT_DIR/$AGENTS_DIR"
-    ;;
   *)
-    echo "Usage: ./setup.sh [setup|update|update-lock|status|link]" >&2
+    echo "Usage: ./setup.sh [setup|update|link]" >&2
     exit 2
     ;;
 esac

@@ -208,11 +208,11 @@ def check_docx_injection_residue() -> CheckResult:
 def check_dependency_pinning() -> CheckResult:
     return result(
         11,
-        "agent와 MCP dependency version이 lock 또는 pin으로 재현 가능하다",
+        "하위 에이전트는 setup.sh로 재현 가능하게 설치되고, MCP dependency는 정확한 버전으로 pin된다",
         [
-            (exists("agents.lock"), "agents.lock exists"),
-            (exists("scripts/agent-lock.py"), "agent lock manager exists"),
-            (exists("tests/test_agent_lock.py"), "agent lock tests exist"),
+            (exists("setup.sh"), "setup.sh exists"),
+            (has("setup.sh", "--depth 1"), "setup.sh uses shallow clone (--depth 1)"),
+            (has("setup.sh", "general-legal-research") and has("setup.sh", "legal-translation-agent"), "setup.sh enumerates all 8 subordinate agents"),
             (exact_mcp_pins(), ".mcp.json pins exact MCP package versions"),
             (exists("tests/test_mcp_pins.py"), "MCP pin tests exist"),
         ],

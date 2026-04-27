@@ -1,5 +1,6 @@
 agents/
-output/
+output/*
+!output/.gitkeep
 samples/
 .env
 .DS_Store

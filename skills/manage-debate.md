@@ -415,35 +415,9 @@ Revision cycle:
 
 ---
 
-### Step 7: Generate the DOCX files
+### Step 7: Conclusion + hand-off to deliver-output
 
-Once review is complete, convert the two markdown files to DOCX.
-
-```bash
-python3 "$PROJECT_ROOT/scripts/md-to-docx.py" \
-  "$OUTPUT_DIR/debate-transcript.md" \
-  "$OUTPUT_DIR/debate-transcript.docx"
-
-python3 "$PROJECT_ROOT/scripts/md-to-docx.py" \
-  "$OUTPUT_DIR/debate-opinion.md" \
-  "$OUTPUT_DIR/debate-opinion.docx"
-```
-
-Two DOCX events:
-```bash
-python3 "$PROJECT_ROOT/scripts/log-event.py" "$OUTPUT_DIR/events.jsonl" \
-  --agent orchestrator \
-  --type docx_generated \
-  --data-json "$(python3 -c 'import json, os, sys; print(json.dumps({"tool":"md-to-docx.py","input":"debate-transcript.md","output":"debate-transcript.docx","size_bytes":os.path.getsize(sys.argv[1])}, ensure_ascii=False))' "$OUTPUT_DIR/debate-transcript.docx")"
-python3 "$PROJECT_ROOT/scripts/log-event.py" "$OUTPUT_DIR/events.jsonl" \
-  --agent orchestrator \
-  --type docx_generated \
-  --data-json "$(python3 -c 'import json, os, sys; print(json.dumps({"tool":"md-to-docx.py","input":"debate-opinion.md","output":"debate-opinion.docx","size_bytes":os.path.getsize(sys.argv[1])}, ensure_ascii=False))' "$OUTPUT_DIR/debate-opinion.docx")"
-```
-
----
-
-### Step 8: Conclusion + hand-off to deliver-output
+DOCX rendering for `debate-transcript.md` and `debate-opinion.md` happens automatically in `deliver-output.md` Step 7 (universal across all patterns). No debate-specific DOCX step is required here.
 
 After logging the debate-conclusion event, read [skills/deliver-output.md](./deliver-output.md) and follow it as-is.
 

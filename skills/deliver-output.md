@@ -142,7 +142,31 @@ When matches are found:
 
 ---
 
-## Step 7: Finalize events.jsonl
+## Step 7: Generate DOCX deliverables
+
+DOCX is the default client-facing deliverable. Convert every final markdown deliverable in the case directory to DOCX before finalization. The conversion is idempotent and Pattern-agnostic — Pattern 1/2 produces `opinion.docx`; Pattern 3 produces `debate-opinion.docx` and `debate-transcript.docx`.
+
+```bash
+for src in "$OUTPUT_DIR"/opinion.md \
+           "$OUTPUT_DIR"/debate-opinion.md \
+           "$OUTPUT_DIR"/debate-transcript.md; do
+  [ -f "$src" ] || continue
+  out="${src%.md}.docx"
+  python3 "$PROJECT_ROOT/scripts/md-to-docx.py" "$src" "$out"
+  python3 "$PROJECT_ROOT/scripts/log-event.py" "$OUTPUT_DIR/events.jsonl" \
+    --agent orchestrator \
+    --type docx_generated \
+    --data-json "$(python3 -c 'import json, os, sys; print(json.dumps({"tool":"md-to-docx.py","input":sys.argv[1],"output":sys.argv[2],"size_bytes":os.path.getsize(sys.argv[3])}, ensure_ascii=False))' "$(basename "$src")" "$(basename "$out")" "$out")"
+done
+```
+
+`md-to-docx.py` honors `<escape>...</escape>` tags by default — text inside an escape is replaced with `[Sanitized instruction-like text omitted]` in the rendered DOCX. Use `--preserve-escaped-text` only when an audit DOCX must retain the original text (rare).
+
+If a DOCX file is needed in a non-default register (e.g., draft watermarking, alternative paper size), pass the appropriate flag to `md-to-docx.py`. The default invocation is sufficient for client delivery.
+
+---
+
+## Step 8: Finalize events.jsonl
 
 Only after every check and assembly step has succeeded, write the `final_output` event.
 
@@ -163,7 +187,7 @@ python3 "$PROJECT_ROOT/scripts/finalize-case.py" "$OUTPUT_DIR" \
 
 ---
 
-## Step 8: Deliver to the client
+## Step 9: Deliver to the client
 
 Report the final result to the client. The `output/{CASE_ID}` notation below refers to `$OUTPUT_DIR`; with the env var unset, the two paths are identical:
 
@@ -171,7 +195,8 @@ Report the final result to the client. The `output/{CASE_ID}` notation below ref
 📋 사건 {CASE_ID} 처리 완료
 
 📄 **최종 결과물:**
-- 의견서: output/{CASE_ID}/opinion.md
+- 의견서 (DOCX): output/{CASE_ID}/opinion.docx  ← 클라이언트 제출용
+- 의견서 (Markdown 원본): output/{CASE_ID}/opinion.md
 - 사건 리포트: output/{CASE_ID}/case-report.md
 - 참조 소스: output/{CASE_ID}/sources.json ({N}개 소스, Grade A: {n}개)
 

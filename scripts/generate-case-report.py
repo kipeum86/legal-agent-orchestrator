@@ -991,7 +991,13 @@ def generate_case_report(case_dir: Path) -> tuple[Path | None, list[str]]:
 
     pattern = infer_pattern(events)
     started_at = str(events[0].get("ts") or "") if events else None
-    ended_at = str(final_output_event.get("ts") or events[-1].get("ts") or "") if events else None
+    if events:
+        last_ts_candidate = final_output_event.get("ts") if isinstance(final_output_event, dict) else None
+        if not last_ts_candidate:
+            last_ts_candidate = events[-1].get("ts")
+        ended_at = str(last_ts_candidate or "")
+    else:
+        ended_at = None
     approval_source = None
     if isinstance(review_meta, dict):
         approval_source = review_meta.get("approval")

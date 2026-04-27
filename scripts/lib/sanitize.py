@@ -1,6 +1,6 @@
 """Prompt-injection sanitiser for orchestrator-ingested text.
 
-Trust boundary policy is declared in CLAUDE.md "신뢰 경계 (Control-Plane Trust Boundary)".
+Trust boundary policy is declared in CLAUDE.md "Trust Boundary (Control-Plane)".
 This module is the enforcement helper. Stdlib only.
 """
 from __future__ import annotations

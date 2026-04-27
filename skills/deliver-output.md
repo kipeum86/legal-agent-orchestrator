@@ -1,71 +1,71 @@
-# 최종 결과물 전달 (deliver-output)
+# Deliver Output (deliver-output)
 
-모든 에이전트 작업이 완료된 후, 최종 결과물을 어셈블하고 클라이언트에게 전달합니다.
+After every agent has finished its work, assemble the final deliverable and hand it back to the client.
 
-이 스킬의 모든 orchestrator bash 예시는 `PRIVATE_DIR="${LEGAL_ORCHESTRATOR_PRIVATE_DIR:-$PROJECT_ROOT/output}"`가 이미 설정되어 있다고 가정합니다. (`CLAUDE.md` Step 1)
+All orchestrator bash examples in this skill assume `PRIVATE_DIR="${LEGAL_ORCHESTRATOR_PRIVATE_DIR:-$PROJECT_ROOT/output}"` is already set (`CLAUDE.md` Step 1).
 
 ---
 
-## Step 1: 결과물 확인
+## Step 1: Verify the work-product files
 
-기본 work-product 디렉토리(`$OUTPUT_DIR`; env 미설정 시 `output/{CASE_ID}`와 동일)의 파일을 확인하세요:
+Inspect the work-product directory (`$OUTPUT_DIR`; equivalent to `output/{CASE_ID}` when the env is unset):
 
 ```bash
 ls -la "$OUTPUT_DIR/"
 ```
 
-**필수 파일:**
-- `events.jsonl` — 이벤트 로그
-- `opinion.md` 또는 `debate-opinion.md` 또는 `*-result.md` — 최종 결과물
-- `*-meta.json` — 각 에이전트의 메타데이터
+**Required files:**
+- `events.jsonl` — event log
+- `opinion.md`, `debate-opinion.md`, or `*-result.md` — final deliverable
+- `*-meta.json` — per-agent metadata
 
 ---
 
-## Step 2: 시니어 리뷰 승인 게이트
+## Step 2: Senior-review approval gate
 
-최종 산출물 확정 전에 review 상태를 deterministic하게 확인하세요.
+Before finalizing, check the review state deterministically.
 
 ```bash
 python3 "$PROJECT_ROOT/scripts/finalize-case.py" "$OUTPUT_DIR" --check-only \
   > "$OUTPUT_DIR/finalization-check.json"
 ```
 
-결과 처리:
-- `approved`: 다음 단계로 진행합니다.
-- `approved_with_revisions`: 수정 반영 여부를 확인한 뒤 다음 단계로 진행합니다.
-- `revision_needed`: `finalize-case.py`가 `pipeline_aborted` 이벤트를 기록하고 non-zero로 종료합니다. 이 경우 `final_output`을 만들지 말고 legal-writing-agent 수정 사이클로 되돌립니다.
+Outcomes:
+- `approved`: proceed to the next step.
+- `approved_with_revisions`: confirm the revisions were applied, then proceed.
+- `revision_needed`: `finalize-case.py` records a `pipeline_aborted` event and exits non-zero. In this case, do **not** emit `final_output`; loop back to a legal-writing-agent revision cycle.
 
-시니어 리뷰에서 `revision_needed`가 반환된 경우:
-- 검토 코멘트를 legal-writing-agent에 전달하여 수정 요청
-- 수정 후 다시 second-review-agent에 재검토 요청
-- 최대 2회 수정 사이클 후에도 승인되지 않으면 사용자에게 미승인 상태를 보고합니다.
+When the senior review returns `revision_needed`:
+- Forward the review comments to legal-writing-agent and request revisions.
+- After revision, send the revised draft back to second-review-agent.
+- After at most 2 revision cycles, if the work is still not approved, report the unapproved state to the user.
 
 ---
 
-## Step 3: 산출물 계약 검증
+## Step 3: Validate the deliverable contract
 
-case directory의 구조적 오류를 점검하세요. `warn` 모드는 경고와 오류를 모두 보고하지만 파이프라인을 즉시 중단하지 않습니다.
+Check the case directory for structural errors. `warn` mode reports both warnings and errors but does not abort the pipeline immediately.
 
 ```bash
 python3 "$PROJECT_ROOT/scripts/validate-case.py" "$OUTPUT_DIR" --mode warn \
   > "$OUTPUT_DIR/case-validation.json"
 ```
 
-`case-validation.json`의 `errors`가 비어 있지 않다면:
-- 누락된 필수 필드(`citation`, `summary`, `sources`, review comment object 등)를 가능한 경우 보정합니다.
-- 보정할 수 없는 경우 최종 전달 메시지에 구조적 오류를 명시합니다.
+If `case-validation.json` shows non-empty `errors`:
+- Repair missing required fields where possible (`citation`, `summary`, `sources`, review comment objects, etc.).
+- Where repair is impossible, disclose the structural errors in the final delivery message.
 
 ---
 
-## Step 4: sources.json 병합 생성
+## Step 4: Generate the merged sources.json
 
-각 에이전트의 meta.json에서 sources를 추출하여 통합 sources.json을 생성하세요:
+Extract `sources` from each agent's `meta.json` and produce a unified `sources.json`:
 
 ```bash
 python3 "$PROJECT_ROOT/scripts/merge-sources.py" "$OUTPUT_DIR"
 ```
 
-**sources.json 형식:**
+**`sources.json` shape:**
 ```json
 {
   "case_id": "{CASE_ID}",
@@ -81,31 +81,31 @@ python3 "$PROJECT_ROOT/scripts/merge-sources.py" "$OUTPUT_DIR"
 }
 ```
 
-`merge-sources.py`는 모든 `*-meta.json`과 `events.jsonl`의 `source_graded` 이벤트를 함께 읽고, 같은 agent 안에서 `(title, citation)` 기준으로 중복을 제거합니다. 수동 작성 대신 이 스크립트를 사용해야 `agent_id`, grade 분포, citation 필드가 일관됩니다.
+`merge-sources.py` reads every `*-meta.json` together with the `source_graded` events in `events.jsonl`, and deduplicates within each agent on `(title, citation)`. Use this script rather than hand-merging — it keeps `agent_id`, grade distribution, and citation fields consistent.
 
 ---
 
-## Step 5: case-report.md 생성
+## Step 5: Generate case-report.md
 
-최종 전달 직전에 반드시 `case-report.md`를 생성하세요.
+Always generate `case-report.md` immediately before final delivery.
 
 ```bash
 python3 "$PROJECT_ROOT/scripts/generate-case-report.py" "$OUTPUT_DIR"
 ```
 
-생성 후 확인:
+Then verify:
 
 ```bash
 [ -f "$OUTPUT_DIR/case-report.md" ]
 ```
 
-`events.jsonl`이 없는 smoke test 디렉토리라면 생성이 skip될 수 있습니다. 이 경우에도 파이프라인 자체를 실패로 처리하지는 않습니다.
+Generation may be skipped for smoke-test directories that lack `events.jsonl`. That alone does not fail the pipeline.
 
 ---
 
-## Step 6: 최종 인젝션 잔여물 스캔
+## Step 6: Final injection-residue scan
 
-DOCX 생성 또는 최종 전달 직전에, 최종 opinion/transcript markdown에 injection 잔여물이 남아있지 않은지 확인합니다.
+Right before DOCX generation or final delivery, ensure no injection residue remains in the final `opinion.md` / `transcript.md`.
 
 ```bash
 for f in "$OUTPUT_DIR"/opinion.md \
@@ -135,23 +135,23 @@ for f in "$OUTPUT_DIR"/opinion.md \
 done
 ```
 
-매치가 발견되면:
-- 모든 매치가 이미 `<escape>...</escape>` 태그 안에 있는 경우, 이는 정상적으로 sanitize된 잔여물입니다. `scripts/md-to-docx.py`는 기본 렌더에서 escape 내부 원문을 `[Sanitized instruction-like text omitted]`로 치환합니다.
-- `<escape>` 태그 밖의 문구가 매치되면 `sanitize-check.py --fail-on-unescaped`가 exit 3으로 실패합니다. sanitizer 우회 가능성이 있으므로 사고로 취급하고, `deliverable_injection_residue` 이벤트를 남긴 뒤 DOCX 생성 및 최종 전달을 중단하여 사용자에게 보고합니다.
-- 감사용 DOCX에서 escape 내부 원문을 보존해야 할 때만 `scripts/md-to-docx.py --preserve-escaped-text`를 명시적으로 사용합니다.
+When matches are found:
+- If every match is already wrapped in `<escape>...</escape>`, that is normal sanitised residue. By default `scripts/md-to-docx.py` replaces the inner text of an `<escape>` with `[Sanitized instruction-like text omitted]`.
+- If a match falls outside any `<escape>` tag, `sanitize-check.py --fail-on-unescaped` exits with status 3. Treat this as a sanitiser-bypass incident: leave the `deliverable_injection_residue` event in place, abort DOCX generation and final delivery, and report to the user.
+- Use `scripts/md-to-docx.py --preserve-escaped-text` only when an audit DOCX must retain the original text inside `<escape>` tags.
 
 ---
 
-## Step 7: events.jsonl 마감
+## Step 7: Finalize events.jsonl
 
-모든 검증과 조립이 끝난 뒤에만 `final_output` 이벤트를 기록하세요.
+Only after every check and assembly step has succeeded, write the `final_output` event.
 
 ```bash
 python3 "$PROJECT_ROOT/scripts/finalize-case.py" "$OUTPUT_DIR" \
   --summary "FINAL_SUMMARY"
 ```
 
-<!-- IF pattern == pattern_3 (토론) -->
+<!-- IF pattern == pattern_3 (debate) -->
 ```bash
 python3 "$PROJECT_ROOT/scripts/finalize-case.py" "$OUTPUT_DIR" \
   --summary "VERDICT_SUMMARY" \
@@ -159,13 +159,13 @@ python3 "$PROJECT_ROOT/scripts/finalize-case.py" "$OUTPUT_DIR" \
 ```
 <!-- END IF -->
 
-`finalize-case.py`는 `review-meta.json.approval`을 다시 확인합니다. `revision_needed` 상태에서는 `final_output`을 쓰지 않고 `pipeline_aborted`를 기록합니다.
+`finalize-case.py` re-checks `review-meta.json.approval`. When the state is `revision_needed`, it does **not** write `final_output` and instead records `pipeline_aborted`.
 
 ---
 
-## Step 8: 클라이언트에게 전달
+## Step 8: Deliver to the client
 
-최종 결과를 클라이언트에게 보고하세요. 아래 `output/{CASE_ID}` 표기는 실제로는 `$OUTPUT_DIR`를 뜻합니다. env 미설정 시 두 경로는 같습니다:
+Report the final result to the client. The `output/{CASE_ID}` notation below refers to `$OUTPUT_DIR`; with the env var unset, the two paths are identical:
 
 ```
 📋 사건 {CASE_ID} 처리 완료
@@ -183,7 +183,7 @@ python3 "$PROJECT_ROOT/scripts/finalize-case.py" "$OUTPUT_DIR" \
 📊 **파이프라인 이벤트 로그:** output/{CASE_ID}/events.jsonl
 ```
 
-<!-- IF pattern == pattern_3 (토론) -->
+<!-- IF pattern == pattern_3 (debate) -->
 
 📋 사건 {CASE_ID} 처리 완료 — 멀티라운드 토론
 

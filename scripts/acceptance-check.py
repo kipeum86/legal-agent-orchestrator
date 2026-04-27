@@ -173,7 +173,7 @@ def check_debate_transcript() -> CheckResult:
         [
             (exists("scripts/build-debate-transcript.py"), "build-debate-transcript.py exists"),
             (has("skills/manage-debate.md", "build-debate-transcript.py"), "manage-debate invokes transcript builder"),
-            (has("skills/manage-debate.md", "transcript 생성에 LLM을 사용하지 않습니다"), "manage-debate forbids LLM transcript generation"),
+            (has("skills/manage-debate.md", "transcript generation step must not use an LLM"), "manage-debate forbids LLM transcript generation"),
             (exists("tests/test_build_debate_transcript.py"), "debate transcript tests exist"),
         ],
     )

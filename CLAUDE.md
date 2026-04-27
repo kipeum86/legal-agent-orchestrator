@@ -27,6 +27,26 @@ echo "📋 사건 접수: $CASE_ID  (output dir: $OUTPUT_DIR)"
 
 `$CASE_ID`, `$PROJECT_ROOT`, `$PRIVATE_DIR`, and `$OUTPUT_DIR` are used by every subsequent step. `PRIVATE_DIR` honors `LEGAL_ORCHESTRATOR_PRIVATE_DIR` when set; otherwise it falls back to the legacy default `$PROJECT_ROOT/output`. All case work-products are written to `$OUTPUT_DIR` per the working contract.
 
+**Sync subordinate agents to latest upstream `main`:**
+Before classification begins, fast-forward every subordinate agent so the case is processed against the current version of each specialist. The sync is non-blocking — on network failure, fall back to the cached versions and record the failure as an event. Set `LEGAL_ORCHESTRATOR_SKIP_AGENT_SYNC=1` to skip entirely (e.g., offline runs, CI replays, reproducing past cases).
+
+```bash
+if [ "${LEGAL_ORCHESTRATOR_SKIP_AGENT_SYNC:-0}" != "1" ]; then
+  if "$PROJECT_ROOT/setup.sh" update; then
+    python3 "$PROJECT_ROOT/scripts/log-event.py" "$OUTPUT_DIR/events.jsonl" \
+      --agent orchestrator \
+      --type agents_synced \
+      --data-json '{"method":"setup.sh update","status":"ok"}'
+  else
+    echo "⚠️  Failed to sync subordinate agents — proceeding with cached versions."
+    python3 "$PROJECT_ROOT/scripts/log-event.py" "$OUTPUT_DIR/events.jsonl" \
+      --agent orchestrator \
+      --type agents_sync_failed \
+      --data-json '{"method":"setup.sh update","fallback":"cached_versions"}'
+  fi
+fi
+```
+
 ### Step 2: Classify the Question and Select Agents
 
 Read and follow `skills/route-case.md`. That skill classifies the question and decides the agent combination and execution pattern.

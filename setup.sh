@@ -2,6 +2,7 @@
 # setup.sh — 8명의 하위 에이전트를 항상 최신 main으로 동기화 (shallow clone)
 # 사용법: ./setup.sh           (clone 또는 최신 main으로 fast-forward)
 #         ./setup.sh update    (alias for default — 모든 에이전트 최신 main 동기화)
+#         ./setup.sh status    (각 에이전트의 로컬 SHA vs 원격 main 비교)
 #         ./setup.sh link      (개발용: 로컬 레포를 심볼릭 링크로 연결)
 
 set -euo pipefail
@@ -52,12 +53,49 @@ sync_one() {
   fi
 }
 
+status_one() {
+  local repo="$1"
+  local target="$AGENTS_DIR/$repo"
+  local url="https://github.com/$GITHUB_USER/$repo.git"
+
+  if [ -L "$target" ]; then
+    printf "%-26s %s\n" "$repo" "🔗 symlink (dev mode)"
+    return
+  fi
+  if [ ! -d "$target/.git" ]; then
+    printf "%-26s %s\n" "$repo" "⛔ not installed"
+    return
+  fi
+
+  local local_sha
+  local_sha=$(git -C "$target" rev-parse HEAD 2>/dev/null || echo "")
+  local remote_sha
+  remote_sha=$(git ls-remote "$url" "refs/heads/$DEFAULT_BRANCH" 2>/dev/null | awk '{print $1}')
+
+  if [ -z "$remote_sha" ]; then
+    printf "%-26s %s\n" "$repo" "❓ unreachable (local: ${local_sha:0:12})"
+    return
+  fi
+
+  if [ "$local_sha" = "$remote_sha" ]; then
+    printf "%-26s %s\n" "$repo" "✅ up to date (${local_sha:0:12})"
+  else
+    printf "%-26s %s\n" "$repo" "⚠️  behind  local: ${local_sha:0:12}  →  remote: ${remote_sha:0:12}"
+  fi
+}
+
 case "${1:-setup}" in
   setup|update)
     for repo in "${REPOS[@]}"; do
       sync_one "$repo"
     done
     echo "✅ All 8 subordinate agents are at latest $DEFAULT_BRANCH."
+    ;;
+  status)
+    echo "📊 Subordinate agent status (local vs origin/$DEFAULT_BRANCH):"
+    for repo in "${REPOS[@]}"; do
+      status_one "$repo"
+    done
     ;;
   link)
     # 로컬 개발용: 기존 레포를 심볼릭 링크로 연결
@@ -76,7 +114,7 @@ case "${1:-setup}" in
     echo "✅ Done linking."
     ;;
   *)
-    echo "Usage: ./setup.sh [setup|update|link]" >&2
+    echo "Usage: ./setup.sh [setup|update|status|link]" >&2
     exit 2
     ;;
 esac

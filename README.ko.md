@@ -37,7 +37,7 @@
 | **계약서 검토 스페셜리스트** | [contract-review-agent](https://github.com/lowtidebuild/contract-review-agent) | 계약서 검토 파이프라인 — 계약서를 drop하면 **tracked-change redline이 들어간 DOCX, 여백 코멘트(internal strategy + external-facing), 전체 분석 리포트, 협상 권고**가 반환됩니다. Node.js + Python 스택. 최종 법률 판단은 사람이 합니다. | Phase 2 |
 | **법률 번역 스페셜리스트** | [legal-translation-agent](https://github.com/lowtidebuild/legal-translation-agent) | **5개 언어** 법률 문서 번역. zero-omission 보장, dual-pass 번역을 comparative synthesis로 병합. 관할권 인식 용어(BGB, UCC, PRC, Taiwan, APPI) 준수, 매 작업마다 성장하는 shared 번역 메모리. | Phase 2 |
 
-**오케스트레이터는 하위 에이전트의 `CLAUDE.md`, skills, 지식 베이스를 절대 수정하지 않습니다.** 이것이 "100% 재활용"의 실천입니다. 하위 에이전트는 각자 GitHub 리포의 `main` 브랜치를 따라가며, `./setup.sh`가 shallow clone으로 받아오고 `./setup.sh update`가 최신 `main`으로 fast-forward합니다. 어느 스페셜리스트가 자기 리포에 버그 픽스를 올리면 다음 `./setup.sh update` 시점에 자동으로 반영됩니다.
+**오케스트레이터는 하위 에이전트의 `CLAUDE.md`, skills, 지식 베이스를 절대 수정하지 않습니다.** 이것이 "100% 재활용"의 실천입니다. 하위 에이전트는 각자 GitHub 리포의 `main` 브랜치를 따라가며, `./setup.sh`가 shallow clone으로 받아오고 `./setup.sh update`가 최신 `main`으로 fast-forward합니다. **모든 신규 케이스는 접수 시점에 자동으로 `./setup.sh update`를 실행**하므로, 어느 스페셜리스트가 버그 픽스를 푸시하면 다음 케이스부터 사용자 조작 없이 즉시 반영됩니다 (`LEGAL_ORCHESTRATOR_SKIP_AGENT_SYNC=1`로 끌 수 있음).
 
 > `setup.sh`는 이 오케스트레이터가 직접 사용하는 리포지토리만 clone합니다. 이 워크플로우 밖의 standalone 프로젝트는 포함되지 않습니다.
 
@@ -211,7 +211,8 @@ agents/
 각 폴더는 자체 `CLAUDE.md`, `skills/`, 지식 베이스, MCP 설정을 가진 **독립된 Claude Code 에이전트**입니다. 오케스트레이터가 케이스를 처리할 때 Claude Code의 `Agent` tool로 이 에이전트들을 `cwd: agents/{agent-id}/`로 호출하므로, 각 서브에이전트는 자기 작업 디렉토리에서 자기 context로 동작합니다.
 
 `setup.sh`의 다른 명령:
-- `./setup.sh update` — 모든 에이전트를 각자 upstream 리포의 최신 `main`으로 fast-forward합니다 (멱등; 인자 없는 `./setup.sh`와 동일)
+- `./setup.sh update` — 모든 에이전트를 각자 upstream 리포의 최신 `main`으로 fast-forward합니다 (멱등; 인자 없는 `./setup.sh`와 동일). **오케스트레이터가 모든 케이스 시작 시점에 자동으로 실행합니다.**
+- `./setup.sh status` — 각 에이전트의 로컬 SHA와 upstream `main` SHA를 비교해 `behind` / `up to date` / `unreachable` / `symlink` (dev 모드) 상태를 표시합니다
 - `./setup.sh link` — **개발 모드**: `~/코딩 프로젝트/` 아래에 이미 에이전트 리포들을 체크아웃해놓았다면, 새 clone 대신 심볼릭 링크를 만들어서 로컬 수정이 즉시 반영되도록 합니다
 
 각 에이전트는 shallow clone (`--depth 1 --single-branch`)으로 받아옵니다 — `main`의 최신 스냅샷만 디스크에 있고, git history나 다른 브랜치는 받지 않습니다.

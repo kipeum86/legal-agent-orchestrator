@@ -353,6 +353,8 @@ Event types added or extended in v2. This is the central reference maintained fo
 | Event type | Phase | Required `data` fields | Purpose |
 |------------|-------|------------------------|---------|
 | `case_received` | P1 | `query`, `case_id` | Case intake |
+| `agents_synced` | **v2** | `method`, `status` | Auto-sync of subordinate agents at case start succeeded (latest upstream `main` for all). |
+| `agents_sync_failed` | **v2** | `method`, `fallback` | Auto-sync at case start failed (e.g., network); the case proceeded against cached versions. |
 | `case_classified` | P1 | `jurisdictions[]`, `domains[]`, `tasks[]`, `complexity`, `confidence`, `pipeline[]`, `pattern` | Array-based classification result. `ambiguity[]`, `route_mode`, `parallel_agents[]` are optional. |
 | `agent_assigned` | P1 | `agent_id`, `name`, `role` | Agent dispatch |
 | `source_graded` | P1 | `agent_id`, `source`, `grade`, `citation` | Per-agent source grading |

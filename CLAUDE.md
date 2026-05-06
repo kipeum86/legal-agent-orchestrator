@@ -199,7 +199,7 @@ These rules are applied at concrete points in [skills/route-case.md](./skills/ro
 
 **Phase 1 active agents:** general-legal-research, legal-writing-agent, second-review-agent.
 **Phase 2 agents:** GDPR-expert, PIPA-expert, game-legal-research, contract-review-agent, legal-translation-agent.
-**Phase 3 default:** data-protection-agent is the default non-debate data-protection route. Set `LEGAL_ORCHESTRATOR_AGENT_PROFILE=legacy` to reproduce older PIPA/GDPR split routing.
+**Phase 3 preview:** data-protection-agent is installed for opt-in testing. The default profile remains legacy PIPA/GDPR routing until merged-agent burn-in is complete. Set `LEGAL_ORCHESTRATOR_AGENT_PROFILE=merged` to test the merged data-protection route.
 
 ---
 

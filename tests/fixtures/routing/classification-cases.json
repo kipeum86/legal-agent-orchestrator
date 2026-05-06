@@ -14,7 +14,7 @@
     "expected_route_mode": "game_regulation"
   },
   {
-    "name": "kr_eu_data_merged",
+    "name": "kr_eu_data_parallel",
     "classification": {
       "jurisdictions": ["KR", "EU"],
       "domains": ["data_protection"],
@@ -23,9 +23,10 @@
       "confidence": 0.95,
       "ambiguity": []
     },
-    "expected_pattern": "pattern_2",
-    "expected_pipeline": ["data-protection-agent", "legal-writing-agent", "second-review-agent"],
-    "expected_route_mode": "multi_jurisdiction_data_merged"
+    "expected_pattern": "pattern_1",
+    "expected_pipeline": ["PIPA-expert", "GDPR-expert", "legal-writing-agent", "second-review-agent"],
+    "expected_parallel_agents": ["PIPA-expert", "GDPR-expert"],
+    "expected_route_mode": "multi_jurisdiction_data"
   },
   {
     "name": "nda_contract_drafting",
@@ -66,9 +67,9 @@
       "ambiguity": []
     },
     "expected_pattern": "pattern_1",
-    "expected_pipeline": ["game-legal-research", "data-protection-agent", "legal-writing-agent", "second-review-agent"],
-    "expected_parallel_agents": ["game-legal-research", "data-protection-agent"],
-    "expected_route_mode": "game_and_data_protection_merged"
+    "expected_pipeline": ["game-legal-research", "PIPA-expert", "GDPR-expert", "legal-writing-agent", "second-review-agent"],
+    "expected_parallel_agents": ["game-legal-research", "PIPA-expert", "GDPR-expert"],
+    "expected_route_mode": "game_and_data_protection"
   },
   {
     "name": "contract_data_kr_parallel",
@@ -81,12 +82,12 @@
       "ambiguity": []
     },
     "expected_pattern": "pattern_1",
-    "expected_pipeline": ["contract-review-agent", "data-protection-agent", "legal-writing-agent", "second-review-agent"],
-    "expected_parallel_agents": ["contract-review-agent", "data-protection-agent"],
-    "expected_route_mode": "contract_and_data_protection_merged"
+    "expected_pipeline": ["contract-review-agent", "PIPA-expert", "legal-writing-agent", "second-review-agent"],
+    "expected_parallel_agents": ["contract-review-agent", "PIPA-expert"],
+    "expected_route_mode": "contract_and_data_protection"
   },
   {
-    "name": "california_data_single",
+    "name": "california_data_legacy_fallback",
     "classification": {
       "jurisdictions": ["US-CA"],
       "domains": ["data_protection"],
@@ -96,8 +97,8 @@
       "ambiguity": []
     },
     "expected_pattern": "pattern_2",
-    "expected_pipeline": ["data-protection-agent", "legal-writing-agent", "second-review-agent"],
-    "expected_route_mode": "single_jurisdiction_data_merged"
+    "expected_pipeline": ["general-legal-research", "legal-writing-agent", "second-review-agent"],
+    "expected_route_mode": "single_jurisdiction_data"
   },
   {
     "name": "translation_only",

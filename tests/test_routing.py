@@ -80,6 +80,40 @@ class RoutingTests(unittest.TestCase):
             ["PIPA-expert", "GDPR-expert", "legal-writing-agent", "second-review-agent"],
         )
 
+    def test_merged_profile_routes_privacy_to_data_protection_agent(self) -> None:
+        os.environ["LEGAL_ORCHESTRATOR_AGENT_PROFILE"] = "merged"
+        route = select_route(
+            {
+                "jurisdictions": ["KR", "EU"],
+                "domains": ["data_protection"],
+                "tasks": ["research"],
+                "complexity": "multi_domain",
+                "confidence": 1.0,
+            }
+        )
+        self.assertEqual(route["route_mode"], "multi_jurisdiction_data_merged")
+        self.assertEqual(
+            route["pipeline"],
+            ["data-protection-agent", "legal-writing-agent", "second-review-agent"],
+        )
+
+    def test_merged_profile_routes_california_to_data_protection_agent(self) -> None:
+        os.environ["LEGAL_ORCHESTRATOR_AGENT_PROFILE"] = "merged"
+        route = select_route(
+            {
+                "jurisdictions": ["US-CA"],
+                "domains": ["data_protection"],
+                "tasks": ["research"],
+                "complexity": "simple",
+                "confidence": 1.0,
+            }
+        )
+        self.assertEqual(route["route_mode"], "single_jurisdiction_data_merged")
+        self.assertEqual(
+            route["pipeline"],
+            ["data-protection-agent", "legal-writing-agent", "second-review-agent"],
+        )
+
     def test_cli_reads_classification_file(self) -> None:
         result = subprocess.run(
             [sys.executable, str(CLI), str(FIXTURE)],

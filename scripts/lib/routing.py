@@ -78,8 +78,8 @@ def _unique_agents(agents: list[str]) -> list[str]:
 
 
 def _agent_profile() -> str:
-    value = os.environ.get("LEGAL_ORCHESTRATOR_AGENT_PROFILE", "merged").strip().lower()
-    return value if value in {"merged", "legacy"} else "merged"
+    value = os.environ.get("LEGAL_ORCHESTRATOR_AGENT_PROFILE", "legacy").strip().lower()
+    return value if value in {"merged", "legacy"} else "legacy"
 
 
 def _legacy_data_protection_agents(jurisdictions: list[str]) -> list[str]:

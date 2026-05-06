@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import unittest
@@ -15,6 +16,15 @@ from scripts.lib.routing import normalize_classification, select_route  # noqa: 
 
 
 class RoutingTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self._old_profile = os.environ.pop("LEGAL_ORCHESTRATOR_AGENT_PROFILE", None)
+
+    def tearDown(self) -> None:
+        if self._old_profile is None:
+            os.environ.pop("LEGAL_ORCHESTRATOR_AGENT_PROFILE", None)
+        else:
+            os.environ["LEGAL_ORCHESTRATOR_AGENT_PROFILE"] = self._old_profile
+
     def test_fixture_routes_match_expected_pipeline(self) -> None:
         cases = json.loads(FIXTURE.read_text(encoding="utf-8"))
         for case in cases:
@@ -51,6 +61,24 @@ class RoutingTests(unittest.TestCase):
         )
         self.assertEqual(route["route_mode"], "contract_drafting_wf5")
         self.assertNotEqual(route["route_mode"], "contract_review")
+
+    def test_legacy_profile_keeps_parallel_pipa_gdpr_route(self) -> None:
+        os.environ["LEGAL_ORCHESTRATOR_AGENT_PROFILE"] = "legacy"
+        route = select_route(
+            {
+                "jurisdictions": ["KR", "EU"],
+                "domains": ["data_protection"],
+                "tasks": ["research"],
+                "complexity": "multi_domain",
+                "confidence": 1.0,
+            }
+        )
+        self.assertEqual(route["route_mode"], "multi_jurisdiction_data")
+        self.assertEqual(route["parallel_agents"], ["PIPA-expert", "GDPR-expert"])
+        self.assertEqual(
+            route["pipeline"],
+            ["PIPA-expert", "GDPR-expert", "legal-writing-agent", "second-review-agent"],
+        )
 
     def test_cli_reads_classification_file(self) -> None:
         result = subprocess.run(

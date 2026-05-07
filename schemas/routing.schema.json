@@ -7,7 +7,7 @@
     "jurisdictions": {
       "type": "array",
       "items": {
-        "enum": ["KR", "EU", "US", "JP", "international", "multi", "other"]
+        "enum": ["KR", "EU", "US", "US-CA", "California", "JP", "international", "multi", "other"]
       }
     },
     "domains": {

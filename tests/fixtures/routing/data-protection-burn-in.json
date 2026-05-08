@@ -3,195 +3,319 @@
     "id": "kr-pipa-pseudonymized-art28-2",
     "question": "Under Korean PIPA Article 28-2, what authorities govern pseudonymized information?",
     "classification": {
-      "jurisdictions": ["KR"],
-      "domains": ["data_protection"],
-      "tasks": ["research"],
+      "jurisdictions": [
+        "KR"
+      ],
+      "domains": [
+        "data_protection"
+      ],
+      "tasks": [
+        "research"
+      ],
       "complexity": "simple",
       "confidence": 0.95,
       "ambiguity": []
     },
-    "legacy_pipeline": ["PIPA-expert", "legal-writing-agent", "second-review-agent"],
-    "merged_pipeline": ["data-protection-agent", "legal-writing-agent", "second-review-agent"],
-    "merged_route_mode": "single_jurisdiction_data_merged"
+    "expected_pipeline": [
+      "data-protection-agent",
+      "legal-writing-agent",
+      "second-review-agent"
+    ],
+    "expected_route_mode": "single_jurisdiction_data"
   },
   {
     "id": "kr-pipa-overseas-transfer",
     "question": "Under Korean PIPA, what authorities govern overseas transfer of personal information?",
     "classification": {
-      "jurisdictions": ["KR"],
-      "domains": ["data_protection"],
-      "tasks": ["research"],
+      "jurisdictions": [
+        "KR"
+      ],
+      "domains": [
+        "data_protection"
+      ],
+      "tasks": [
+        "research"
+      ],
       "complexity": "simple",
       "confidence": 0.95,
       "ambiguity": []
     },
-    "legacy_pipeline": ["PIPA-expert", "legal-writing-agent", "second-review-agent"],
-    "merged_pipeline": ["data-protection-agent", "legal-writing-agent", "second-review-agent"],
-    "merged_route_mode": "single_jurisdiction_data_merged"
+    "expected_pipeline": [
+      "data-protection-agent",
+      "legal-writing-agent",
+      "second-review-agent"
+    ],
+    "expected_route_mode": "single_jurisdiction_data"
   },
   {
     "id": "eu-gdpr-processor-dpa",
     "question": "Under GDPR Article 28, what must a processor data processing agreement include?",
     "classification": {
-      "jurisdictions": ["EU"],
-      "domains": ["data_protection"],
-      "tasks": ["research"],
+      "jurisdictions": [
+        "EU"
+      ],
+      "domains": [
+        "data_protection"
+      ],
+      "tasks": [
+        "research"
+      ],
       "complexity": "simple",
       "confidence": 0.95,
       "ambiguity": []
     },
-    "legacy_pipeline": ["GDPR-expert", "legal-writing-agent", "second-review-agent"],
-    "merged_pipeline": ["data-protection-agent", "legal-writing-agent", "second-review-agent"],
-    "merged_route_mode": "single_jurisdiction_data_merged"
+    "expected_pipeline": [
+      "data-protection-agent",
+      "legal-writing-agent",
+      "second-review-agent"
+    ],
+    "expected_route_mode": "single_jurisdiction_data"
   },
   {
     "id": "eu-gdpr-international-transfer-scc",
     "question": "Under GDPR, what authorities govern international transfers and SCC safeguards?",
     "classification": {
-      "jurisdictions": ["EU"],
-      "domains": ["data_protection"],
-      "tasks": ["research"],
+      "jurisdictions": [
+        "EU"
+      ],
+      "domains": [
+        "data_protection"
+      ],
+      "tasks": [
+        "research"
+      ],
       "complexity": "simple",
       "confidence": 0.95,
       "ambiguity": []
     },
-    "legacy_pipeline": ["GDPR-expert", "legal-writing-agent", "second-review-agent"],
-    "merged_pipeline": ["data-protection-agent", "legal-writing-agent", "second-review-agent"],
-    "merged_route_mode": "single_jurisdiction_data_merged"
+    "expected_pipeline": [
+      "data-protection-agent",
+      "legal-writing-agent",
+      "second-review-agent"
+    ],
+    "expected_route_mode": "single_jurisdiction_data"
   },
   {
     "id": "us-ca-ccpa-applicability-threshold",
     "question": "Under California CCPA, what authorities govern applicability thresholds and business definition?",
     "classification": {
-      "jurisdictions": ["US-CA"],
-      "domains": ["data_protection"],
-      "tasks": ["research"],
+      "jurisdictions": [
+        "US-CA"
+      ],
+      "domains": [
+        "data_protection"
+      ],
+      "tasks": [
+        "research"
+      ],
       "complexity": "simple",
       "confidence": 0.95,
       "ambiguity": []
     },
-    "legacy_pipeline": ["general-legal-research", "legal-writing-agent", "second-review-agent"],
-    "merged_pipeline": ["data-protection-agent", "legal-writing-agent", "second-review-agent"],
-    "merged_route_mode": "single_jurisdiction_data_merged"
+    "expected_pipeline": [
+      "data-protection-agent",
+      "legal-writing-agent",
+      "second-review-agent"
+    ],
+    "expected_route_mode": "single_jurisdiction_data"
   },
   {
     "id": "us-ca-sale-share-gpc",
     "question": "Under California CCPA, what authorities govern sale/share opt-out and Global Privacy Control?",
     "classification": {
-      "jurisdictions": ["US-CA"],
-      "domains": ["data_protection"],
-      "tasks": ["research"],
+      "jurisdictions": [
+        "US-CA"
+      ],
+      "domains": [
+        "data_protection"
+      ],
+      "tasks": [
+        "research"
+      ],
       "complexity": "simple",
       "confidence": 0.95,
       "ambiguity": []
     },
-    "legacy_pipeline": ["general-legal-research", "legal-writing-agent", "second-review-agent"],
-    "merged_pipeline": ["data-protection-agent", "legal-writing-agent", "second-review-agent"],
-    "merged_route_mode": "single_jurisdiction_data_merged"
+    "expected_pipeline": [
+      "data-protection-agent",
+      "legal-writing-agent",
+      "second-review-agent"
+    ],
+    "expected_route_mode": "single_jurisdiction_data"
   },
   {
     "id": "us-ca-sensitive-limit-use",
     "question": "Under California CCPA, what authorities govern sensitive personal information and limit-use rights?",
     "classification": {
-      "jurisdictions": ["US-CA"],
-      "domains": ["data_protection"],
-      "tasks": ["research"],
+      "jurisdictions": [
+        "US-CA"
+      ],
+      "domains": [
+        "data_protection"
+      ],
+      "tasks": [
+        "research"
+      ],
       "complexity": "simple",
       "confidence": 0.95,
       "ambiguity": []
     },
-    "legacy_pipeline": ["general-legal-research", "legal-writing-agent", "second-review-agent"],
-    "merged_pipeline": ["data-protection-agent", "legal-writing-agent", "second-review-agent"],
-    "merged_route_mode": "single_jurisdiction_data_merged"
+    "expected_pipeline": [
+      "data-protection-agent",
+      "legal-writing-agent",
+      "second-review-agent"
+    ],
+    "expected_route_mode": "single_jurisdiction_data"
   },
   {
     "id": "us-ca-admt-2026",
     "question": "Under California CCPA 2026 regulations, what authorities govern ADMT opt-out, access, and appeal rights?",
     "classification": {
-      "jurisdictions": ["US-CA"],
-      "domains": ["data_protection"],
-      "tasks": ["research"],
+      "jurisdictions": [
+        "US-CA"
+      ],
+      "domains": [
+        "data_protection"
+      ],
+      "tasks": [
+        "research"
+      ],
       "complexity": "simple",
       "confidence": 0.95,
       "ambiguity": []
     },
-    "legacy_pipeline": ["general-legal-research", "legal-writing-agent", "second-review-agent"],
-    "merged_pipeline": ["data-protection-agent", "legal-writing-agent", "second-review-agent"],
-    "merged_route_mode": "single_jurisdiction_data_merged"
+    "expected_pipeline": [
+      "data-protection-agent",
+      "legal-writing-agent",
+      "second-review-agent"
+    ],
+    "expected_route_mode": "single_jurisdiction_data"
   },
   {
     "id": "kr-eu-overseas-transfer-comparison",
     "question": "Compare Korean PIPA and GDPR overseas transfer requirements.",
     "classification": {
-      "jurisdictions": ["KR", "EU"],
-      "domains": ["data_protection"],
-      "tasks": ["research"],
+      "jurisdictions": [
+        "KR",
+        "EU"
+      ],
+      "domains": [
+        "data_protection"
+      ],
+      "tasks": [
+        "research"
+      ],
       "complexity": "multi_domain",
       "confidence": 0.95,
       "ambiguity": []
     },
-    "legacy_pipeline": ["PIPA-expert", "GDPR-expert", "legal-writing-agent", "second-review-agent"],
-    "merged_pipeline": ["data-protection-agent", "legal-writing-agent", "second-review-agent"],
-    "merged_route_mode": "multi_jurisdiction_data_merged"
+    "expected_pipeline": [
+      "data-protection-agent",
+      "legal-writing-agent",
+      "second-review-agent"
+    ],
+    "expected_route_mode": "multi_jurisdiction_data"
   },
   {
     "id": "kr-usca-notice-vendor-comparison",
     "question": "Compare Korean PIPA and California CCPA privacy notice and vendor contract requirements.",
     "classification": {
-      "jurisdictions": ["KR", "US-CA"],
-      "domains": ["data_protection"],
-      "tasks": ["research"],
+      "jurisdictions": [
+        "KR",
+        "US-CA"
+      ],
+      "domains": [
+        "data_protection"
+      ],
+      "tasks": [
+        "research"
+      ],
       "complexity": "multi_domain",
       "confidence": 0.95,
       "ambiguity": []
     },
-    "legacy_pipeline": ["PIPA-expert", "general-legal-research", "legal-writing-agent", "second-review-agent"],
-    "merged_pipeline": ["data-protection-agent", "legal-writing-agent", "second-review-agent"],
-    "merged_route_mode": "multi_jurisdiction_data_merged"
+    "expected_pipeline": [
+      "data-protection-agent",
+      "legal-writing-agent",
+      "second-review-agent"
+    ],
+    "expected_route_mode": "multi_jurisdiction_data"
   },
   {
     "id": "eu-usca-automated-decisionmaking-comparison",
     "question": "Compare GDPR and California CCPA automated decisionmaking obligations.",
     "classification": {
-      "jurisdictions": ["EU", "US-CA"],
-      "domains": ["data_protection"],
-      "tasks": ["research"],
+      "jurisdictions": [
+        "EU",
+        "US-CA"
+      ],
+      "domains": [
+        "data_protection"
+      ],
+      "tasks": [
+        "research"
+      ],
       "complexity": "multi_domain",
       "confidence": 0.95,
       "ambiguity": []
     },
-    "legacy_pipeline": ["GDPR-expert", "general-legal-research", "legal-writing-agent", "second-review-agent"],
-    "merged_pipeline": ["data-protection-agent", "legal-writing-agent", "second-review-agent"],
-    "merged_route_mode": "multi_jurisdiction_data_merged"
+    "expected_pipeline": [
+      "data-protection-agent",
+      "legal-writing-agent",
+      "second-review-agent"
+    ],
+    "expected_route_mode": "multi_jurisdiction_data"
   },
   {
     "id": "kr-eu-usca-children-comparison",
     "question": "Compare Korean PIPA, GDPR, and California CCPA rules for children's data.",
     "classification": {
-      "jurisdictions": ["KR", "EU", "US-CA"],
-      "domains": ["data_protection"],
-      "tasks": ["research"],
+      "jurisdictions": [
+        "KR",
+        "EU",
+        "US-CA"
+      ],
+      "domains": [
+        "data_protection"
+      ],
+      "tasks": [
+        "research"
+      ],
       "complexity": "multi_domain",
       "confidence": 0.95,
       "ambiguity": []
     },
-    "legacy_pipeline": ["PIPA-expert", "GDPR-expert", "general-legal-research", "legal-writing-agent", "second-review-agent"],
-    "merged_pipeline": ["data-protection-agent", "legal-writing-agent", "second-review-agent"],
-    "merged_route_mode": "multi_jurisdiction_data_merged"
+    "expected_pipeline": [
+      "data-protection-agent",
+      "legal-writing-agent",
+      "second-review-agent"
+    ],
+    "expected_route_mode": "multi_jurisdiction_data"
   },
   {
     "id": "game-privacy-composite-california",
     "question": "For a California online game with child users, which data protection authorities should be checked for CCPA minors opt-in and privacy notices?",
     "classification": {
-      "jurisdictions": ["US-CA"],
-      "domains": ["game_regulation", "data_protection"],
-      "tasks": ["research"],
+      "jurisdictions": [
+        "US-CA"
+      ],
+      "domains": [
+        "game_regulation",
+        "data_protection"
+      ],
+      "tasks": [
+        "research"
+      ],
       "complexity": "multi_domain",
       "confidence": 0.95,
       "ambiguity": []
     },
-    "legacy_pipeline": ["game-legal-research", "general-legal-research", "legal-writing-agent", "second-review-agent"],
-    "merged_pipeline": ["game-legal-research", "data-protection-agent", "legal-writing-agent", "second-review-agent"],
-    "merged_route_mode": "game_and_data_protection_merged"
+    "expected_pipeline": [
+      "game-legal-research",
+      "data-protection-agent",
+      "legal-writing-agent",
+      "second-review-agent"
+    ],
+    "expected_route_mode": "game_and_data_protection"
   }
 ]

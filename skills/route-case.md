@@ -2,9 +2,9 @@
 
 This skill analyzes the client's legal question and selects the right combination of specialist agents and the execution pattern (Pattern 1 / 2 / 3).
 
-**Active agents:** 9 (Claude Code agents only. `game-legal-briefing` and `game-policy-briefing` are standalone Python monitoring apps; they are not routed here.)
+**Active agents:** 7 (Claude Code agents only. `game-legal-briefing` and `game-policy-briefing` are standalone Python monitoring apps; they are not routed here.)
 
-**Data-protection profile:** by default, data-protection matters still use the legacy `PIPA-expert` / `GDPR-expert` routes. Set `LEGAL_ORCHESTRATOR_AGENT_PROFILE=merged` to test `data-protection-agent`, the merged KR/EU/California specialist.
+**Data-protection routing:** all data-protection matters route to the merged `data-protection-agent` (KR PIPA + EU GDPR + California CCPA/CPRA). Jurisdictions outside that set fall back to `general-legal-research`.
 
 ---
 
@@ -43,19 +43,19 @@ Classify the client's question along the four dimensions below:
 | Question | jurisdictions | domains | tasks | complexity | Pipeline |
 |----------|---------------|---------|-------|------------|----------|
 | "한국 게임산업법의 확률형 아이템 규제" | `["KR"]` | `["game_regulation"]` | `["research"]` | `simple` | game-legal-research → writing → review |
-| "개인정보보호법 제28조의2 해석" | `["KR"]` | `["data_protection"]` | `["research"]` | `simple` | PIPA-expert → writing → review |
-| "EU GDPR Article 28 DPA 해석" | `["EU"]` | `["data_protection"]` | `["research"]` | `simple` | GDPR-expert → writing → review |
-| "한국과 EU의 국외이전 규제 비교" | `["KR","EU"]` | `["data_protection"]` | `["research"]` | `multi_domain` | **[PIPA ∥ GDPR]** → writing → review |
-| "한국 SaaS가 EU 유저 데이터 처리할 때 GDPR 컴플라이언스" | `["KR","EU"]` | `["data_protection"]` | `["research"]` | `multi_domain` | **[PIPA ∥ GDPR]** → writing → review |
-| "미국 CCPA와 한국 PIPA의 동의 요건 차이" | `["US-CA","KR"]` | `["data_protection"]` | `["research"]` | `multi_domain` | **[general-legal-research ∥ PIPA]** → writing → review by default; `data-protection-agent` in merged profile |
+| "개인정보보호법 제28조의2 해석" | `["KR"]` | `["data_protection"]` | `["research"]` | `simple` | data-protection-agent → writing → review |
+| "EU GDPR Article 28 DPA 해석" | `["EU"]` | `["data_protection"]` | `["research"]` | `simple` | data-protection-agent → writing → review |
+| "한국과 EU의 국외이전 규제 비교" | `["KR","EU"]` | `["data_protection"]` | `["research"]` | `multi_domain` | data-protection-agent → writing → review |
+| "한국 SaaS가 EU 유저 데이터 처리할 때 GDPR 컴플라이언스" | `["KR","EU"]` | `["data_protection"]` | `["research"]` | `multi_domain` | data-protection-agent → writing → review |
+| "미국 CCPA와 한국 PIPA의 동의 요건 차이" | `["US-CA","KR"]` | `["data_protection"]` | `["research"]` | `multi_domain` | data-protection-agent → writing → review |
 | "일본 게임사가 한국 출시할 때 규제" | `["JP","KR"]` | `["game_regulation"]` | `["research"]` | `simple` | game-legal-research → writing → review *(game-legal-research handles international game regulation, so JP+KR fits a single agent)* |
-| "확률형 아이템 규제가 EU 소비자법과 어떻게 상호작용하는지" | `["KR","EU"]` | `["game_regulation","data_protection"]` | `["research"]` | `multi_domain` | **[game-legal-research ∥ GDPR]** → writing → review by default; merged profile uses data-protection-agent |
+| "확률형 아이템 규제가 EU 소비자법과 어떻게 상호작용하는지" | `["KR","EU"]` | `["game_regulation","data_protection"]` | `["research"]` | `multi_domain` | **[game-legal-research ∥ data-protection-agent]** → writing → review |
 | "이 계약서 검토해줘" | `[]` | `["contract"]` | `["contract_review"]` | `simple` | contract-review-agent → review |
 | "NDA 초안 작성해줘" | `[]` | `["contract"]` | `["drafting"]` | `compound` | contract-review-agent(WF5) → review |
 | "법률 의견서를 작성해줘" (도메인 모호) | `[]` | `["general"]` | `["drafting"]` | `compound` | general-legal-research → writing → review |
 | "이 문서를 영어로 번역해줘" | `[]` | `["translation"]` | `["translation"]` | `simple` | legal-translation-agent (alone) |
 | "계약서를 검토하고 리스크 조항을 영어로 번역" | `[]` | `["contract","translation"]` | `["contract_review","translation"]` | `compound` | contract-review-agent → legal-translation-agent → review |
-| "한국 게임사의 EU 진출 시 GDPR 컴플라이언스 종합 의견서" | `["KR","EU"]` | `["game_regulation","data_protection"]` | `["drafting"]` | `multi_domain` | **[game-legal-research ∥ PIPA ∥ GDPR]** → writing → review by default; merged profile uses data-protection-agent |
+| "한국 게임사의 EU 진출 시 GDPR 컴플라이언스 종합 의견서" | `["KR","EU"]` | `["game_regulation","data_protection"]` | `["drafting"]` | `multi_domain` | **[game-legal-research ∥ data-protection-agent]** → writing → review |
 | "양측 의견을 들려줘" / "논쟁 보고 싶다" | `["multi"]` | situational | `["debate"]` | `adversarial` | Pattern 3 → `manage-debate.md` |
 | "이 분야 최신 동향" | `[]` | situational | `["briefing"]` | `simple` | **Not routable here** — briefing tools are standalone Python apps. |
 
@@ -68,14 +68,12 @@ Classify the client's question along the four dimensions below:
 | `general-legal-research` | General Legal Research Specialist | general | KR + international fallback | General research via the korean-law MCP | — (MCP-driven) |
 | `legal-writing-agent` | Legal Writing Specialist | — (writing) | — | Drafting opinions, style-guide adherence | — |
 | `second-review-agent` | Senior Review Specialist | — (review) | — | Quality review, approve/revise decision | — |
-| `GDPR-expert` | GDPR Specialist | data_protection | **EU** | GDPR, ePrivacy, EU AI Act, Data Act, Data Governance Act | Grade A 1,027 + CJEU 51 + EDPB 120 |
-| `PIPA-expert` | PIPA Specialist | data_protection | **KR** | Korean PIPA, Enforcement Decree, PIPC guidelines, dispositions | Grade A 929 + PIPC guides 46 |
-| `data-protection-agent` | Merged Data Protection Specialist | data_protection | **KR + EU + US-CA** | PIPA, GDPR, California CCPA/CPRA, comparative privacy analysis | Namespaced KR/EU/US-CA KB |
+| `data-protection-agent` | Data Protection Specialist | data_protection | **KR + EU + US-CA** | PIPA, GDPR, California CCPA/CPRA, comparative privacy analysis | Namespaced KR/EU/US-CA KB |
 | `game-legal-research` | Game Industry Research Specialist | game_regulation | **International (KR included)** | Cross-jurisdiction game-industry legal research | 9-stage research pipeline |
 | `contract-review-agent` | Contract Review Specialist | contract | — | Contract ingest/review/draft/rereview, redlines | Library + 5 WF |
 | `legal-translation-agent` | Legal Translation Specialist | translation | — | 5-language legal translation, terminology management | Multilingual glossary |
 
-**Note on built-in subagents:** the fact-checker subagents inside GDPR-expert / PIPA-expert and the deep-researcher inside game-legal-research **do not run** when invoked through the orchestrator (Phase 0 spike #6). The specialists' KBs remain accessible, but be aware that the built-in quality-verification layer is bypassed. The merged `data-protection-agent` exposes its own local output-contract runner and KB indexes.
+**Note on built-in subagents:** the deep-researcher inside game-legal-research **does not run** when invoked through the orchestrator (Phase 0 spike #6). The specialist's KB remains accessible, but be aware that the built-in quality-verification layer is bypassed. `data-protection-agent` exposes its own local output-contract runner and KB indexes.
 
 ---
 
@@ -118,7 +116,7 @@ question input
   ├─ complexity == "multi_domain" (multiple jurisdictions/domains — Pattern 1, max 3 agents)
   │   │
   │   ├─ "data_protection" in domains
-  │   │   → parallel combination by jurisdictions in legacy profile; data-protection-agent in merged profile
+  │   │   → data-protection-agent (covers KR/EU/US-CA in one agent); add general-legal-research only for jurisdictions outside that set
   │   │
   │   ├─ "contract" in domains && (multi-jurisdictional contract law)
   │   │   → [contract-review-agent ∥ general-legal-research] → legal-writing → second-review
@@ -131,10 +129,8 @@ question input
   │       → legal-writing → second-review
   │
   ├─ "data_protection" in domains (single jurisdiction)
-  │   ├─ jurisdictions == ["KR"] → PIPA-expert → legal-writing → second-review
-  │   ├─ jurisdictions == ["EU"] → GDPR-expert → legal-writing → second-review
-  │   ├─ merged profile && jurisdiction in {KR, EU, US-CA, US} → data-protection-agent → legal-writing → second-review
-  │   └─ jurisdictions == ["US"|other] → general-legal-research → legal-writing → second-review
+  │   ├─ jurisdiction in {KR, EU, US-CA, US} → data-protection-agent → legal-writing → second-review
+  │   └─ jurisdictions == ["JP"|other] → general-legal-research → legal-writing → second-review
   │
   ├─ "game_regulation" in domains (any jurisdiction)
   │   → game-legal-research → legal-writing → second-review
@@ -154,12 +150,12 @@ When `complexity == "adversarial"`, use the table below to pick the two particip
 
 | Domain | Jurisdictions | Agent A | Agent B |
 |--------|---------------|---------|---------|
-| `data_protection` | `[KR, EU]` | `PIPA-expert` | `GDPR-expert` |
-| `data_protection` | `[KR, US]` | `PIPA-expert` | `general-legal-research` |
-| `data_protection` | `[EU, US]` | `GDPR-expert` | `general-legal-research` |
-| `game_regulation` + `data_protection` | `[KR, EU]` | `game-legal-research` | `GDPR-expert` |
+| `data_protection` | any | `data-protection-agent` | `general-legal-research` |
+| `game_regulation` + `data_protection` | any | `game-legal-research` | `data-protection-agent` |
 | `game_regulation` | `[KR, EU]` | `game-legal-research` | `general-legal-research` |
 | Other 2-jurisdiction case | varies | The relevant domain specialist | The opposing-domain specialist or `general-legal-research` |
+
+> Cross-jurisdiction privacy debates (KR↔EU, KR↔US-CA, etc.) used to dispatch two jurisdictional specialists. After the merger they run as **`data-protection-agent` taking the domain-specialist position vs. `general-legal-research` taking the broader-jurisprudence/comparative position**. The orchestrator frames the prompts so the two participants argue distinct stances on the same record.
 
 ---
 
@@ -169,13 +165,12 @@ Explicit rules where agent scopes overlap:
 
 | Situation | Rule | Reason |
 |-----------|------|--------|
-| KR data-protection question | **PIPA-expert** by default | Specialist preference until merged-agent burn-in is complete. |
-| EU data-protection question | **GDPR-expert** by default | Same. |
-| Merged data-protection profile | **data-protection-agent** | Set `LEGAL_ORCHESTRATOR_AGENT_PROFILE=merged` to test KR/EU/California merged routing. |
+| Data-protection question (KR / EU / US-CA / US) | **data-protection-agent** | The merged specialist covers PIPA, GDPR, and CCPA/CPRA in one agent. |
+| Data-protection question (JP / other unsupported jurisdiction) | **general-legal-research** | No jurisdictional coverage in `data-protection-agent`; general handles MCP-based fallback. |
 | **KR game-law** question (e.g., loot-box regulation) | **game-legal-research** | Domain-specialization consistency. The game domain always uses game-legal-research. (Alternative: general-legal-research, validated end-to-end. The consistent rule is preferred.) |
 | International game-law (multi-jurisdiction) | **game-legal-research alone** | Cross-jurisdiction is its design intent. |
-| US/JP/other single jurisdiction | **general-legal-research** | No jurisdictional specialist available. General handles MCP-based fallback. |
-| Game + data-protection composite | **[game-legal-research ∥ (jurisdictional privacy specialist)]** by default | Pattern 1 parallel; merged profile swaps the privacy side to `data-protection-agent`. |
+| US/JP/other single jurisdiction (non-privacy, non-game) | **general-legal-research** | No jurisdictional specialist available. General handles MCP-based fallback. |
+| Game + data-protection composite | **[game-legal-research ∥ data-protection-agent]** | Pattern 1 parallel: game-legal-research covers regulation, data-protection-agent covers privacy. |
 | Contract + translation composite | **contract-review → legal-translation** | Pattern 2 sequential: review first, then translate. |
 | Translation request mixed with legal analysis | **legal-translation-agent alone** + redirect message | The translation agent declines legal analysis; instruct the user to file the analysis as a separate question. |
 
@@ -185,17 +180,12 @@ When `complexity == "multi_domain"`, match the table below left-to-right to dete
 
 | Domains | Jurisdictions | Agent combination | Note |
 |---------|---------------|-------------------|------|
-| `data_protection` | `{KR, EU}` | **[PIPA ∥ GDPR]** | Default legacy route |
-| `data_protection` | `{KR, US}` | **[PIPA ∥ general-legal-research]** | Default legacy route; no US specialist |
-| `data_protection` | `{EU, US}` | **[GDPR ∥ general-legal-research]** | Default legacy route |
-| `data_protection` | `{KR, EU, US-CA}` or any subset with `LEGAL_ORCHESTRATOR_AGENT_PROFILE=merged` | **data-protection-agent** (sequential) | Opt-in burn-in route |
-| `data_protection` | `{KR|EU|US-CA, JP|other}` with merged profile | **[data-protection-agent ∥ general-legal-research]** | Merged agent covers KR/EU/US-CA; general covers the extra jurisdiction |
+| `data_protection` | any subset of `{KR, EU, US-CA, US}` | **data-protection-agent** (sequential) | Single merged agent — no parallel split needed |
+| `data_protection` | `{KR\|EU\|US-CA, JP\|other}` | **[data-protection-agent ∥ general-legal-research]** | Merged agent covers KR/EU/US-CA; general covers the unsupported jurisdiction |
 | `data_protection` | 4+ jurisdictions | **Ask user to narrow scope** | `multi_domain_truncated` event |
-| `game_regulation` + `data_protection` | `{KR, EU}` | **[game-legal-research ∥ PIPA ∥ GDPR]** | Default legacy route |
-| `game_regulation` + `data_protection` | `{KR, EU, US-CA}` or any subset with merged profile | **[game-legal-research ∥ data-protection-agent]** | game-legal-research covers game regulation; merged agent covers privacy |
+| `game_regulation` + `data_protection` | any | **[game-legal-research ∥ data-protection-agent]** | game-legal-research covers regulation; data-protection-agent covers privacy |
 | `contract` + `translation` | — | **contract-review → legal-translation** (sequential, Pattern 2) | Not parallel: review first, then translate |
-| `contract` + `data_protection` | `{KR}` | **[contract-review-agent ∥ PIPA]** | Default legacy route |
-| `contract` + `data_protection` | `{KR, EU, US-CA}` or any subset with merged profile | **[contract-review-agent ∥ data-protection-agent]** | Opt-in merged route |
+| `contract` + `data_protection` | any | **[contract-review-agent ∥ data-protection-agent]** | Pattern 1 parallel |
 
 **Combinations not listed above:** follow the fallback — narrow to a 2-way `[general-legal-research ∥ (one available specialist)]`.
 
@@ -329,8 +319,6 @@ Prompt bodies are kept under `skills/prompt-templates/`. The orchestrator reads 
 | Agent ID | Template |
 |----------|----------|
 | `general-legal-research` | `skills/prompt-templates/general-legal-research.md` |
-| `PIPA-expert` | `skills/prompt-templates/pipa-expert.md` |
-| `GDPR-expert` | `skills/prompt-templates/gdpr-expert.md` |
 | `data-protection-agent` | `skills/prompt-templates/data-protection-agent.md` |
 | `game-legal-research` | `skills/prompt-templates/game-legal-research.md` |
 | `contract-review-agent` | `skills/prompt-templates/contract-review-agent.md` |

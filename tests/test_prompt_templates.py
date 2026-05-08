@@ -10,8 +10,6 @@ ROUTE_CASE = REPO_ROOT / "skills" / "route-case.md"
 
 AGENT_TEMPLATES = {
     "general-legal-research": "general-legal-research.md",
-    "PIPA-expert": "pipa-expert.md",
-    "GDPR-expert": "gdpr-expert.md",
     "data-protection-agent": "data-protection-agent.md",
     "game-legal-research": "game-legal-research.md",
     "contract-review-agent": "contract-review-agent.md",

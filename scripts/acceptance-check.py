@@ -145,10 +145,10 @@ def check_case_report_meta() -> CheckResult:
         [
             (exists("scripts/generate-case-report.py"), "generate-case-report.py exists"),
             (has("scripts/generate-case-report.py", 'glob("*-meta.json")'), "case-report generator discovers *-meta.json"),
-            (exists("tests/fixtures/cases/pattern1-multi-agent/PIPA-expert-meta.json"), "mixed-case PIPA-expert meta fixture exists"),
-            (exists("tests/fixtures/cases/pattern1-multi-agent/GDPR-expert-meta.json"), "mixed-case GDPR-expert meta fixture exists"),
-            (has("tests/test_generate_case_report.py", "개인정보보호법 스페셜리스트"), "case-report test asserts PIPA specialist appears"),
-            (has("tests/test_generate_case_report.py", "GDPR 스페셜리스트"), "case-report test asserts GDPR specialist appears"),
+            (exists("tests/fixtures/cases/pattern1-multi-agent/data-protection-agent-meta.json"), "data-protection-agent meta fixture exists"),
+            (exists("tests/fixtures/cases/pattern1-multi-agent/general-legal-research-meta.json"), "general-legal-research meta fixture exists"),
+            (has("tests/test_generate_case_report.py", "데이터보호 스페셜리스트"), "case-report test asserts data-protection specialist appears"),
+            (has("tests/test_generate_case_report.py", "범용 법률 리서치 스페셜리스트"), "case-report test asserts general-legal-research specialist appears"),
         ],
     )
 
@@ -212,7 +212,7 @@ def check_dependency_pinning() -> CheckResult:
         [
             (exists("setup.sh"), "setup.sh exists"),
             (has("setup.sh", "--depth 1"), "setup.sh uses shallow clone (--depth 1)"),
-            (has("setup.sh", "general-legal-research") and has("setup.sh", "legal-translation-agent"), "setup.sh enumerates all 8 subordinate agents"),
+            (has("setup.sh", "general-legal-research") and has("setup.sh", "legal-translation-agent"), "setup.sh enumerates all 7 subordinate agents"),
             (exact_mcp_pins(), ".mcp.json pins exact MCP package versions"),
             (exists("tests/test_mcp_pins.py"), "MCP pin tests exist"),
         ],

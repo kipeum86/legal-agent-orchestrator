@@ -1,0 +1,38 @@
+{
+  "summary": "한국 PIPA와 EU GDPR 처리위탁/Processor 쟁점을 통합 분석합니다.",
+  "issue_map": [
+    {
+      "issue": "처리위탁",
+      "answer": "위탁자 관리 감독과 계약상 필수사항이 필요합니다.",
+      "authority_ids": ["dp_src_001"],
+      "confidence": "high"
+    },
+    {
+      "issue": "Processor terms",
+      "answer": "Article 28 processor clauses are required.",
+      "authority_ids": ["dp_src_002"],
+      "confidence": "high"
+    }
+  ],
+  "key_findings": [
+    "PIPA와 GDPR 모두 위탁자/컨트롤러의 통제 장치를 요구합니다.",
+    "양 법역 공통적으로 계약상 필수사항을 명시해야 합니다."
+  ],
+  "sources": [
+    {
+      "id": "dp_src_001",
+      "title": "개인정보 보호법",
+      "grade": "A",
+      "citation": "제28조의8",
+      "pinpoint": "제1항"
+    },
+    {
+      "id": "dp_src_002",
+      "title": "GDPR",
+      "grade": "A",
+      "citation": "Article 28",
+      "pinpoint": "Article 28(3)"
+    }
+  ],
+  "error": null
+}

@@ -1,7 +1,7 @@
 {
-  "summary": "PIPA와 GDPR 결과를 통합한 합성 의견서입니다.",
+  "summary": "data-protection-agent와 general-legal-research 결과를 통합한 합성 의견서입니다.",
   "issue_map": [],
-  "key_findings": ["양 법역 모두 계약상 통제 장치가 필요합니다."],
+  "key_findings": ["KR/EU/JP 모두 위탁자(컨트롤러)의 통제 장치를 요구합니다."],
   "sources": [],
   "pattern": "pattern_1",
   "partial_results": false,

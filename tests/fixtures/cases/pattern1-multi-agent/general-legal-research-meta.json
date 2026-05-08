@@ -1,0 +1,22 @@
+{
+  "summary": "일본 APPI의 위탁 관련 통제 요구사항을 합성 데이터로 요약합니다.",
+  "issue_map": [
+    {
+      "issue": "APPI 위탁자 의무",
+      "answer": "수탁자에 대한 필요·적절한 감독이 요구됩니다.",
+      "authority_ids": ["gen_src_001"],
+      "confidence": "high"
+    }
+  ],
+  "key_findings": ["APPI 합성 핵심 발견"],
+  "sources": [
+    {
+      "id": "gen_src_001",
+      "title": "Act on the Protection of Personal Information (APPI)",
+      "grade": "A",
+      "citation": "Article 25",
+      "pinpoint": "Article 25"
+    }
+  ],
+  "error": null
+}

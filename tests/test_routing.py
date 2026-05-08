@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 import subprocess
 import sys
 import unittest
@@ -16,15 +15,6 @@ from scripts.lib.routing import normalize_classification, select_route  # noqa: 
 
 
 class RoutingTests(unittest.TestCase):
-    def setUp(self) -> None:
-        self._old_profile = os.environ.pop("LEGAL_ORCHESTRATOR_AGENT_PROFILE", None)
-
-    def tearDown(self) -> None:
-        if self._old_profile is None:
-            os.environ.pop("LEGAL_ORCHESTRATOR_AGENT_PROFILE", None)
-        else:
-            os.environ["LEGAL_ORCHESTRATOR_AGENT_PROFILE"] = self._old_profile
-
     def test_fixture_routes_match_expected_pipeline(self) -> None:
         cases = json.loads(FIXTURE.read_text(encoding="utf-8"))
         for case in cases:
@@ -62,8 +52,7 @@ class RoutingTests(unittest.TestCase):
         self.assertEqual(route["route_mode"], "contract_drafting_wf5")
         self.assertNotEqual(route["route_mode"], "contract_review")
 
-    def test_legacy_profile_keeps_parallel_pipa_gdpr_route(self) -> None:
-        os.environ["LEGAL_ORCHESTRATOR_AGENT_PROFILE"] = "legacy"
+    def test_kr_eu_privacy_routes_to_data_protection_agent(self) -> None:
         route = select_route(
             {
                 "jurisdictions": ["KR", "EU"],
@@ -74,31 +63,14 @@ class RoutingTests(unittest.TestCase):
             }
         )
         self.assertEqual(route["route_mode"], "multi_jurisdiction_data")
-        self.assertEqual(route["parallel_agents"], ["PIPA-expert", "GDPR-expert"])
-        self.assertEqual(
-            route["pipeline"],
-            ["PIPA-expert", "GDPR-expert", "legal-writing-agent", "second-review-agent"],
-        )
-
-    def test_merged_profile_routes_privacy_to_data_protection_agent(self) -> None:
-        os.environ["LEGAL_ORCHESTRATOR_AGENT_PROFILE"] = "merged"
-        route = select_route(
-            {
-                "jurisdictions": ["KR", "EU"],
-                "domains": ["data_protection"],
-                "tasks": ["research"],
-                "complexity": "multi_domain",
-                "confidence": 1.0,
-            }
-        )
-        self.assertEqual(route["route_mode"], "multi_jurisdiction_data_merged")
         self.assertEqual(
             route["pipeline"],
             ["data-protection-agent", "legal-writing-agent", "second-review-agent"],
         )
+        self.assertNotIn("PIPA-expert", route["pipeline"])
+        self.assertNotIn("GDPR-expert", route["pipeline"])
 
-    def test_merged_profile_routes_california_to_data_protection_agent(self) -> None:
-        os.environ["LEGAL_ORCHESTRATOR_AGENT_PROFILE"] = "merged"
+    def test_california_privacy_routes_to_data_protection_agent(self) -> None:
         route = select_route(
             {
                 "jurisdictions": ["US-CA"],
@@ -108,7 +80,7 @@ class RoutingTests(unittest.TestCase):
                 "confidence": 1.0,
             }
         )
-        self.assertEqual(route["route_mode"], "single_jurisdiction_data_merged")
+        self.assertEqual(route["route_mode"], "single_jurisdiction_data")
         self.assertEqual(
             route["pipeline"],
             ["data-protection-agent", "legal-writing-agent", "second-review-agent"],

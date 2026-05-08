@@ -28,12 +28,16 @@ class MergeSourcesTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, msg=result.stderr)
             payload = json.loads((case_dir / "sources.json").read_text(encoding="utf-8"))
 
-        self.assertEqual(payload["total_sources"], 2)
-        self.assertEqual(payload["grade_distribution"], {"A": 2, "B": 0, "C": 0, "D": 0})
+        self.assertEqual(payload["total_sources"], 3)
+        self.assertEqual(payload["grade_distribution"], {"A": 3, "B": 0, "C": 0, "D": 0})
         agents = {agent["agent_id"]: agent for agent in payload["agents"]}
-        self.assertEqual(set(agents), {"GDPR-expert", "PIPA-expert"})
-        self.assertEqual(agents["PIPA-expert"]["sources"][0]["citation"], "제28조의8")
-        self.assertEqual(agents["GDPR-expert"]["sources"][0]["citation"], "Article 28")
+        self.assertEqual(set(agents), {"data-protection-agent", "general-legal-research"})
+        dp_citations = [s["citation"] for s in agents["data-protection-agent"]["sources"]]
+        self.assertIn("제28조의8", dp_citations)
+        self.assertIn("Article 28", dp_citations)
+        self.assertEqual(
+            agents["general-legal-research"]["sources"][0]["citation"], "Article 25"
+        )
 
 
 if __name__ == "__main__":

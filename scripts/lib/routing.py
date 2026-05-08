@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from typing import Any
 
 JURISDICTIONS = {"KR", "EU", "US", "US-CA", "California", "JP", "international", "multi", "other"}
@@ -8,7 +7,7 @@ DOMAINS = {"general", "data_protection", "game_regulation", "contract", "transla
 TASKS = {"research", "drafting", "contract_review", "translation", "debate", "briefing"}
 COMPLEXITIES = {"simple", "compound", "multi_domain", "adversarial"}
 DATA_PROTECTION_AGENT = "data-protection-agent"
-MERGED_DATA_PROTECTION_JURISDICTIONS = {"KR", "EU", "US", "US-CA", "California"}
+DATA_PROTECTION_JURISDICTIONS = {"KR", "EU", "US", "US-CA", "California"}
 
 
 def _split_token(value: Any) -> list[str]:
@@ -43,8 +42,6 @@ def normalize_classification(raw: dict[str, Any]) -> dict[str, Any]:
 
     if "multi" in jurisdictions and len(jurisdictions) > 1:
         jurisdictions = [value for value in jurisdictions if value != "multi"]
-    if not jurisdictions:
-        jurisdictions = ["KR"] if "PIPA" in str(raw) else []
 
     complexity = str(raw.get("complexity") or "").strip()
     if complexity not in COMPLEXITIES:
@@ -77,45 +74,19 @@ def _unique_agents(agents: list[str]) -> list[str]:
     return _dedupe([agent for agent in agents if agent])
 
 
-def _agent_profile() -> str:
-    value = os.environ.get("LEGAL_ORCHESTRATOR_AGENT_PROFILE", "legacy").strip().lower()
-    return value if value in {"merged", "legacy"} else "legacy"
-
-
-def _legacy_data_protection_agents(jurisdictions: list[str]) -> list[str]:
-    agents: list[str] = []
-    if "KR" in jurisdictions:
-        agents.append("PIPA-expert")
-    if "EU" in jurisdictions:
-        agents.append("GDPR-expert")
-    if not jurisdictions or any(value not in {"KR", "EU"} for value in jurisdictions):
-        agents.append("general-legal-research")
-    return _unique_agents(agents)
-
-
 def _data_protection_agents(jurisdictions: list[str]) -> list[str]:
-    if _agent_profile() == "legacy":
-        return _legacy_data_protection_agents(jurisdictions)
-
     if not jurisdictions:
         return [DATA_PROTECTION_AGENT]
 
-    supported = [
-        value for value in jurisdictions
-        if value in MERGED_DATA_PROTECTION_JURISDICTIONS
-    ]
+    supported = [value for value in jurisdictions if value in DATA_PROTECTION_JURISDICTIONS]
     unsupported = [
         value for value in jurisdictions
-        if value not in MERGED_DATA_PROTECTION_JURISDICTIONS and value not in {"multi"}
+        if value not in DATA_PROTECTION_JURISDICTIONS and value != "multi"
     ]
     agents = [DATA_PROTECTION_AGENT] if supported else []
     if unsupported:
         agents.append("general-legal-research")
     return _unique_agents(agents or ["general-legal-research"])
-
-
-def _data_route_mode(base: str) -> str:
-    return f"{base}_merged" if _agent_profile() == "merged" else base
 
 
 def _with_writing_review(agents: list[str]) -> list[str]:
@@ -145,15 +116,10 @@ def _parallel(agents: list[str], *, route_mode: str, notes: list[str] | None = N
 
 
 def _debate_participants(domains: list[str], jurisdictions: list[str]) -> list[str]:
-    if "data_protection" in domains:
-        agents = _legacy_data_protection_agents(jurisdictions)
-        if len(agents) >= 2:
-            return agents[:2]
     if {"game_regulation", "data_protection"}.issubset(set(domains)):
-        if "EU" in jurisdictions:
-            return ["game-legal-research", "GDPR-expert"]
-        if "KR" in jurisdictions:
-            return ["game-legal-research", "PIPA-expert"]
+        return ["game-legal-research", DATA_PROTECTION_AGENT]
+    if "data_protection" in domains:
+        return [DATA_PROTECTION_AGENT, "general-legal-research"]
     if "game_regulation" in domains:
         return ["game-legal-research", "general-legal-research"]
     return ["general-legal-research", "second-review-agent"]
@@ -215,7 +181,7 @@ def select_route(raw: dict[str, Any]) -> dict[str, Any]:
 
     if {"contract", "data_protection"}.issubset(domain_set):
         agents = ["contract-review-agent", *_data_protection_agents(jurisdictions)]
-        route = _parallel(agents, route_mode=_data_route_mode("contract_and_data_protection"))
+        route = _parallel(agents, route_mode="contract_and_data_protection")
         route["classification"] = classification
         return route
 
@@ -239,22 +205,19 @@ def select_route(raw: dict[str, Any]) -> dict[str, Any]:
 
     if {"game_regulation", "data_protection"}.issubset(domain_set):
         agents = ["game-legal-research", *_data_protection_agents(jurisdictions)]
-        route = _parallel(agents, route_mode=_data_route_mode("game_and_data_protection"))
+        route = _parallel(agents, route_mode="game_and_data_protection")
         route["classification"] = classification
         return route
 
     if "data_protection" in domain_set and (complexity == "multi_domain" or len(jurisdictions) > 1):
-        if _agent_profile() == "merged":
-            agents = _data_protection_agents(jurisdictions)
-            if len(agents) > 1:
-                route = _parallel(agents, route_mode="multi_jurisdiction_data_merged")
-            else:
-                route = _sequential(
-                    _with_writing_review(agents),
-                    route_mode="multi_jurisdiction_data_merged",
-                )
+        agents = _data_protection_agents(jurisdictions)
+        if len(agents) > 1:
+            route = _parallel(agents, route_mode="multi_jurisdiction_data")
         else:
-            route = _parallel(_data_protection_agents(jurisdictions), route_mode="multi_jurisdiction_data")
+            route = _sequential(
+                _with_writing_review(agents),
+                route_mode="multi_jurisdiction_data",
+            )
         route["classification"] = classification
         return route
 
@@ -269,7 +232,7 @@ def select_route(raw: dict[str, Any]) -> dict[str, Any]:
     if "data_protection" in domain_set:
         route = _sequential(
             _with_writing_review(_data_protection_agents(jurisdictions)[:1]),
-            route_mode=_data_route_mode("single_jurisdiction_data"),
+            route_mode="single_jurisdiction_data",
         )
         route["classification"] = classification
         return route

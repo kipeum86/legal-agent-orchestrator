@@ -212,7 +212,7 @@ def check_dependency_pinning() -> CheckResult:
         [
             (exists("setup.sh"), "setup.sh exists"),
             (has("setup.sh", "--depth 1"), "setup.sh uses shallow clone (--depth 1)"),
-            (has("setup.sh", "legal-research-agent") and has("setup.sh", "legal-translation-agent"), "setup.sh enumerates all 6 subordinate agents"),
+            (has("setup.sh", "legal-research-agent") and has("setup.sh", "data-protection-agent"), "setup.sh enumerates all 4 subordinate agents"),
             (exact_mcp_pins(), ".mcp.json pins exact MCP package versions"),
             (exists("tests/test_mcp_pins.py"), "MCP pin tests exist"),
         ],

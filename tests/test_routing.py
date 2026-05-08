@@ -48,7 +48,7 @@ class RoutingTests(unittest.TestCase):
         self.assertEqual(normalized["domains"], ["contract", "translation"])
         self.assertEqual(normalized["tasks"], ["contract_review", "translation"])
 
-    def test_contract_drafting_takes_precedence_over_contract_review(self) -> None:
+    def test_contract_domain_returns_out_of_scope(self) -> None:
         route = select_route(
             {
                 "jurisdictions": [],
@@ -58,8 +58,22 @@ class RoutingTests(unittest.TestCase):
                 "confidence": 1.0,
             }
         )
-        self.assertEqual(route["route_mode"], "contract_drafting_wf5")
-        self.assertNotEqual(route["route_mode"], "contract_review")
+        self.assertEqual(route["pattern"], "out_of_scope")
+        self.assertEqual(route["route_mode"], "contract_or_translation_not_orchestrated")
+        self.assertEqual(route["pipeline"], [])
+
+    def test_translation_domain_returns_out_of_scope(self) -> None:
+        route = select_route(
+            {
+                "jurisdictions": [],
+                "domains": ["translation"],
+                "tasks": ["translation"],
+                "complexity": "simple",
+                "confidence": 1.0,
+            }
+        )
+        self.assertEqual(route["pattern"], "out_of_scope")
+        self.assertEqual(route["route_mode"], "contract_or_translation_not_orchestrated")
 
     def test_kr_eu_privacy_routes_to_data_protection_agent(self) -> None:
         route = select_route(

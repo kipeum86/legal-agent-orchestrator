@@ -11,8 +11,6 @@ ROUTE_CASE = REPO_ROOT / "skills" / "route-case.md"
 AGENT_TEMPLATES = {
     "legal-research-agent": "legal-research-agent.md",
     "data-protection-agent": "data-protection-agent.md",
-    "contract-review-agent": "contract-review-agent.md",
-    "legal-translation-agent": "legal-translation-agent.md",
     "legal-writing-agent": "legal-writing-agent.md",
     "second-review-agent": "second-review-agent.md",
 }

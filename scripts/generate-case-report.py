@@ -19,8 +19,6 @@ TEAM = {
     "legal-writing-agent": {"name": "법률문서 작성 스페셜리스트", "role": "법률문서 작성"},
     "second-review-agent": {"name": "시니어 리뷰 스페셜리스트", "role": "품질 검토, 최종 승인"},
     "data-protection-agent": {"name": "데이터보호 스페셜리스트", "role": "KR PIPA, EU GDPR, California CCPA/CPRA"},
-    "contract-review-agent": {"name": "계약서 검토 스페셜리스트", "role": "계약서 검토"},
-    "legal-translation-agent": {"name": "법률 번역 스페셜리스트", "role": "법률문서 번역"},
 }
 
 EVENT_ALIASES = {

@@ -15,9 +15,7 @@ Use these blocks when rendering any agent prompt from `skills/route-case.md`.
 에이전트 자체에 유사한 스타일 가이드가 있더라도 위 절대 경로를 정본으로 사용하세요.
 ```
 
-적용 대상: `legal-research-agent`, `data-protection-agent`, `contract-review-agent`, `legal-writing-agent`, `second-review-agent`.
-
-`legal-translation-agent`에는 주입하지 않습니다.
+적용 대상: `legal-research-agent`, `data-protection-agent`, `legal-writing-agent`, `second-review-agent`.
 
 ## `{{ERROR_CONTRACT_BLOCK}}`
 

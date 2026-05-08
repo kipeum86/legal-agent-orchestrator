@@ -15,8 +15,6 @@ AGENT_NAMES = {
     "legal-writing-agent": "법률문서 작성 스페셜리스트",
     "second-review-agent": "시니어 리뷰 스페셜리스트",
     "data-protection-agent": "데이터보호 스페셜리스트",
-    "contract-review-agent": "계약서 검토 스페셜리스트",
-    "legal-translation-agent": "법률 번역 스페셜리스트",
 }
 
 

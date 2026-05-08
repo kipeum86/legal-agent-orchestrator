@@ -29,7 +29,7 @@
     "expected_route_mode": "multi_jurisdiction_data"
   },
   {
-    "name": "nda_contract_drafting",
+    "name": "contract_drafting_out_of_scope",
     "classification": {
       "jurisdictions": [],
       "domains": ["contract"],
@@ -38,12 +38,12 @@
       "confidence": 0.9,
       "ambiguity": []
     },
-    "expected_pattern": "pattern_2",
-    "expected_pipeline": ["contract-review-agent", "second-review-agent"],
-    "expected_route_mode": "contract_drafting_wf5"
+    "expected_pattern": "out_of_scope",
+    "expected_pipeline": [],
+    "expected_route_mode": "contract_or_translation_not_orchestrated"
   },
   {
-    "name": "contract_review_then_translation",
+    "name": "contract_plus_translation_out_of_scope",
     "classification": {
       "jurisdictions": [],
       "domains": ["contract", "translation"],
@@ -52,9 +52,9 @@
       "confidence": 0.9,
       "ambiguity": []
     },
-    "expected_pattern": "pattern_2",
-    "expected_pipeline": ["contract-review-agent", "legal-translation-agent", "second-review-agent"],
-    "expected_route_mode": "contract_review_then_translation"
+    "expected_pattern": "out_of_scope",
+    "expected_pipeline": [],
+    "expected_route_mode": "contract_or_translation_not_orchestrated"
   },
   {
     "name": "game_data_kr_eu_parallel",
@@ -73,7 +73,7 @@
     "expected_agent_research_mode": "game_regulation"
   },
   {
-    "name": "contract_data_kr_parallel",
+    "name": "contract_plus_data_protection_out_of_scope",
     "classification": {
       "jurisdictions": ["KR"],
       "domains": ["contract", "data_protection"],
@@ -82,10 +82,9 @@
       "confidence": 0.9,
       "ambiguity": []
     },
-    "expected_pattern": "pattern_1",
-    "expected_pipeline": ["contract-review-agent", "data-protection-agent", "legal-writing-agent", "second-review-agent"],
-    "expected_parallel_agents": ["contract-review-agent", "data-protection-agent"],
-    "expected_route_mode": "contract_and_data_protection"
+    "expected_pattern": "out_of_scope",
+    "expected_pipeline": [],
+    "expected_route_mode": "contract_or_translation_not_orchestrated"
   },
   {
     "name": "california_data",
@@ -102,7 +101,7 @@
     "expected_route_mode": "single_jurisdiction_data"
   },
   {
-    "name": "translation_only",
+    "name": "translation_out_of_scope",
     "classification": {
       "jurisdictions": [],
       "domains": ["translation"],
@@ -111,9 +110,9 @@
       "confidence": 0.95,
       "ambiguity": []
     },
-    "expected_pattern": "pattern_2",
-    "expected_pipeline": ["legal-translation-agent"],
-    "expected_route_mode": "translation_only"
+    "expected_pattern": "out_of_scope",
+    "expected_pipeline": [],
+    "expected_route_mode": "contract_or_translation_not_orchestrated"
   },
   {
     "name": "briefing_out_of_scope",

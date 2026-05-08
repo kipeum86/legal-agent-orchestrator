@@ -183,41 +183,22 @@ def select_route(raw: dict[str, Any]) -> dict[str, Any]:
             route["agent_research_mode"] = derive_research_mode(domains)
         return route
 
-    if "translation" in task_set and "contract" in domain_set:
-        route = _sequential(
-            ["contract-review-agent", "legal-translation-agent", "second-review-agent"],
-            route_mode="contract_review_then_translation",
-        )
-        route["classification"] = classification
-        return _annotate_research_mode(route, domains)
-
-    if "translation" in task_set and domain_set.issubset({"translation", "general"}):
-        route = _sequential(["legal-translation-agent"], route_mode="translation_only")
-        route["classification"] = classification
-        return _annotate_research_mode(route, domains)
-
-    if "contract" in domain_set and "drafting" in task_set:
-        route = _sequential(
-            ["contract-review-agent", "second-review-agent"],
-            route_mode="contract_drafting_wf5",
-            notes=["contract drafting must use contract-review-agent WF5 drafting mode"],
-        )
-        route["classification"] = classification
-        return _annotate_research_mode(route, domains)
-
-    if {"contract", "data_protection"}.issubset(domain_set):
-        agents = ["contract-review-agent", *_data_protection_agents(jurisdictions)]
-        route = _parallel(agents, route_mode="contract_and_data_protection")
-        route["classification"] = classification
-        return _annotate_research_mode(route, domains)
-
-    if "contract_review" in task_set or ("contract" in domain_set and len(domain_set) == 1):
-        route = _sequential(
-            ["contract-review-agent", "second-review-agent"],
-            route_mode="contract_review",
-        )
-        route["classification"] = classification
-        return _annotate_research_mode(route, domains)
+    if (
+        "contract" in domain_set
+        or "translation" in domain_set
+        or "contract_review" in task_set
+        or "translation" in task_set
+    ):
+        return {
+            "classification": classification,
+            "pattern": "out_of_scope",
+            "execution": "external_agent",
+            "pipeline": [],
+            "route_mode": "contract_or_translation_not_orchestrated",
+            "notes": [
+                "contract review and translation are handled by separate standalone agents — see contract-review-agent and legal-translation-agent",
+            ],
+        }
 
     if len(jurisdictions) >= 4:
         return {

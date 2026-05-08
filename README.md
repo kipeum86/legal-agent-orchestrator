@@ -16,7 +16,7 @@
 
 Most "legal AI" products are a single LLM you throw questions at. This one is different.
 
-The **lead orchestrator** classifies each incoming question, routes it to the right specialist agent, and picks the collaboration pattern (sequential handoff / parallel research / multi-round debate). The six subordinate agents are real Claude Code agents — each with its own jurisdiction, knowledge base, and MCP tools — and this project reuses them **100% unmodified**.
+The **lead orchestrator** classifies each incoming question, routes it to the right specialist agent, and picks the collaboration pattern (sequential handoff / parallel research / multi-round debate). The four subordinate agents are real Claude Code agents — each with its own jurisdiction, knowledge base, and MCP tools — and this project reuses them **100% unmodified**.
 
 Every step is logged to `events.jsonl`, and the final delivery step folds the whole case folder into a single `case-report.md`. Which specialist was assigned, which sources (Grade A/B/C) were cited, what the fact-checker flagged, and how revisions resolved — it's all visible in one narrative artifact.
 
@@ -24,7 +24,7 @@ Every step is logged to `events.jsonl`, and the final delivery step folds the wh
 
 ## Meet the Team — Legal Agent Orchestrator Specialist Agents
 
-This repository is the central coordinator for **Legal Agent Orchestrator**, a fictional AI legal workflow system. Each of the six specialists below lives in its own independent GitHub repository as a standalone Claude Code agent. When you run `./setup.sh` they are all cloned into `agents/` and ready to be dispatched.
+This repository is the central coordinator for **Legal Agent Orchestrator**, a fictional AI legal workflow system. Each of the four specialists below lives in its own independent GitHub repository as a standalone Claude Code agent. When you run `./setup.sh` they are all cloned into `agents/` and ready to be dispatched.
 
 | Specialist | Agent repository | What they actually do |
 |----------|------------------|-----------------------|
@@ -32,8 +32,12 @@ This repository is the central coordinator for **Legal Agent Orchestrator**, a f
 | **Legal Writing Specialist** | [legal-writing-agent](https://github.com/lowtidebuild/legal-writing-agent) | Bilingual (KR/EN) drafter for **non-contract** legal documents. Drafts via a D1–D6 pipeline, revises via an R1–R7 tracked-change pipeline. Korean drafts follow 쟁점→결론→분석 conventions; English drafts follow IRAC/CRAC with Bluebook/OSCOLA. |
 | **Senior Review Specialist** | [second-review-agent](https://github.com/lowtidebuild/second-review-agent) | Final quality gate for AI-generated legal documents. Verifies citations against primary legal databases (law.go.kr, congress.gov, eur-lex, and more), checks legal logic, and ships redlined DOCX with tracked changes. Independent release gate (Pass / Pass with Warnings / Manual Review Required / Not Recommended). Zero tolerance for hallucinated citations. |
 | **Data Protection Specialist** | [data-protection-agent](https://github.com/lowtidebuild/data-protection-agent) | Unified KR PIPA, EU GDPR, and California CCPA/CPRA specialist with namespaced local KBs, deterministic retrieval, and golden-set evaluation. Single agent for cross-jurisdiction privacy work. |
-| **Contract Review Specialist** | [contract-review-agent](https://github.com/lowtidebuild/contract-review-agent) | Contract review pipeline — drop a contract in, get back a **DOCX with tracked-change redlines, margin comments (internal strategy + external-facing), a full analysis report, and negotiation recommendations**. Node.js + Python stack. Final legal judgment stays with the human. |
-| **Legal Translation Specialist** | [legal-translation-agent](https://github.com/lowtidebuild/legal-translation-agent) | Legal document translation across **5 languages** with zero-omission guarantee and dual-pass translation merged via comparative synthesis. Jurisdiction-aware terminology (BGB, UCC, PRC, Taiwan, APPI) and a persistent shared translation memory that grows with every job. |
+
+> **Out of scope (handled in their own repositories):**
+> - [`contract-review-agent`](https://github.com/lowtidebuild/contract-review-agent) — drop-in contract review with tracked-change redlines, margin comments, and a negotiation report.
+> - [`legal-translation-agent`](https://github.com/lowtidebuild/legal-translation-agent) — 5-language legal document translation with zero-omission guarantee.
+>
+> Contract and translation work runs end-to-end inside those agents, not through this orchestrator. Questions classified into those domains receive a redirect message instead of a routed pipeline.
 
 **The orchestrator never modifies a subordinate agent's `CLAUDE.md`, skills, or knowledge base.** That's what "100% reuse" means in practice. Subordinate agents are tracked at the `main` branch of their respective GitHub repositories — `./setup.sh` shallow-clones them and `./setup.sh update` fast-forwards each one to the latest `main`. **Every new case automatically runs `./setup.sh update` at intake**, so when a specialist ships a bug fix the next case picks it up without any user action (set `LEGAL_ORCHESTRATOR_SKIP_AGENT_SYNC=1` to opt out).
 
@@ -111,7 +115,7 @@ Pattern 3 is the killer feature — two specialists from different jurisdictions
 
 The standard playbook for multi-agent systems is to wrap a framework (LangGraph, CrewAI, AutoGen, Claude Agent SDK) in a web server. Using Claude Code itself as the orchestration runtime is non-standard. Four misconceptions usually come up first:
 
-### 1. "Doesn't stuffing 6 agents into one orchestrator kill performance?"
+### 1. "Doesn't stuffing 4 agents into one orchestrator kill performance?"
 
 No — that's a misconception about how Claude Code's `Agent` tool works.
 
@@ -184,24 +188,22 @@ git clone https://github.com/lowtidebuild/legal-agent-orchestrator.git
 cd legal-agent-orchestrator
 ```
 
-What you have now: the orchestrator itself — `CLAUDE.md` (the lead orchestrator system prompt), `.mcp.json` (MCP server config), `skills/` (routing and assembly logic), and `setup.sh`. The six subordinate agents are **not yet installed**.
+What you have now: the orchestrator itself — `CLAUDE.md` (the lead orchestrator system prompt), `.mcp.json` (MCP server config), `skills/` (routing and assembly logic), and `setup.sh`. The four subordinate agents are **not yet installed**.
 
-### 2. Install the six subordinate agents
+### 2. Install the four subordinate agents
 
 ```bash
 ./setup.sh
 ```
 
-This script shallow-clones all six specialists' GitHub repositories into `agents/` under their Agent ID names, tracking each one's `main` branch:
+This script shallow-clones all four specialists' GitHub repositories into `agents/` under their Agent ID names, tracking each one's `main` branch:
 
 ```
 agents/
 ├── legal-research-agent/       ← Legal Research Specialist (general + game)
 ├── legal-writing-agent/        ← Legal Writing Specialist
 ├── second-review-agent/        ← Senior Review Specialist
-├── data-protection-agent/      ← Data Protection Specialist
-├── contract-review-agent/      ← Contract Review Specialist
-└── legal-translation-agent/    ← Legal Translation Specialist
+└── data-protection-agent/      ← Data Protection Specialist
 ```
 
 Each folder is an independent Claude Code agent with its own `CLAUDE.md`, `skills/`, knowledge base, and MCP configuration. When the orchestrator dispatches a case, it calls into these agents via Claude Code's `Agent` tool with `cwd: agents/{agent-id}/`, so each subagent runs in its own working directory with its own context.
@@ -238,7 +240,7 @@ claude
 ```
 
 When Claude Code starts, it auto-loads:
-- **[CLAUDE.md](CLAUDE.md)** — the orchestrator system prompt that tells the main Claude session "you are the lead orchestrator of Legal Agent Orchestrator, here is your workflow, here are your six specialists, here are the skills you can invoke"
+- **[CLAUDE.md](CLAUDE.md)** — the orchestrator system prompt that tells the main Claude session "you are the lead orchestrator of Legal Agent Orchestrator, here is your workflow, here are your four specialists, here are the skills you can invoke"
 - **[.mcp.json](.mcp.json)** — the MCP servers available (`korean-law` and `kordoc`); each subagent inherits these on dispatch
 - **`skills/*.md`** — markdown procedure documents the orchestrator executes as subroutines
 
@@ -320,7 +322,7 @@ The generated report is designed to be the one file you open first. It includes:
 Everything runs locally on your machine under your own Claude Code session. No intermediate SaaS. Claude Code itself sends prompts to Anthropic for inference — whether that's acceptable for a given matter depends on your firm. `output/`, `agents/`, and `.env` are gitignored so case files and API keys don't leak into commits.
 
 **What does `./setup.sh` actually do to my machine?**
-It creates an `agents/` folder inside this repository and clones six GitHub repositories into it, one per specialist agent. Nothing outside this directory is touched. No global package installs, no environment mutations beyond whatever `git clone` does. Each agent folder is roughly 10–80 MB depending on its knowledge base size.
+It creates an `agents/` folder inside this repository and clones four GitHub repositories into it, one per specialist agent. Nothing outside this directory is touched. No global package installs, no environment mutations beyond whatever `git clone` does. Each agent folder is roughly 10–80 MB depending on its knowledge base size.
 
 **Can I add my own specialist agent?**
 Yes. Write it as a standalone Claude Code agent (its own `CLAUDE.md`, `skills/`, optional `library/`, optional `.mcp.json`), drop it under `agents/` (or symlink it), add one line to the `REPOS` array in `setup.sh`, and add one row to [`skills/route-case.md`](skills/route-case.md) so the router knows when to call it. No orchestrator code changes needed. The design is plugin-shaped.

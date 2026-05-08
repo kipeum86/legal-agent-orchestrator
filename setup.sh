@@ -1,5 +1,5 @@
 #!/bin/bash
-# setup.sh — 6명의 하위 에이전트를 항상 최신 main으로 동기화 (shallow clone)
+# setup.sh — 4명의 하위 에이전트를 항상 최신 main으로 동기화 (shallow clone)
 # 사용법: ./setup.sh           (clone 또는 최신 main으로 fast-forward)
 #         ./setup.sh update    (alias for default — 모든 에이전트 최신 main 동기화)
 #         ./setup.sh status    (각 에이전트의 로컬 SHA vs 원격 main 비교)
@@ -15,15 +15,13 @@ AGENTS_DIR="agents"
 LOCAL_BASE="$HOME/코딩 프로젝트"
 DEFAULT_BRANCH="main"
 
-# Legal Agent Orchestrator가 호출하는 6명의 하위 에이전트.
+# Legal Agent Orchestrator가 호출하는 4명의 하위 에이전트.
 # 각 에이전트는 자체 GitHub 리포의 main 브랜치를 따라가며, 항상 최신 버전이 반영됩니다.
 REPOS=(
   "legal-research-agent"
   "legal-writing-agent"
   "second-review-agent"
   "data-protection-agent"
-  "contract-review-agent"
-  "legal-translation-agent"
 )
 
 mkdir -p "$AGENTS_DIR"
@@ -87,7 +85,7 @@ case "${1:-setup}" in
     for repo in "${REPOS[@]}"; do
       sync_one "$repo"
     done
-    echo "✅ All 6 subordinate agents are at latest $DEFAULT_BRANCH."
+    echo "✅ All 4 subordinate agents are at latest $DEFAULT_BRANCH."
     ;;
   status)
     echo "📊 Subordinate agent status (local vs origin/$DEFAULT_BRANCH):"

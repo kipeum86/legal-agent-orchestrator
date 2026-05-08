@@ -2,7 +2,7 @@
 
 This skill analyzes the client's legal question and selects the right combination of specialist agents and the execution pattern (Pattern 1 / 2 / 3).
 
-**Active agents:** 6 (Claude Code agents only. `game-legal-briefing` and `game-policy-briefing` are standalone Python monitoring apps; they are not routed here.)
+**Active agents:** 4 (Claude Code agents only. Contract review, translation, and the briefing tools — `game-legal-briefing` / `game-policy-briefing` — are operated outside this orchestrator; questions classified into those domains are routed to `out_of_scope` with a redirect message.)
 
 **Data-protection routing:** all data-protection matters route to the merged `data-protection-agent` (KR PIPA + EU GDPR + California CCPA/CPRA). Jurisdictions outside that set fall back to `legal-research-agent`.
 
@@ -59,11 +59,9 @@ Classify the client's question along the four dimensions below:
 | "미국 CCPA와 한국 PIPA의 동의 요건 차이" | `["US-CA","KR"]` | `["data_protection"]` | `["research"]` | `multi_domain` | data-protection-agent → writing → review |
 | "일본 게임사가 한국 출시할 때 규제" | `["JP","KR"]` | `["game_regulation"]` | `["research"]` | `simple` | legal-research-agent (mode=`game_regulation`) → writing → review |
 | "확률형 아이템 규제가 EU 소비자법과 어떻게 상호작용하는지" | `["KR","EU"]` | `["game_regulation","data_protection"]` | `["research"]` | `multi_domain` | **[legal-research-agent (mode=`game_regulation`) ∥ data-protection-agent]** → writing → review |
-| "이 계약서 검토해줘" | `[]` | `["contract"]` | `["contract_review"]` | `simple` | contract-review-agent → review |
-| "NDA 초안 작성해줘" | `[]` | `["contract"]` | `["drafting"]` | `compound` | contract-review-agent(WF5) → review |
+| "이 계약서 검토해줘" / "NDA 초안 작성해줘" | `[]` | `["contract"]` | `["contract_review"\|"drafting"]` | — | **Out of scope.** Redirect to standalone `contract-review-agent`. |
 | "법률 의견서를 작성해줘" (도메인 모호) | `[]` | `["general"]` | `["drafting"]` | `compound` | legal-research-agent (mode=`general`) → writing → review |
-| "이 문서를 영어로 번역해줘" | `[]` | `["translation"]` | `["translation"]` | `simple` | legal-translation-agent (alone) |
-| "계약서를 검토하고 리스크 조항을 영어로 번역" | `[]` | `["contract","translation"]` | `["contract_review","translation"]` | `compound` | contract-review-agent → legal-translation-agent → review |
+| "이 문서를 영어로 번역해줘" / "계약서 번역" | `[]` | `["translation"\|"contract"]` | `["translation"]` | — | **Out of scope.** Redirect to standalone `legal-translation-agent`. |
 | "한국 게임사의 EU 진출 시 GDPR 컴플라이언스 종합 의견서" | `["KR","EU"]` | `["game_regulation","data_protection"]` | `["drafting"]` | `multi_domain` | **[legal-research-agent (mode=`game_regulation`) ∥ data-protection-agent]** → writing → review |
 | "양측 의견을 들려줘" / "논쟁 보고 싶다" | `["multi"]` | situational | `["debate"]` | `adversarial` | Pattern 3 → `manage-debate.md` |
 | "이 분야 최신 동향" | `[]` | situational | `["briefing"]` | `simple` | **Not routable here** — briefing tools are standalone Python apps. |
@@ -78,10 +76,10 @@ Classify the client's question along the four dimensions below:
 | `legal-writing-agent` | Legal Writing Specialist | — (writing) | — | Drafting opinions, style-guide adherence | — |
 | `second-review-agent` | Senior Review Specialist | — (review) | — | Quality review, approve/revise decision | — |
 | `data-protection-agent` | Data Protection Specialist | data_protection | **KR + EU + US-CA** | PIPA, GDPR, California CCPA/CPRA, comparative privacy analysis | Namespaced KR/EU/US-CA KB |
-| `contract-review-agent` | Contract Review Specialist | contract | — | Contract ingest/review/draft/rereview, redlines | Library + 5 WF |
-| `legal-translation-agent` | Legal Translation Specialist | translation | — | 5-language legal translation, terminology management | Multilingual glossary |
 
 **Note on built-in subagents:** `legal-research-agent`'s deep-researcher subagent **does not run** when invoked through the orchestrator (Phase 0 spike #6). The agent's KB remains accessible, but be aware that the built-in quality-verification layer is bypassed. `data-protection-agent` exposes its own local output-contract runner and KB indexes.
+
+**Out-of-scope domains:** `contract` and `translation` are no longer dispatched by this orchestrator. When a question is classified into either domain, return an `out_of_scope` route and direct the user to the standalone `contract-review-agent` and `legal-translation-agent` repositories.
 
 ---
 
@@ -102,32 +100,19 @@ question input
   ├─ "briefing" in tasks
   │   → not routable here. Direct user to standalone briefing tools.
   │
+  ├─ "contract" in domains || "translation" in domains ||
+  │  "contract_review" in tasks || "translation" in tasks
+  │   → out_of_scope. Direct user to the standalone contract-review-agent
+  │     and legal-translation-agent repositories.
+  │
   ├─ complexity == "adversarial" || "debate" in tasks
   │   → see skills/manage-debate.md (Pattern 3 multi-round debate)
   │   → choose 2 participants from the Debate Participant Matrix below
-  │
-  ├─ "translation" in tasks && "contract" in domains
-  │   → contract-review-agent → legal-translation-agent → second-review
-  │
-  ├─ "translation" in tasks && domains ⊆ {"translation", "general"}
-  │   → legal-translation-agent (alone)
-  │
-  ├─ "drafting" in tasks && "contract" in domains
-  │   → contract-review-agent (WF5 drafting mode) → second-review
-  │
-  ├─ domains ⊇ {contract, data_protection}
-  │   → [contract-review-agent ∥ jurisdictional data-protection specialist] → legal-writing → second-review
-  │
-  ├─ "contract_review" in tasks || domains == ["contract"]
-  │   → contract-review-agent → second-review
   │
   ├─ complexity == "multi_domain" (multiple jurisdictions/domains — Pattern 1, max 3 agents)
   │   │
   │   ├─ "data_protection" in domains
   │   │   → data-protection-agent (covers KR/EU/US-CA in one agent); add legal-research-agent (mode=`fallback`) only for jurisdictions outside that set
-  │   │
-  │   ├─ "contract" in domains && (multi-jurisdictional contract law)
-  │   │   → [contract-review-agent ∥ legal-research-agent (mode=`general`)] → legal-writing → second-review
   │   │
   │   ├─ domains ⊇ {game_regulation, data_protection}
   │   │   → see the game+data row in the matrix below
@@ -176,8 +161,8 @@ Explicit rules where agent scopes overlap:
 | International game-law (multi-jurisdiction) | **legal-research-agent** (mode=`game_regulation`) alone | Cross-jurisdiction is its design intent. |
 | US/JP/other single jurisdiction (non-privacy, non-game) | **legal-research-agent** (mode=`general`) | No jurisdictional specialist available; the research agent's `general` mode covers it via MCP. |
 | Game + data-protection composite | **[legal-research-agent (mode=`game_regulation`) ∥ data-protection-agent]** | Pattern 1 parallel: research agent covers game regulation, data-protection-agent covers privacy. |
-| Contract + translation composite | **contract-review → legal-translation** | Pattern 2 sequential: review first, then translate. |
-| Translation request mixed with legal analysis | **legal-translation-agent alone** + redirect message | The translation agent declines legal analysis; instruct the user to file the analysis as a separate question. |
+| Contract review / drafting | **out_of_scope** — redirect to `contract-review-agent` repo | Contract work is performed in the standalone repository, not orchestrated here. |
+| Translation request | **out_of_scope** — redirect to `legal-translation-agent` repo | Translation is performed in the standalone repository, not orchestrated here. |
 
 ### Multi_domain Matrix (Pattern 1 agent combinations)
 
@@ -189,8 +174,7 @@ When `complexity == "multi_domain"`, match the table below left-to-right to dete
 | `data_protection` | `{KR\|EU\|US-CA, JP\|other}` | **[data-protection-agent ∥ legal-research-agent (mode=`fallback`)]** | data-protection-agent covers KR/EU/US-CA; legal-research-agent covers the unsupported jurisdiction |
 | `data_protection` | 4+ jurisdictions | **Ask user to narrow scope** | `multi_domain_truncated` event |
 | `game_regulation` + `data_protection` | any | **[legal-research-agent (mode=`game_regulation`) ∥ data-protection-agent]** | research agent covers game regulation; data-protection-agent covers privacy |
-| `contract` + `translation` | — | **contract-review → legal-translation** (sequential, Pattern 2) | Not parallel: review first, then translate |
-| `contract` + `data_protection` | any | **[contract-review-agent ∥ data-protection-agent]** | Pattern 1 parallel |
+| `contract` or `translation` (alone or combined with anything) | — | **out_of_scope** — redirect to standalone repos | Not orchestrated here |
 
 **Combinations not listed above:** follow the fallback — narrow to a 2-way `[legal-research-agent (mode=`fallback`) ∥ (one available specialist)]`.
 
@@ -325,8 +309,6 @@ Prompt bodies are kept under `skills/prompt-templates/`. The orchestrator reads 
 |----------|----------|
 | `legal-research-agent` | `skills/prompt-templates/legal-research-agent.md` |
 | `data-protection-agent` | `skills/prompt-templates/data-protection-agent.md` |
-| `contract-review-agent` | `skills/prompt-templates/contract-review-agent.md` |
-| `legal-translation-agent` | `skills/prompt-templates/legal-translation-agent.md` |
 | `legal-writing-agent` | `skills/prompt-templates/legal-writing-agent.md` |
 | `second-review-agent` | `skills/prompt-templates/second-review-agent.md` |
 
@@ -338,7 +320,6 @@ Render rules:
 - `{{STYLE_GUIDE_BLOCK}}` is injected only into agents that produce or review Korean deliverables.
 - `{{ERROR_CONTRACT_BLOCK}}` is injected into every agent.
 - `{{OUTPUT_CONTRACT_BLOCK}}` is injected into every output-producing agent.
-- For `legal-translation-agent`, run the template's `Preflight` section before calling the Agent tool.
 - In the `legal-writing-agent` and `second-review-agent` templates, every meta/result interpolation from a subagent must be sanitised and wrapped with `<untrusted_content>` per the trust-boundary rules in `CLAUDE.md`.
 
 ---

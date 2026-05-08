@@ -11,11 +11,10 @@ from typing import Any
 GRADES = ("A", "B", "C", "D")
 
 AGENT_NAMES = {
-    "general-legal-research": "범용 법률 리서치 스페셜리스트",
+    "legal-research-agent": "법률 리서치 스페셜리스트",
     "legal-writing-agent": "법률문서 작성 스페셜리스트",
     "second-review-agent": "시니어 리뷰 스페셜리스트",
     "data-protection-agent": "데이터보호 스페셜리스트",
-    "game-legal-research": "게임산업 리서치 스페셜리스트",
     "contract-review-agent": "계약서 검토 스페셜리스트",
     "legal-translation-agent": "법률 번역 스페셜리스트",
 }
@@ -53,7 +52,7 @@ def agent_from_meta_filename(path: Path) -> str:
     if name == "review-meta.json":
         return "second-review-agent"
     if name == "research-meta.json":
-        return "general-legal-research"
+        return "legal-research-agent"
     if name.endswith("-meta.json"):
         return name[: -len("-meta.json")]
     return path.stem

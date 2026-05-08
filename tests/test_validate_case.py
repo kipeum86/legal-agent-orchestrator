@@ -34,10 +34,10 @@ class ValidateCaseTests(unittest.TestCase):
         event = {
             "id": "evt_001",
             "ts": "2026-04-24T00:00:00Z",
-            "agent": "general-legal-research",
+            "agent": "legal-research-agent",
             "type": "source_graded",
             "data": {
-                "agent_id": "general-legal-research",
+                "agent_id": "legal-research-agent",
                 "source": "민법",
                 "grade": "A",
             },

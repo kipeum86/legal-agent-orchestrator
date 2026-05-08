@@ -9,9 +9,8 @@ TEMPLATE_DIR = REPO_ROOT / "skills" / "prompt-templates"
 ROUTE_CASE = REPO_ROOT / "skills" / "route-case.md"
 
 AGENT_TEMPLATES = {
-    "general-legal-research": "general-legal-research.md",
+    "legal-research-agent": "legal-research-agent.md",
     "data-protection-agent": "data-protection-agent.md",
-    "game-legal-research": "game-legal-research.md",
     "contract-review-agent": "contract-review-agent.md",
     "legal-translation-agent": "legal-translation-agent.md",
     "legal-writing-agent": "legal-writing-agent.md",
@@ -72,6 +71,9 @@ class PromptTemplateTests(unittest.TestCase):
             "{RESEARCH_SUMMARY}",
             "{스페셜리스트명_A}",
             "{스페셜리스트명_B}",
+            "{RESEARCH_MODE}",
+            "{ROUTE_MODE}",
+            "{CO_RUNNING_AGENTS}",
         }
         pattern = re.compile(r"(\{\{[A-Z_]+\}\}|\{[^{}\n]+\})")
         for path in sorted(TEMPLATE_DIR.glob("*.md")):

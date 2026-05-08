@@ -15,11 +15,10 @@ from zoneinfo import ZoneInfo
 KST = ZoneInfo("Asia/Seoul")
 
 TEAM = {
-    "general-legal-research": {"name": "범용 법률 리서치 스페셜리스트", "role": "범용 법률 리서치"},
+    "legal-research-agent": {"name": "법률 리서치 스페셜리스트", "role": "범용 + 게임산업 법률 리서치"},
     "legal-writing-agent": {"name": "법률문서 작성 스페셜리스트", "role": "법률문서 작성"},
     "second-review-agent": {"name": "시니어 리뷰 스페셜리스트", "role": "품질 검토, 최종 승인"},
     "data-protection-agent": {"name": "데이터보호 스페셜리스트", "role": "KR PIPA, EU GDPR, California CCPA/CPRA"},
-    "game-legal-research": {"name": "게임산업 리서치 스페셜리스트", "role": "게임산업 국제법"},
     "contract-review-agent": {"name": "계약서 검토 스페셜리스트", "role": "계약서 검토"},
     "legal-translation-agent": {"name": "법률 번역 스페셜리스트", "role": "법률문서 번역"},
 }
@@ -288,7 +287,7 @@ def derive_key_findings(
 def agent_id_from_meta_filename(path: Path) -> str:
     name = path.name
     if name == "research-meta.json":
-        return "general-legal-research"
+        return "legal-research-agent"
     if name == "writing-meta.json":
         return "legal-writing-agent"
     if name == "review-meta.json":
@@ -307,7 +306,7 @@ def load_meta_bundle(case_dir: Path) -> dict[str, dict[str, Any] | None]:
 
     # Legacy aliases remain supported for old case folders.
     legacy_paths = {
-        "general-legal-research": case_dir / "research-meta.json",
+        "legal-research-agent": case_dir / "research-meta.json",
         "legal-writing-agent": case_dir / "writing-meta.json",
         "second-review-agent": case_dir / "review-meta.json",
     }
@@ -320,7 +319,7 @@ def load_meta_bundle(case_dir: Path) -> dict[str, dict[str, Any] | None]:
 
 
 def select_primary_research_meta(meta_bundle: dict[str, dict[str, Any] | None]) -> dict[str, Any] | None:
-    preferred = meta_bundle.get("general-legal-research")
+    preferred = meta_bundle.get("legal-research-agent")
     if isinstance(preferred, dict):
         return preferred
     for agent_id, meta in meta_bundle.items():

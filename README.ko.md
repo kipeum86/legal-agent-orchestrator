@@ -2,7 +2,7 @@
 
 **English:** [README.md](README.md)
 
-> Claude Code 위에서 돌아가는 AI 기반 법률 워크플로우 시스템. 7명의 전문 스페셜리스트 에이전트가 협업하여 감사 가능한 법률 분석 결과물을 생성합니다.
+> Claude Code 위에서 돌아가는 AI 기반 법률 워크플로우 시스템. 6명의 전문 스페셜리스트 에이전트가 협업하여 감사 가능한 법률 분석 결과물을 생성합니다.
 >
 > 면책 안내: 이 저장소는 법률 리서치, 드래프팅, 리뷰, 워크플로우 오케스트레이션을 지원하기 위한 AI 시스템입니다. 자격 있는 전문가의 법률자문을 대체하는 용도로 사용되어서는 안 되며, AI 산출물에는 오류, 부정확한 인용, 불완전한 분석이 포함될 수 있으므로 실제 의사결정 전에는 별도 검토가 필요합니다. 이 저장소의 사용만으로 변호사-의뢰인 관계가 성립하지 않습니다.
 
@@ -16,7 +16,7 @@
 
 시중의 "법률 AI"는 대부분 단일 LLM에 질문을 던지는 구조입니다. 이 프로젝트는 다릅니다.
 
-**리드 오케스트레이터가 전체 조율 역할**을 맡습니다. 들어오는 질문을 분류하고, 적합한 전문 스페셜리스트 에이전트에게 배정하고, 협업 패턴(순차 핸드오프 / 병렬 리서치 / 멀티라운드 토론)을 직접 선택합니다. 7명의 하위 에이전트는 각자 다른 관할권, 지식 베이스, MCP 도구를 가진 진짜 Claude Code 에이전트이며, 이 프로젝트는 그들을 **단 한 줄도 수정하지 않고 100% 그대로 재활용**합니다.
+**리드 오케스트레이터가 전체 조율 역할**을 맡습니다. 들어오는 질문을 분류하고, 적합한 전문 스페셜리스트 에이전트에게 배정하고, 협업 패턴(순차 핸드오프 / 병렬 리서치 / 멀티라운드 토론)을 직접 선택합니다. 6명의 하위 에이전트는 각자 다른 관할권, 지식 베이스, MCP 도구를 가진 진짜 Claude Code 에이전트이며, 이 프로젝트는 그들을 **단 한 줄도 수정하지 않고 100% 그대로 재활용**합니다.
 
 모든 단계는 `events.jsonl`에 기록되며, 최종 전달 단계에서 사건 전체가 하나의 `case-report.md`로 다시 묶입니다. 어느 스페셜리스트가 배정됐는지, 어떤 소스(Grade A/B/C)를 인용했는지, 팩트체커가 무엇을 지적했는지, 리비전이 어떻게 해소됐는지 — 전부 한 파일에서 확인할 수 있습니다.
 
@@ -24,15 +24,14 @@
 
 ## 팀 소개 — Legal Agent Orchestrator 에이전트
 
-이 저장소는 가상의 AI 법률 워크플로우 시스템 **Legal Agent Orchestrator**의 중앙 오케스트레이터입니다. 아래 7명의 스페셜리스트는 각자 독립된 GitHub 리포지토리에 standalone Claude Code 에이전트로 존재합니다. `./setup.sh`를 실행하면 이들 전부가 `agents/` 아래로 clone되어 바로 디스패치할 수 있는 상태가 됩니다.
+이 저장소는 가상의 AI 법률 워크플로우 시스템 **Legal Agent Orchestrator**의 중앙 오케스트레이터입니다. 아래 6명의 스페셜리스트는 각자 독립된 GitHub 리포지토리에 standalone Claude Code 에이전트로 존재합니다. `./setup.sh`를 실행하면 이들 전부가 `agents/` 아래로 clone되어 바로 디스패치할 수 있는 상태가 됩니다.
 
 | 담당 스페셜리스트 | Agent 리포지토리 | 실제로 하는 일 |
 |------------|------------------|---------------|
-| **범용 법률 리서치 스페셜리스트** | [general-legal-research](https://github.com/lowtidebuild/general-legal-research) | **17+ 관할권**을 커버하는 증거 기반 국제 법률 리서치. 한국법뿐 아니라 어느 관할권의 어떤 법률 질문이든 받는 제너럴리스트 리서치 어소시엇. Grade A 1차 소스 우선 워크플로우. |
+| **법률 리서치 스페셜리스트** | [legal-research-agent](https://github.com/lowtidebuild/legal-research-agent) | 일반 법률 + 게임산업 규제 통합 소스-우선 리서치. 4개 명시적 모드(`general` / `game_regulation` / `game_plus_general` / `fallback`)를 오케스트레이터가 분류 결과로부터 주입. **17+ 관할권** Grade A 1차 소스 우선 워크플로우. |
 | **법률문서 작성 스페셜리스트** | [legal-writing-agent](https://github.com/lowtidebuild/legal-writing-agent) | **한/영 이중 언어** 비계약 법률 문서 드래프터. 신규 작성 D1–D6 파이프라인, 리비전 R1–R7 tracked-change 파이프라인. 한국어 문서는 쟁점→결론→분석 관행, 영어 문서는 IRAC/CRAC + Bluebook/OSCOLA 관행 적용. |
 | **시니어 리뷰 스페셜리스트** | [second-review-agent](https://github.com/lowtidebuild/second-review-agent) | AI 생성 법률 문서 최종 품질 게이트. 인용을 **여러 primary legal database**(law.go.kr, congress.gov, eur-lex 등)에 대해 verbatim 대조하고, 법적 논리와 작성 품질을 점검하며, tracked change가 들어간 redlined DOCX를 생성합니다. 독립 release 게이트(Pass / Pass with Warnings / Manual Review Required / Not Recommended). 환각 인용 zero tolerance. |
 | **데이터보호 스페셜리스트** | [data-protection-agent](https://github.com/lowtidebuild/data-protection-agent) | KR 개인정보보호법(PIPA), EU GDPR, 캘리포니아 CCPA/CPRA 통합 전문가. 관할권별 namespaced 로컬 KB, 결정론적 retrieval, golden-set 평가. 다관할권 개인정보 업무를 단일 에이전트에서 처리. |
-| **게임산업 리서치 스페셜리스트** | [game-legal-research](https://github.com/lowtidebuild/game-legal-research) | 국제 게임 산업 법률 리서치. 게임 클라이언트 자문을 위한 다관할권 규제 비교. 증거 기반, 1차 소스 우선, deliverable 수준 결과물 로컬 출력 파이프라인 보유. |
 | **계약서 검토 스페셜리스트** | [contract-review-agent](https://github.com/lowtidebuild/contract-review-agent) | 계약서 검토 파이프라인 — 계약서를 drop하면 **tracked-change redline이 들어간 DOCX, 여백 코멘트(internal strategy + external-facing), 전체 분석 리포트, 협상 권고**가 반환됩니다. Node.js + Python 스택. 최종 법률 판단은 사람이 합니다. |
 | **법률 번역 스페셜리스트** | [legal-translation-agent](https://github.com/lowtidebuild/legal-translation-agent) | **5개 언어** 법률 문서 번역. zero-omission 보장, dual-pass 번역을 comparative synthesis로 병합. 관할권 인식 용어(BGB, UCC, PRC, Taiwan, APPI) 준수, 매 작업마다 성장하는 shared 번역 메모리. |
 
@@ -48,7 +47,7 @@
 
 | 단계 | 에이전트 | 수행한 작업 | 산출물 |
 |------|---------|------------|--------|
-| **1. 리서치** | 범용 법률 리서치 스페셜리스트 · `general-legal-research` | 관련 MCP와 1차 법률 데이터베이스에서 법조문, 판례, 규제기관 가이드, 집행 경로를 수집 | `{agent}-result.md`, `{agent}-meta.json` |
+| **1. 리서치** | 법률 리서치 스페셜리스트 · `legal-research-agent` | 관련 MCP와 1차 법률 데이터베이스에서 법조문, 판례, 규제기관 가이드, 집행 경로를 수집. 모드(`general` / `game_regulation` 등)는 분류 결과에 따라 오케스트레이터가 결정 | `{agent}-result.md`, `{agent}-meta.json` |
 | **2. 드래프팅** | 법률문서 작성 스페셜리스트 · `legal-writing-agent` | 정형화된 법률 메모 형식으로 초안을 작성 | `opinion.md` |
 | **3. 리뷰** | 시니어 리뷰 스페셜리스트 · `second-review-agent` | 블록 인용구를 verbatim 대조하고, severity 기준으로 코멘트를 반환 | `review-result.md`, `review-meta.json` |
 | **4. 리비전 rescue** | `legal-writing-agent` + 오케스트레이터 | 리비전이 막히면 오케스트레이터가 직접 1차 소스를 재대조 | `verbatim-verification.md` |
@@ -185,23 +184,22 @@ git clone https://github.com/lowtidebuild/legal-agent-orchestrator.git
 cd legal-agent-orchestrator
 ```
 
-이 시점에서 받는 것: 오케스트레이터 자체 — `CLAUDE.md`(리드 오케스트레이터 시스템 프롬프트), `.mcp.json`(MCP 서버 설정), `skills/`(라우팅 및 어셈블 로직), `setup.sh`입니다. 7명의 하위 에이전트는 **아직 설치되지 않은** 상태입니다.
+이 시점에서 받는 것: 오케스트레이터 자체 — `CLAUDE.md`(리드 오케스트레이터 시스템 프롬프트), `.mcp.json`(MCP 서버 설정), `skills/`(라우팅 및 어셈블 로직), `setup.sh`입니다. 6명의 하위 에이전트는 **아직 설치되지 않은** 상태입니다.
 
-### 2. 7명의 하위 에이전트 설치
+### 2. 6명의 하위 에이전트 설치
 
 ```bash
 ./setup.sh
 ```
 
-이 스크립트가 7명의 스페셜리스트 각자의 GitHub 리포지토리를 `agents/` 아래에 Agent ID 이름으로 shallow clone합니다 — 각 리포의 `main` 브랜치만 추적합니다:
+이 스크립트가 6명의 스페셜리스트 각자의 GitHub 리포지토리를 `agents/` 아래에 Agent ID 이름으로 shallow clone합니다 — 각 리포의 `main` 브랜치만 추적합니다:
 
 ```
 agents/
-├── general-legal-research/     ← 범용 법률 리서치 스페셜리스트
+├── legal-research-agent/       ← 법률 리서치 스페셜리스트 (범용 + 게임)
 ├── legal-writing-agent/        ← 법률문서 작성 스페셜리스트
 ├── second-review-agent/        ← 시니어 리뷰 스페셜리스트
 ├── data-protection-agent/      ← 데이터보호 스페셜리스트
-├── game-legal-research/        ← 게임산업 리서치 스페셜리스트
 ├── contract-review-agent/      ← 계약서 검토 스페셜리스트
 └── legal-translation-agent/    ← 법률 번역 스페셜리스트
 ```

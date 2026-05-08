@@ -7,7 +7,24 @@ DOMAINS = {"general", "data_protection", "game_regulation", "contract", "transla
 TASKS = {"research", "drafting", "contract_review", "translation", "debate", "briefing"}
 COMPLEXITIES = {"simple", "compound", "multi_domain", "adversarial"}
 DATA_PROTECTION_AGENT = "data-protection-agent"
+LEGAL_RESEARCH_AGENT = "legal-research-agent"
 DATA_PROTECTION_JURISDICTIONS = {"KR", "EU", "US", "US-CA", "California"}
+
+
+def derive_research_mode(domains: list[str]) -> str:
+    """Map a classification's `domains` to a legal-research-agent research mode.
+
+    Canonical modes per legal-research-agent intake contract: general,
+    game_regulation, game_plus_general, fallback.
+    """
+    domain_set = set(domains)
+    if {"game_regulation", "general"}.issubset(domain_set):
+        return "game_plus_general"
+    if "game_regulation" in domain_set:
+        return "game_regulation"
+    if domain_set.issubset({"general"}) or "general" in domain_set:
+        return "general"
+    return "fallback"
 
 
 def _split_token(value: Any) -> list[str]:
@@ -85,8 +102,8 @@ def _data_protection_agents(jurisdictions: list[str]) -> list[str]:
     ]
     agents = [DATA_PROTECTION_AGENT] if supported else []
     if unsupported:
-        agents.append("general-legal-research")
-    return _unique_agents(agents or ["general-legal-research"])
+        agents.append(LEGAL_RESEARCH_AGENT)
+    return _unique_agents(agents or [LEGAL_RESEARCH_AGENT])
 
 
 def _with_writing_review(agents: list[str]) -> list[str]:
@@ -117,12 +134,18 @@ def _parallel(agents: list[str], *, route_mode: str, notes: list[str] | None = N
 
 def _debate_participants(domains: list[str], jurisdictions: list[str]) -> list[str]:
     if {"game_regulation", "data_protection"}.issubset(set(domains)):
-        return ["game-legal-research", DATA_PROTECTION_AGENT]
+        return [LEGAL_RESEARCH_AGENT, DATA_PROTECTION_AGENT]
     if "data_protection" in domains:
-        return [DATA_PROTECTION_AGENT, "general-legal-research"]
-    if "game_regulation" in domains:
-        return ["game-legal-research", "general-legal-research"]
-    return ["general-legal-research", "second-review-agent"]
+        return [DATA_PROTECTION_AGENT, LEGAL_RESEARCH_AGENT]
+    return [LEGAL_RESEARCH_AGENT, "second-review-agent"]
+
+
+def _annotate_research_mode(route: dict[str, Any], domains: list[str]) -> dict[str, Any]:
+    pipeline = route.get("pipeline") or []
+    parallel = route.get("parallel_agents") or []
+    if LEGAL_RESEARCH_AGENT in pipeline or LEGAL_RESEARCH_AGENT in parallel:
+        route["agent_research_mode"] = derive_research_mode(domains)
+    return route
 
 
 def select_route(raw: dict[str, Any]) -> dict[str, Any]:
@@ -147,7 +170,7 @@ def select_route(raw: dict[str, Any]) -> dict[str, Any]:
 
     if complexity == "adversarial" or "debate" in task_set:
         participants = _debate_participants(domains, jurisdictions)
-        return {
+        route = {
             "classification": classification,
             "pattern": "pattern_3",
             "execution": "debate",
@@ -156,6 +179,9 @@ def select_route(raw: dict[str, Any]) -> dict[str, Any]:
             "route_mode": "adversarial_debate",
             "notes": notes,
         }
+        if LEGAL_RESEARCH_AGENT in participants:
+            route["agent_research_mode"] = derive_research_mode(domains)
+        return route
 
     if "translation" in task_set and "contract" in domain_set:
         route = _sequential(
@@ -163,12 +189,12 @@ def select_route(raw: dict[str, Any]) -> dict[str, Any]:
             route_mode="contract_review_then_translation",
         )
         route["classification"] = classification
-        return route
+        return _annotate_research_mode(route, domains)
 
     if "translation" in task_set and domain_set.issubset({"translation", "general"}):
         route = _sequential(["legal-translation-agent"], route_mode="translation_only")
         route["classification"] = classification
-        return route
+        return _annotate_research_mode(route, domains)
 
     if "contract" in domain_set and "drafting" in task_set:
         route = _sequential(
@@ -177,13 +203,13 @@ def select_route(raw: dict[str, Any]) -> dict[str, Any]:
             notes=["contract drafting must use contract-review-agent WF5 drafting mode"],
         )
         route["classification"] = classification
-        return route
+        return _annotate_research_mode(route, domains)
 
     if {"contract", "data_protection"}.issubset(domain_set):
         agents = ["contract-review-agent", *_data_protection_agents(jurisdictions)]
         route = _parallel(agents, route_mode="contract_and_data_protection")
         route["classification"] = classification
-        return route
+        return _annotate_research_mode(route, domains)
 
     if "contract_review" in task_set or ("contract" in domain_set and len(domain_set) == 1):
         route = _sequential(
@@ -191,7 +217,7 @@ def select_route(raw: dict[str, Any]) -> dict[str, Any]:
             route_mode="contract_review",
         )
         route["classification"] = classification
-        return route
+        return _annotate_research_mode(route, domains)
 
     if len(jurisdictions) >= 4:
         return {
@@ -204,10 +230,10 @@ def select_route(raw: dict[str, Any]) -> dict[str, Any]:
         }
 
     if {"game_regulation", "data_protection"}.issubset(domain_set):
-        agents = ["game-legal-research", *_data_protection_agents(jurisdictions)]
+        agents = [LEGAL_RESEARCH_AGENT, *_data_protection_agents(jurisdictions)]
         route = _parallel(agents, route_mode="game_and_data_protection")
         route["classification"] = classification
-        return route
+        return _annotate_research_mode(route, domains)
 
     if "data_protection" in domain_set and (complexity == "multi_domain" or len(jurisdictions) > 1):
         agents = _data_protection_agents(jurisdictions)
@@ -219,15 +245,15 @@ def select_route(raw: dict[str, Any]) -> dict[str, Any]:
                 route_mode="multi_jurisdiction_data",
             )
         route["classification"] = classification
-        return route
+        return _annotate_research_mode(route, domains)
 
     if "game_regulation" in domain_set:
         route = _sequential(
-            ["game-legal-research", "legal-writing-agent", "second-review-agent"],
+            [LEGAL_RESEARCH_AGENT, "legal-writing-agent", "second-review-agent"],
             route_mode="game_regulation",
         )
         route["classification"] = classification
-        return route
+        return _annotate_research_mode(route, domains)
 
     if "data_protection" in domain_set:
         route = _sequential(
@@ -235,11 +261,11 @@ def select_route(raw: dict[str, Any]) -> dict[str, Any]:
             route_mode="single_jurisdiction_data",
         )
         route["classification"] = classification
-        return route
+        return _annotate_research_mode(route, domains)
 
     route = _sequential(
-        ["general-legal-research", "legal-writing-agent", "second-review-agent"],
+        [LEGAL_RESEARCH_AGENT, "legal-writing-agent", "second-review-agent"],
         route_mode="general_fallback",
     )
     route["classification"] = classification
-    return route
+    return _annotate_research_mode(route, domains)

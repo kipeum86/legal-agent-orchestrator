@@ -73,8 +73,8 @@ python3 "$PROJECT_ROOT/scripts/merge-sources.py" "$OUTPUT_DIR"
   "grade_distribution": { "A": 0, "B": 0, "C": 0, "D": 0 },
   "agents": [
     {
-      "agent_id": "general-legal-research",
-      "agent_name": "범용 법률 리서치 스페셜리스트",
+      "agent_id": "legal-research-agent",
+      "agent_name": "법률 리서치 스페셜리스트",
       "sources": []
     }
   ]

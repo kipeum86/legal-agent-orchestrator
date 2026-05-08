@@ -31,12 +31,12 @@ class MergeSourcesTests(unittest.TestCase):
         self.assertEqual(payload["total_sources"], 3)
         self.assertEqual(payload["grade_distribution"], {"A": 3, "B": 0, "C": 0, "D": 0})
         agents = {agent["agent_id"]: agent for agent in payload["agents"]}
-        self.assertEqual(set(agents), {"data-protection-agent", "general-legal-research"})
+        self.assertEqual(set(agents), {"data-protection-agent", "legal-research-agent"})
         dp_citations = [s["citation"] for s in agents["data-protection-agent"]["sources"]]
         self.assertIn("제28조의8", dp_citations)
         self.assertIn("Article 28", dp_citations)
         self.assertEqual(
-            agents["general-legal-research"]["sources"][0]["citation"], "Article 25"
+            agents["legal-research-agent"]["sources"][0]["citation"], "Article 25"
         )
 
 

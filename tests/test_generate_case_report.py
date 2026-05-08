@@ -36,7 +36,7 @@ class GenerateCaseReportTests(unittest.TestCase):
             report = (case_dir / "case-report.md").read_text(encoding="utf-8")
 
         self.assertIn("데이터보호 스페셜리스트", report)
-        self.assertIn("범용 법률 리서치 스페셜리스트", report)
+        self.assertIn("법률 리서치 스페셜리스트", report)
         self.assertIn("개인정보 보호법", report)
         self.assertIn("제28조의8", report)
         self.assertIn("Article 28", report)

@@ -33,6 +33,11 @@ class DataProtectionBurnInTests(unittest.TestCase):
                 self.assertIn("data-protection-agent", route["pipeline"])
                 self.assertNotIn("PIPA-expert", route["pipeline"])
                 self.assertNotIn("GDPR-expert", route["pipeline"])
+                if "expected_agent_research_mode" in case:
+                    self.assertEqual(
+                        route.get("agent_research_mode"),
+                        case["expected_agent_research_mode"],
+                    )
 
     def test_debate_privacy_pairs_data_protection_with_general_research(self) -> None:
         route = select_route(
@@ -48,7 +53,7 @@ class DataProtectionBurnInTests(unittest.TestCase):
         self.assertEqual(route["route_mode"], "adversarial_debate")
         self.assertEqual(
             route["debate_participants"],
-            ["data-protection-agent", "general-legal-research"],
+            ["data-protection-agent", "legal-research-agent"],
         )
         self.assertNotIn("PIPA-expert", route["debate_participants"])
         self.assertNotIn("GDPR-expert", route["debate_participants"])

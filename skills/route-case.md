@@ -2,9 +2,18 @@
 
 This skill analyzes the client's legal question and selects the right combination of specialist agents and the execution pattern (Pattern 1 / 2 / 3).
 
-**Active agents:** 7 (Claude Code agents only. `game-legal-briefing` and `game-policy-briefing` are standalone Python monitoring apps; they are not routed here.)
+**Active agents:** 6 (Claude Code agents only. `game-legal-briefing` and `game-policy-briefing` are standalone Python monitoring apps; they are not routed here.)
 
-**Data-protection routing:** all data-protection matters route to the merged `data-protection-agent` (KR PIPA + EU GDPR + California CCPA/CPRA). Jurisdictions outside that set fall back to `general-legal-research`.
+**Data-protection routing:** all data-protection matters route to the merged `data-protection-agent` (KR PIPA + EU GDPR + California CCPA/CPRA). Jurisdictions outside that set fall back to `legal-research-agent`.
+
+**Legal-research routing:** general legal research and game-industry regulation are unified under `legal-research-agent`. The orchestrator picks an `agent_research_mode` from the classification's `domains` and injects it into the dispatch prompt:
+
+| Domains contain | `agent_research_mode` |
+|-----------------|------------------------|
+| `["general"]` only or empty | `general` |
+| `["game_regulation"]` (any jurisdiction) | `game_regulation` |
+| both `general` and `game_regulation` | `game_plus_general` |
+| any other (composite where research is the partner role, e.g. data-protection unsupported jurisdiction) | `fallback` |
 
 ---
 
@@ -42,20 +51,20 @@ Classify the client's question along the four dimensions below:
 
 | Question | jurisdictions | domains | tasks | complexity | Pipeline |
 |----------|---------------|---------|-------|------------|----------|
-| "한국 게임산업법의 확률형 아이템 규제" | `["KR"]` | `["game_regulation"]` | `["research"]` | `simple` | game-legal-research → writing → review |
+| "한국 게임산업법의 확률형 아이템 규제" | `["KR"]` | `["game_regulation"]` | `["research"]` | `simple` | legal-research-agent (mode=`game_regulation`) → writing → review |
 | "개인정보보호법 제28조의2 해석" | `["KR"]` | `["data_protection"]` | `["research"]` | `simple` | data-protection-agent → writing → review |
 | "EU GDPR Article 28 DPA 해석" | `["EU"]` | `["data_protection"]` | `["research"]` | `simple` | data-protection-agent → writing → review |
 | "한국과 EU의 국외이전 규제 비교" | `["KR","EU"]` | `["data_protection"]` | `["research"]` | `multi_domain` | data-protection-agent → writing → review |
 | "한국 SaaS가 EU 유저 데이터 처리할 때 GDPR 컴플라이언스" | `["KR","EU"]` | `["data_protection"]` | `["research"]` | `multi_domain` | data-protection-agent → writing → review |
 | "미국 CCPA와 한국 PIPA의 동의 요건 차이" | `["US-CA","KR"]` | `["data_protection"]` | `["research"]` | `multi_domain` | data-protection-agent → writing → review |
-| "일본 게임사가 한국 출시할 때 규제" | `["JP","KR"]` | `["game_regulation"]` | `["research"]` | `simple` | game-legal-research → writing → review *(game-legal-research handles international game regulation, so JP+KR fits a single agent)* |
-| "확률형 아이템 규제가 EU 소비자법과 어떻게 상호작용하는지" | `["KR","EU"]` | `["game_regulation","data_protection"]` | `["research"]` | `multi_domain` | **[game-legal-research ∥ data-protection-agent]** → writing → review |
+| "일본 게임사가 한국 출시할 때 규제" | `["JP","KR"]` | `["game_regulation"]` | `["research"]` | `simple` | legal-research-agent (mode=`game_regulation`) → writing → review |
+| "확률형 아이템 규제가 EU 소비자법과 어떻게 상호작용하는지" | `["KR","EU"]` | `["game_regulation","data_protection"]` | `["research"]` | `multi_domain` | **[legal-research-agent (mode=`game_regulation`) ∥ data-protection-agent]** → writing → review |
 | "이 계약서 검토해줘" | `[]` | `["contract"]` | `["contract_review"]` | `simple` | contract-review-agent → review |
 | "NDA 초안 작성해줘" | `[]` | `["contract"]` | `["drafting"]` | `compound` | contract-review-agent(WF5) → review |
-| "법률 의견서를 작성해줘" (도메인 모호) | `[]` | `["general"]` | `["drafting"]` | `compound` | general-legal-research → writing → review |
+| "법률 의견서를 작성해줘" (도메인 모호) | `[]` | `["general"]` | `["drafting"]` | `compound` | legal-research-agent (mode=`general`) → writing → review |
 | "이 문서를 영어로 번역해줘" | `[]` | `["translation"]` | `["translation"]` | `simple` | legal-translation-agent (alone) |
 | "계약서를 검토하고 리스크 조항을 영어로 번역" | `[]` | `["contract","translation"]` | `["contract_review","translation"]` | `compound` | contract-review-agent → legal-translation-agent → review |
-| "한국 게임사의 EU 진출 시 GDPR 컴플라이언스 종합 의견서" | `["KR","EU"]` | `["game_regulation","data_protection"]` | `["drafting"]` | `multi_domain` | **[game-legal-research ∥ data-protection-agent]** → writing → review |
+| "한국 게임사의 EU 진출 시 GDPR 컴플라이언스 종합 의견서" | `["KR","EU"]` | `["game_regulation","data_protection"]` | `["drafting"]` | `multi_domain` | **[legal-research-agent (mode=`game_regulation`) ∥ data-protection-agent]** → writing → review |
 | "양측 의견을 들려줘" / "논쟁 보고 싶다" | `["multi"]` | situational | `["debate"]` | `adversarial` | Pattern 3 → `manage-debate.md` |
 | "이 분야 최신 동향" | `[]` | situational | `["briefing"]` | `simple` | **Not routable here** — briefing tools are standalone Python apps. |
 
@@ -65,15 +74,14 @@ Classify the client's question along the four dimensions below:
 
 | ID | Specialist | Domain | Primary jurisdiction | Strengths | Built-in KB |
 |----|------------|--------|----------------------|-----------|-------------|
-| `general-legal-research` | General Legal Research Specialist | general | KR + international fallback | General research via the korean-law MCP | — (MCP-driven) |
+| `legal-research-agent` | Legal Research Specialist (general + game) | general / game_regulation | KR + international fallback | Source-first legal research with four explicit modes (`general` / `game_regulation` / `game_plus_general` / `fallback`) | — (MCP-driven) |
 | `legal-writing-agent` | Legal Writing Specialist | — (writing) | — | Drafting opinions, style-guide adherence | — |
 | `second-review-agent` | Senior Review Specialist | — (review) | — | Quality review, approve/revise decision | — |
 | `data-protection-agent` | Data Protection Specialist | data_protection | **KR + EU + US-CA** | PIPA, GDPR, California CCPA/CPRA, comparative privacy analysis | Namespaced KR/EU/US-CA KB |
-| `game-legal-research` | Game Industry Research Specialist | game_regulation | **International (KR included)** | Cross-jurisdiction game-industry legal research | 9-stage research pipeline |
 | `contract-review-agent` | Contract Review Specialist | contract | — | Contract ingest/review/draft/rereview, redlines | Library + 5 WF |
 | `legal-translation-agent` | Legal Translation Specialist | translation | — | 5-language legal translation, terminology management | Multilingual glossary |
 
-**Note on built-in subagents:** the deep-researcher inside game-legal-research **does not run** when invoked through the orchestrator (Phase 0 spike #6). The specialist's KB remains accessible, but be aware that the built-in quality-verification layer is bypassed. `data-protection-agent` exposes its own local output-contract runner and KB indexes.
+**Note on built-in subagents:** `legal-research-agent`'s deep-researcher subagent **does not run** when invoked through the orchestrator (Phase 0 spike #6). The agent's KB remains accessible, but be aware that the built-in quality-verification layer is bypassed. `data-protection-agent` exposes its own local output-contract runner and KB indexes.
 
 ---
 
@@ -116,32 +124,30 @@ question input
   ├─ complexity == "multi_domain" (multiple jurisdictions/domains — Pattern 1, max 3 agents)
   │   │
   │   ├─ "data_protection" in domains
-  │   │   → data-protection-agent (covers KR/EU/US-CA in one agent); add general-legal-research only for jurisdictions outside that set
+  │   │   → data-protection-agent (covers KR/EU/US-CA in one agent); add legal-research-agent (mode=`fallback`) only for jurisdictions outside that set
   │   │
   │   ├─ "contract" in domains && (multi-jurisdictional contract law)
-  │   │   → [contract-review-agent ∥ general-legal-research] → legal-writing → second-review
+  │   │   → [contract-review-agent ∥ legal-research-agent (mode=`general`)] → legal-writing → second-review
   │   │
   │   ├─ domains ⊇ {game_regulation, data_protection}
   │   │   → see the game+data row in the matrix below
   │   │
   │   └─ domains == ["game_regulation"] (multiple jurisdictions)
-  │       → game-legal-research alone (cross-jurisdiction is its design intent)
+  │       → legal-research-agent (mode=`game_regulation`) alone (cross-jurisdiction is its design intent)
   │       → legal-writing → second-review
   │
   ├─ "data_protection" in domains (single jurisdiction)
   │   ├─ jurisdiction in {KR, EU, US-CA, US} → data-protection-agent → legal-writing → second-review
-  │   └─ jurisdictions == ["JP"|other] → general-legal-research → legal-writing → second-review
+  │   └─ jurisdictions == ["JP"|other] → legal-research-agent (mode=`fallback`) → legal-writing → second-review
   │
   ├─ "game_regulation" in domains (any jurisdiction)
-  │   → game-legal-research → legal-writing → second-review
-  │   (domain-specialization rule: the game domain always uses game-legal-research, including
-  │   single-jurisdiction KR game-law questions)
+  │   → legal-research-agent (mode=`game_regulation`) → legal-writing → second-review
   │
   ├─ "research" in tasks && domains == ["general"]
-  │   → general-legal-research → legal-writing → second-review
+  │   → legal-research-agent (mode=`general`) → legal-writing → second-review
   │
   └─ ambiguous classification (fallback)
-      → general-legal-research → legal-writing → second-review
+      → legal-research-agent (mode=`fallback`) → legal-writing → second-review
 ```
 
 ### Debate Participant Matrix
@@ -150,12 +156,11 @@ When `complexity == "adversarial"`, use the table below to pick the two particip
 
 | Domain | Jurisdictions | Agent A | Agent B |
 |--------|---------------|---------|---------|
-| `data_protection` | any | `data-protection-agent` | `general-legal-research` |
-| `game_regulation` + `data_protection` | any | `game-legal-research` | `data-protection-agent` |
-| `game_regulation` | `[KR, EU]` | `game-legal-research` | `general-legal-research` |
-| Other 2-jurisdiction case | varies | The relevant domain specialist | The opposing-domain specialist or `general-legal-research` |
+| `data_protection` | any | `data-protection-agent` | `legal-research-agent` (mode=`fallback`) |
+| `game_regulation` + `data_protection` | any | `legal-research-agent` (mode=`game_regulation`) | `data-protection-agent` |
+| Other 2-domain case | varies | The relevant domain specialist | The opposing-domain specialist or `legal-research-agent` |
 
-> Cross-jurisdiction privacy debates (KR↔EU, KR↔US-CA, etc.) used to dispatch two jurisdictional specialists. After the merger they run as **`data-protection-agent` taking the domain-specialist position vs. `general-legal-research` taking the broader-jurisprudence/comparative position**. The orchestrator frames the prompts so the two participants argue distinct stances on the same record.
+> Cross-jurisdiction privacy debates (KR↔EU, KR↔US-CA, etc.) used to dispatch two jurisdictional specialists. After the data-protection merger they run as **`data-protection-agent` taking the domain-specialist position vs. `legal-research-agent` taking the broader-jurisprudence/comparative position**. Pure-game debates were removed because a single research agent now spans the game-vs-general split — argue from `agent_research_mode` differences instead, or rephrase the case as `game_regulation + data_protection`.
 
 ---
 
@@ -166,11 +171,11 @@ Explicit rules where agent scopes overlap:
 | Situation | Rule | Reason |
 |-----------|------|--------|
 | Data-protection question (KR / EU / US-CA / US) | **data-protection-agent** | The merged specialist covers PIPA, GDPR, and CCPA/CPRA in one agent. |
-| Data-protection question (JP / other unsupported jurisdiction) | **general-legal-research** | No jurisdictional coverage in `data-protection-agent`; general handles MCP-based fallback. |
-| **KR game-law** question (e.g., loot-box regulation) | **game-legal-research** | Domain-specialization consistency. The game domain always uses game-legal-research. (Alternative: general-legal-research, validated end-to-end. The consistent rule is preferred.) |
-| International game-law (multi-jurisdiction) | **game-legal-research alone** | Cross-jurisdiction is its design intent. |
-| US/JP/other single jurisdiction (non-privacy, non-game) | **general-legal-research** | No jurisdictional specialist available. General handles MCP-based fallback. |
-| Game + data-protection composite | **[game-legal-research ∥ data-protection-agent]** | Pattern 1 parallel: game-legal-research covers regulation, data-protection-agent covers privacy. |
+| Data-protection question (JP / other unsupported jurisdiction) | **legal-research-agent** (mode=`fallback`) | No jurisdictional coverage in `data-protection-agent`; the research agent covers it via MCP. |
+| **KR game-law** question (e.g., loot-box regulation) | **legal-research-agent** (mode=`game_regulation`) | The unified research agent's `game_regulation` mode handles single-jurisdiction game cases. |
+| International game-law (multi-jurisdiction) | **legal-research-agent** (mode=`game_regulation`) alone | Cross-jurisdiction is its design intent. |
+| US/JP/other single jurisdiction (non-privacy, non-game) | **legal-research-agent** (mode=`general`) | No jurisdictional specialist available; the research agent's `general` mode covers it via MCP. |
+| Game + data-protection composite | **[legal-research-agent (mode=`game_regulation`) ∥ data-protection-agent]** | Pattern 1 parallel: research agent covers game regulation, data-protection-agent covers privacy. |
 | Contract + translation composite | **contract-review → legal-translation** | Pattern 2 sequential: review first, then translate. |
 | Translation request mixed with legal analysis | **legal-translation-agent alone** + redirect message | The translation agent declines legal analysis; instruct the user to file the analysis as a separate question. |
 
@@ -181,13 +186,13 @@ When `complexity == "multi_domain"`, match the table below left-to-right to dete
 | Domains | Jurisdictions | Agent combination | Note |
 |---------|---------------|-------------------|------|
 | `data_protection` | any subset of `{KR, EU, US-CA, US}` | **data-protection-agent** (sequential) | Single merged agent — no parallel split needed |
-| `data_protection` | `{KR\|EU\|US-CA, JP\|other}` | **[data-protection-agent ∥ general-legal-research]** | Merged agent covers KR/EU/US-CA; general covers the unsupported jurisdiction |
+| `data_protection` | `{KR\|EU\|US-CA, JP\|other}` | **[data-protection-agent ∥ legal-research-agent (mode=`fallback`)]** | data-protection-agent covers KR/EU/US-CA; legal-research-agent covers the unsupported jurisdiction |
 | `data_protection` | 4+ jurisdictions | **Ask user to narrow scope** | `multi_domain_truncated` event |
-| `game_regulation` + `data_protection` | any | **[game-legal-research ∥ data-protection-agent]** | game-legal-research covers regulation; data-protection-agent covers privacy |
+| `game_regulation` + `data_protection` | any | **[legal-research-agent (mode=`game_regulation`) ∥ data-protection-agent]** | research agent covers game regulation; data-protection-agent covers privacy |
 | `contract` + `translation` | — | **contract-review → legal-translation** (sequential, Pattern 2) | Not parallel: review first, then translate |
 | `contract` + `data_protection` | any | **[contract-review-agent ∥ data-protection-agent]** | Pattern 1 parallel |
 
-**Combinations not listed above:** follow the fallback — narrow to a 2-way `[general-legal-research ∥ (one available specialist)]`.
+**Combinations not listed above:** follow the fallback — narrow to a 2-way `[legal-research-agent (mode=`fallback`) ∥ (one available specialist)]`.
 
 ---
 
@@ -232,7 +237,7 @@ When one or more agents in the N parallel calls fail (timeout, rate_limit, MCP e
 | 1 failure + (N-1) successes, rate_limit | Retry the failed agent once (matching the CLAUDE.md error policy). If retry also fails, take the "partial success" path below. |
 | Partial success (≥ 1 succeeded) | Pass `partial_results: true` plus the failed agent ID/reason to the writing agent. The opinion **must** disclose the omission ("{jurisdiction} analysis omitted for technical reasons; conservative assumptions applied for that segment."). |
 | All failed | Abort the pipeline. Log a `pipeline_aborted` event. Report to the user. |
-| Misclassification → wrong agent invoked → domain refusal | Log an `agent_out_of_scope` event and fall back to the general-legal-research solo route. |
+| Misclassification → wrong agent invoked → domain refusal | Log an `agent_out_of_scope` event and fall back to the legal-research-agent (mode=`fallback`) solo route. |
 
 **Event logging:**
 ```bash
@@ -318,9 +323,8 @@ Prompt bodies are kept under `skills/prompt-templates/`. The orchestrator reads 
 
 | Agent ID | Template |
 |----------|----------|
-| `general-legal-research` | `skills/prompt-templates/general-legal-research.md` |
+| `legal-research-agent` | `skills/prompt-templates/legal-research-agent.md` |
 | `data-protection-agent` | `skills/prompt-templates/data-protection-agent.md` |
-| `game-legal-research` | `skills/prompt-templates/game-legal-research.md` |
 | `contract-review-agent` | `skills/prompt-templates/contract-review-agent.md` |
 | `legal-translation-agent` | `skills/prompt-templates/legal-translation-agent.md` |
 | `legal-writing-agent` | `skills/prompt-templates/legal-writing-agent.md` |

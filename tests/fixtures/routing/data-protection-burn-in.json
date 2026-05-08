@@ -311,11 +311,12 @@
       "ambiguity": []
     },
     "expected_pipeline": [
-      "game-legal-research",
+      "legal-research-agent",
       "data-protection-agent",
       "legal-writing-agent",
       "second-review-agent"
     ],
-    "expected_route_mode": "game_and_data_protection"
+    "expected_route_mode": "game_and_data_protection",
+    "expected_agent_research_mode": "game_regulation"
   }
 ]

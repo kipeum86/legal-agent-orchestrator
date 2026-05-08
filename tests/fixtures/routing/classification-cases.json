@@ -10,8 +10,9 @@
       "ambiguity": []
     },
     "expected_pattern": "pattern_2",
-    "expected_pipeline": ["game-legal-research", "legal-writing-agent", "second-review-agent"],
-    "expected_route_mode": "game_regulation"
+    "expected_pipeline": ["legal-research-agent", "legal-writing-agent", "second-review-agent"],
+    "expected_route_mode": "game_regulation",
+    "expected_agent_research_mode": "game_regulation"
   },
   {
     "name": "kr_eu_data_merged",
@@ -66,9 +67,10 @@
       "ambiguity": []
     },
     "expected_pattern": "pattern_1",
-    "expected_pipeline": ["game-legal-research", "data-protection-agent", "legal-writing-agent", "second-review-agent"],
-    "expected_parallel_agents": ["game-legal-research", "data-protection-agent"],
-    "expected_route_mode": "game_and_data_protection"
+    "expected_pipeline": ["legal-research-agent", "data-protection-agent", "legal-writing-agent", "second-review-agent"],
+    "expected_parallel_agents": ["legal-research-agent", "data-protection-agent"],
+    "expected_route_mode": "game_and_data_protection",
+    "expected_agent_research_mode": "game_regulation"
   },
   {
     "name": "contract_data_kr_parallel",

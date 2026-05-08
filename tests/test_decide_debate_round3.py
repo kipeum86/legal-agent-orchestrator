@@ -26,7 +26,7 @@ def write_case(case_dir: Path, *, concessions_a: list[str], concessions_b: list[
             "data": {
                 "topic": "확률형 아이템 표시 의무",
                 "framing": "데이터보호 vs 일반 법리",
-                "participants": ["data-protection-agent", "general-legal-research"],
+                "participants": ["data-protection-agent", "legal-research-agent"],
                 "max_rounds": 3,
                 "case_id": case_dir.name,
             },
@@ -37,15 +37,15 @@ def write_case(case_dir: Path, *, concessions_a: list[str], concessions_b: list[
         {"key_claims": ["DP claim 1", "DP claim 2"]},
     )
     write_json(
-        case_dir / "debate-round-1-general-legal-research-meta.json",
+        case_dir / "debate-round-1-legal-research-agent-meta.json",
         {"key_claims": ["GEN claim 1", "GEN claim 2"]},
     )
     write_json(
         case_dir / "debate-round-2-data-protection-agent-meta.json",
-        {"rebuts_agent": "general-legal-research", "conceded_points": concessions_a},
+        {"rebuts_agent": "legal-research-agent", "conceded_points": concessions_a},
     )
     write_json(
-        case_dir / "debate-round-2-general-legal-research-meta.json",
+        case_dir / "debate-round-2-legal-research-agent-meta.json",
         {"rebuts_agent": "data-protection-agent", "conceded_points": concessions_b},
     )
 
@@ -101,7 +101,7 @@ class DecideDebateRound3Tests(unittest.TestCase):
                 concessions_a=["GEN claim 1"],
                 concessions_b=["DP claim 1"],
             )
-            (case_dir / "debate-round-2-general-legal-research-meta.json").write_text(
+            (case_dir / "debate-round-2-legal-research-agent-meta.json").write_text(
                 "{not json",
                 encoding="utf-8",
             )

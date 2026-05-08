@@ -445,7 +445,7 @@ When handing off to `deliver-output`, preserve the following context:
 |----------|----------|
 | One side fails in Round 1 | Retry once. If retry also fails, log an `error` event and switch to a single-perspective report. The `debate-opinion.md` must disclose that the debate format was downgraded to a single-perspective report due to a technical failure. |
 | `rate_limit` from Round 2 onward | Skip the affected agent's remaining rounds; the orchestrator performs key-claim verification directly via MCP. The verdict prompt must include a note explaining this. |
-| `out_of_scope` | Log an `agent_out_of_scope` event and re-dispatch that round to `general-legal-research`. |
+| `out_of_scope` | Log an `agent_out_of_scope` event and re-dispatch that round to `legal-research-agent` (mode=`fallback`). |
 | `meta.json` not produced | Extract `summary`, `key_claims`, and key sources directly from the returned text. |
 | Round 3 convergence | Normal flow. Record `proceed: false` in `debate_round3_decision` and produce the verdict, transcript, and DOCX based on the two completed rounds. |
 

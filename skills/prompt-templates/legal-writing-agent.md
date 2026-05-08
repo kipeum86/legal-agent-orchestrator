@@ -8,7 +8,7 @@
 [리서치 출처]
 
 <!-- IF pattern == pattern_2 (단일 에이전트 순차) -->
-- 에이전트: {AGENT_ID}  (예: general-legal-research)
+- 에이전트: {AGENT_ID}  (예: legal-research-agent)
 - 요약: {SUMMARY}
 - 주요 발견: {KEY_FINDINGS}
 - 상세 결과 경로: {OUTPUT_DIR}/{AGENT_ID}-result.md

@@ -11,7 +11,11 @@ FIXTURE = REPO_ROOT / "tests" / "fixtures" / "routing" / "classification-cases.j
 CLI = REPO_ROOT / "scripts" / "select-route.py"
 sys.path.insert(0, str(REPO_ROOT))
 
-from scripts.lib.routing import normalize_classification, select_route  # noqa: E402
+from scripts.lib.routing import (  # noqa: E402
+    derive_research_mode,
+    normalize_classification,
+    select_route,
+)
 
 
 class RoutingTests(unittest.TestCase):
@@ -26,6 +30,11 @@ class RoutingTests(unittest.TestCase):
                     self.assertEqual(route["route_mode"], case["expected_route_mode"])
                 if "expected_parallel_agents" in case:
                     self.assertEqual(route["parallel_agents"], case["expected_parallel_agents"])
+                if "expected_agent_research_mode" in case:
+                    self.assertEqual(
+                        route.get("agent_research_mode"),
+                        case["expected_agent_research_mode"],
+                    )
 
     def test_legacy_plus_delimited_values_normalize_to_arrays(self) -> None:
         normalized = normalize_classification(
@@ -69,6 +78,43 @@ class RoutingTests(unittest.TestCase):
         )
         self.assertNotIn("PIPA-expert", route["pipeline"])
         self.assertNotIn("GDPR-expert", route["pipeline"])
+
+    def test_derive_research_mode_maps_domains_correctly(self) -> None:
+        self.assertEqual(derive_research_mode(["general"]), "general")
+        self.assertEqual(derive_research_mode([]), "general")
+        self.assertEqual(derive_research_mode(["game_regulation"]), "game_regulation")
+        self.assertEqual(
+            derive_research_mode(["game_regulation", "general"]),
+            "game_plus_general",
+        )
+        self.assertEqual(derive_research_mode(["data_protection"]), "fallback")
+        self.assertEqual(derive_research_mode(["contract"]), "fallback")
+
+    def test_general_fallback_route_carries_agent_research_mode(self) -> None:
+        route = select_route(
+            {
+                "jurisdictions": ["JP"],
+                "domains": [],
+                "tasks": ["research"],
+                "complexity": "simple",
+                "confidence": 1.0,
+            }
+        )
+        self.assertEqual(route["pipeline"][0], "legal-research-agent")
+        self.assertEqual(route.get("agent_research_mode"), "general")
+
+    def test_game_regulation_route_carries_game_research_mode(self) -> None:
+        route = select_route(
+            {
+                "jurisdictions": ["KR"],
+                "domains": ["game_regulation"],
+                "tasks": ["research"],
+                "complexity": "simple",
+                "confidence": 1.0,
+            }
+        )
+        self.assertEqual(route["route_mode"], "game_regulation")
+        self.assertEqual(route.get("agent_research_mode"), "game_regulation")
 
     def test_california_privacy_routes_to_data_protection_agent(self) -> None:
         route = select_route(

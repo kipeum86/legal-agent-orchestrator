@@ -115,7 +115,7 @@ Pattern 3이 킬러 피처입니다. 서로 다른 관할권의 두 전문가가
 
 멀티에이전트 업계 표준은 LangGraph · CrewAI · AutoGen · Claude Agent SDK 같은 프레임워크를 웹 서버로 감싸는 것입니다. Claude Code 자체를 오케스트레이션 런타임으로 사용하는 것은 비주류입니다. 네 가지 오해부터 풀어야 답이 나옵니다:
 
-### 1. "에이전트 8개를 한 오케스트레이터에 꾸겨 넣으면 성능 저하 아닌가?"
+### 1. "에이전트 4개를 한 오케스트레이터에 꾸겨 넣으면 성능 저하 아닌가?"
 
 아닙니다. Claude Code `Agent` tool이 어떻게 작동하는지에 대한 오해입니다.
 
@@ -240,7 +240,7 @@ claude
 ```
 
 Claude Code가 시작할 때 다음을 자동 로드합니다:
-- **[CLAUDE.md](CLAUDE.md)** — 오케스트레이터 시스템 프롬프트. 메인 Claude 세션에게 "당신은 Legal Agent Orchestrator의 리드 오케스트레이터이고, 이것이 워크플로우이고, 소속 스페셜리스트 8명이고, 호출할 수 있는 스킬들입니다"라고 지시합니다
+- **[CLAUDE.md](CLAUDE.md)** — 오케스트레이터 시스템 프롬프트. 메인 Claude 세션에게 "당신은 Legal Agent Orchestrator의 리드 오케스트레이터이고, 이것이 워크플로우이고, 소속 스페셜리스트 4명이고, 호출할 수 있는 스킬들입니다"라고 지시합니다
 - **[.mcp.json](.mcp.json)** — 사용 가능한 MCP 서버 설정 (`korean-law` 및 `kordoc`); 디스패치 시 각 서브에이전트가 이를 상속합니다
 - **`skills/*.md`** — 오케스트레이터가 서브루틴처럼 실행하는 markdown 절차 문서입니다
 
@@ -323,7 +323,7 @@ python3 "$PROJECT_ROOT/scripts/generate-case-report.py" "$OUTPUT_DIR"
 모든 실행은 사용자의 로컬 머신에서 사용자 본인의 Claude Code 세션으로 이루어집니다. 중간 SaaS는 없습니다. 다만 Claude Code 자체가 추론을 위해 Anthropic에 프롬프트를 전송하므로, 특정 사안에서 이것이 허용되는지는 소속 조직 정책에 따라 다릅니다. `output/`, `agents/`, `.env`는 gitignored 되어 있어 케이스 파일과 API 키가 커밋에 포함되지 않습니다.
 
 **`./setup.sh`가 머신에 정확히 무엇을 하나요?**
-이 리포지토리 안에 `agents/` 폴더를 만들고, 8개의 public GitHub 리포지토리를 그 아래로 clone합니다. 이 디렉토리 바깥은 건드리지 않습니다. global package 설치도 없고, `git clone`이 수행하는 것 외의 환경 변이도 없습니다. 각 에이전트 폴더는 지식 베이스 크기에 따라 대략 10~80 MB 정도입니다.
+이 리포지토리 안에 `agents/` 폴더를 만들고, 4개의 public GitHub 리포지토리를 그 아래로 clone합니다. 이 디렉토리 바깥은 건드리지 않습니다. global package 설치도 없고, `git clone`이 수행하는 것 외의 환경 변이도 없습니다. 각 에이전트 폴더는 지식 베이스 크기에 따라 대략 10~80 MB 정도입니다.
 
 **자체 전문 에이전트를 추가할 수 있나요?**
 네. 독립된 Claude Code 에이전트로 작성(자체 `CLAUDE.md`, `skills/`, 선택적으로 `library/`와 `.mcp.json`)하고, `agents/` 아래에 drop (또는 심볼릭 링크)하고, `setup.sh`의 `REPOS` 배열에 한 줄 추가하고, [`skills/route-case.md`](skills/route-case.md)에 라우터가 해당 에이전트를 호출할 조건을 한 행 추가하시면 됩니다. 오케스트레이터 코드 변경은 필요 없습니다. plugin 형태로 설계되어 있습니다.

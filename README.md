@@ -2,7 +2,7 @@
 
 **한국어:** [README.ko.md](README.ko.md)
 
-> An AI-based legal workflow system running on Claude Code. Eight specialist agents collaborate to produce audit-friendly legal analysis with transparent process logs.
+> An AI-based legal workflow system running on Claude Code. Four specialist agents collaborate to produce audit-friendly legal analysis with transparent process logs.
 >
 > Disclaimer: This repository supports legal research, drafting, review, and workflow orchestration. It is designed as an AI workflow system for legal work and should not be relied on as a substitute for advice from qualified counsel in the relevant jurisdiction. AI outputs may contain errors, inaccurate citations, or incomplete analysis, and no attorney-client relationship is created through use of this repository.
 

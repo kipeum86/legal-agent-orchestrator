@@ -5,7 +5,7 @@
 Run these before committing orchestrator changes:
 
 ```bash
-python3 -m unittest
+python3 -m pytest
 python3 scripts/sanitize-check.py --self-test
 python3 scripts/smoke-check.py
 ```

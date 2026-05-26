@@ -220,7 +220,7 @@ Each agent is shallow-cloned (`--depth 1 --single-branch`), so only the latest s
 Before committing orchestrator changes, run the checks in [CONTRIBUTING.md](CONTRIBUTING.md):
 
 ```bash
-python3 -m unittest
+python3 -m pytest
 python3 scripts/sanitize-check.py --self-test
 python3 scripts/smoke-check.py
 ```

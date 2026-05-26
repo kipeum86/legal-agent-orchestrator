@@ -3,10 +3,19 @@ output/*
 !output/.gitkeep
 samples/
 .env
+.env.*
+!.env.example
 .DS_Store
 node_modules/
 .pnpm-store/
 __pycache__/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
 .claude/settings.local.json
 tests/fixtures-private/
 

@@ -28,7 +28,7 @@ class SmokeCheckTests(unittest.TestCase):
 
     def test_contributing_documents_minimum_smoke_commands(self) -> None:
         text = (REPO_ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
-        self.assertIn("python3 -m unittest", text)
+        self.assertIn("python3 -m pytest", text)
         self.assertIn("python3 scripts/sanitize-check.py --self-test", text)
         self.assertIn("python3 scripts/generate-case-report.py tests/fixtures/cases/pattern2-basic", text)
 

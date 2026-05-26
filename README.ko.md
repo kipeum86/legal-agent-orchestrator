@@ -220,7 +220,7 @@ agents/
 오케스트레이터 변경을 커밋하기 전에는 [CONTRIBUTING.md](CONTRIBUTING.md)의 최소 검증 명령을 실행합니다:
 
 ```bash
-python3 -m unittest
+python3 -m pytest
 python3 scripts/sanitize-check.py --self-test
 python3 scripts/smoke-check.py
 ```

@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pytest python-docx
+
+      - name: Run unit tests
+        run: python3 -m pytest
+
+      - name: Run sanitizer self-test
+        run: python3 scripts/sanitize-check.py --self-test
+
+      - name: Run smoke checks
+        run: python3 scripts/smoke-check.py
+
+      - name: Run acceptance check
+        run: python3 scripts/acceptance-check.py --json

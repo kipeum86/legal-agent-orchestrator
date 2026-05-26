@@ -505,6 +505,18 @@ Mode D is the article-by-article statute-and-commentary output (see `mode-d-temp
 - **고립 행 방지:** Widow/Orphan 제어 활성화.
 - **기밀 등급 머리말:** 소형 대문자, 네이비 또는 회색 (§16 참조 — AI 초안에는 특권 라벨을 기본값으로 사용하지 않습니다).
 
+#### 17.1 DOCX 생성 기본값
+
+AI 에이전트가 `python-docx` 등으로 한국어 의견서 DOCX를 생성할 때는 다음 값을 기본으로 사용합니다.
+
+- **용지 및 여백:** A4 (210 mm x 297 mm), 상하좌우 2.54 cm.
+- **본문 서체:** Latin은 Times New Roman 11 pt, 한글/CJK는 맑은 고딕 11 pt.
+- **CJK 폰트 지정:** `w:eastAsia`를 명시적으로 `맑은 고딕`으로 설정합니다. `w:ascii`와 `w:hAnsi`는 Times New Roman으로 설정합니다.
+- **줄간격:** 본문 1.15, 법령 블록 내부 1.0.
+- **단락 간격:** 본문 단락 후 6 pt, 법령 블록 단락 후 3 pt.
+- **법령 블록:** 단일 셀 테이블 또는 blockquote 스타일을 사용하고, 0.5 pt 실선 테두리와 5 pt 안쪽 여백을 둡니다.
+- **강조:** 색상 강조와 기울임체는 피하고, 필요한 경우 굵게만 사용합니다.
+
 ### 18. 제출 전 품질 체크리스트
 
 초안을 검토자에게 넘기기 전에:

@@ -2,7 +2,7 @@
 """
 Korean Legal Opinion Markdown → DOCX converter.
 
-Implements legal-writing-formatting-guide.md §11 (Typography & DOCX Generation Rules):
+Implements the DOCX defaults in legal-writing-formatting-guide.md §17.1:
 - A4 (210mm x 297mm), 2.54cm margins
 - Times New Roman 11pt (Latin) + 맑은 고딕 11pt (CJK), eastAsia explicitly set
 - Body line spacing 1.15, paragraph after 6pt

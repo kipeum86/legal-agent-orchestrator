@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Callable
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+CANONICAL_STYLE_GUIDE = "legal-writing-formatting-guide.md"
 
 
 @dataclass(frozen=True)
@@ -77,9 +78,9 @@ def check_style_guide() -> CheckResult:
         1,
         "fresh clone에서 canonical style guide 경로가 존재한다",
         [
-            (exists("legal-writing-formatting-guide.md"), "legal-writing-formatting-guide.md exists"),
-            (git_tracked("legal-writing-formatting-guide.md"), "canonical style guide is tracked by git"),
-            (has("skills/prompt-templates/common-blocks.md", "legal-writing-formatting-guide.md"), "prompt common block references canonical guide"),
+            (exists(CANONICAL_STYLE_GUIDE), f"{CANONICAL_STYLE_GUIDE} exists"),
+            (git_tracked(CANONICAL_STYLE_GUIDE), "canonical style guide is tracked by git"),
+            (has("skills/prompt-templates/common-blocks.md", CANONICAL_STYLE_GUIDE), "prompt common block references canonical guide"),
         ],
     )
 

@@ -342,6 +342,7 @@ legal-agent-orchestrator/
 ├── setup.sh                            # 하위 에이전트 shallow clone, update, link 명령
 ├── CONTRIBUTING.md                     # 로컬 smoke check 절차
 ├── MCP_VERSION_CHANGELOG.md            # MCP pin 및 smoke test 이력
+├── legal-writing-formatting-guide.md   # 법률 의견서 스타일 정본
 ├── skills/
 │   ├── route-case.md                   # 분류 + 파이프라인 선택
 │   ├── deliver-output.md               # 최종 어셈블리 + case-report 생성 호출
@@ -364,9 +365,7 @@ legal-agent-orchestrator/
 ├── schemas/                            # events, meta, routing, review JSON schema
 ├── tests/                              # unit test 및 fixture case
 ├── agents/                             # 8 하위 에이전트 (gitignored, setup.sh로 설치)
-├── output/                             # 런타임 케이스 아티팩트 (gitignored)
-└── docs/
-    └── legal-writing-formatting-guide.md # 한국어 법률 의견서 스타일 정본
+└── output/                             # 런타임 케이스 아티팩트 (gitignored)
 ```
 
 ---

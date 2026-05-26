@@ -62,7 +62,7 @@ When invoking any agent that produces or reviews a Korean opinion (legal-researc
 한국어 결과물 작성/검토 시, 반드시 다음 스타일 가이드를 먼저 Read하고 준수하세요:
 {PROJECT_ROOT}/legal-writing-formatting-guide.md
 
-이 가이드는 문서 구조, 인용 형식, 어조, 확신도 언어 척도, 번호 매기기, 타이포그래피(이중 폰트: Times New Roman + 맑은 고딕)를 정의합니다. 에이전트 자체 legal-writing-formatting-guide.md가 있더라도, 오케스트레이터가 제공한 위 절대 경로를 정본(canonical source)으로 사용하세요.
+이 가이드는 문서 구조, 인용 형식, 어조, 확신도 언어 척도, 번호 매기기, 타이포그래피(이중 폰트: Times New Roman + 맑은 고딕)를 정의합니다. 에이전트 자체에 유사한 스타일 가이드가 있더라도, 오케스트레이터가 제공한 위 절대 경로를 정본(canonical source)으로 사용하세요.
 ```
 
 For each invocation:

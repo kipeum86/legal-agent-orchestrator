@@ -338,10 +338,12 @@ On Claude Code Max: zero marginal dollars. On metered API pricing: roughly $3–
 legal-agent-orchestrator/
 ├── CLAUDE.md                           # orchestrator system prompt
 ├── .mcp.json                           # MCP server config (korean-law + kordoc)
+├── .github/workflows/                  # CI and scheduled maintenance workflows
 ├── setup.sh                            # shallow-clone / update / link commands for subordinate agents
 ├── CONTRIBUTING.md                     # local smoke-check workflow
 ├── MCP_VERSION_CHANGELOG.md            # MCP pin and smoke-test history
 ├── legal-writing-formatting-guide.md   # canonical legal opinion style guide
+├── pytest.ini                          # restricts pytest collection to orchestrator tests
 ├── skills/
 │   ├── route-case.md                   # classification + pipeline selection
 │   ├── deliver-output.md               # final assembly + case-report generation handoff
@@ -357,13 +359,13 @@ legal-agent-orchestrator/
 │   ├── build-debate-transcript.py      # deterministic Pattern 3 transcript builder
 │   ├── decide-debate-round3.py         # deterministic Round 3 decision
 │   ├── sanitize-check.py               # trust-boundary and deliverable residue scan
-│   ├── md-to-docx.py                   # DOCX conversion (dual-font Korean style guide §11)
+│   ├── md-to-docx.py                   # DOCX conversion (style guide §17.1)
 │   ├── generate-case-report.py         # narrative case-report.md generator
 │   ├── smoke-check.py                  # clean-tree smoke checks
 │   └── acceptance-check.py             # remediation acceptance checks
 ├── schemas/                            # JSON schemas for events, meta, routing, review
 ├── tests/                              # unit tests and fixture cases
-├── agents/                             # 9 subordinate agents (gitignored, populated by setup.sh)
+├── agents/                             # 4 subordinate agents (gitignored, populated by setup.sh)
 └── output/                             # live case artifacts (gitignored)
 ```
 

@@ -339,10 +339,12 @@ Claude Code Max: marginal dollar cost 0. 종량제 API: 복잡도와 리비전 �
 legal-agent-orchestrator/
 ├── CLAUDE.md                           # 오케스트레이터 시스템 프롬프트
 ├── .mcp.json                           # MCP 서버 설정 (korean-law + kordoc)
+├── .github/workflows/                  # CI 및 정기 유지보수 workflow
 ├── setup.sh                            # 하위 에이전트 shallow clone, update, link 명령
 ├── CONTRIBUTING.md                     # 로컬 smoke check 절차
 ├── MCP_VERSION_CHANGELOG.md            # MCP pin 및 smoke test 이력
 ├── legal-writing-formatting-guide.md   # 법률 의견서 스타일 정본
+├── pytest.ini                          # pytest 수집 범위를 오케스트레이터 테스트로 제한
 ├── skills/
 │   ├── route-case.md                   # 분류 + 파이프라인 선택
 │   ├── deliver-output.md               # 최종 어셈블리 + case-report 생성 호출
@@ -358,13 +360,13 @@ legal-agent-orchestrator/
 │   ├── build-debate-transcript.py      # deterministic Pattern 3 transcript 생성
 │   ├── decide-debate-round3.py         # deterministic Round 3 판단
 │   ├── sanitize-check.py               # trust-boundary 및 deliverable 잔여물 스캔
-│   ├── md-to-docx.py                   # DOCX 변환 (이중 폰트 한국어 스타일 가이드 §11)
+│   ├── md-to-docx.py                   # DOCX 변환 (스타일 가이드 §17.1)
 │   ├── generate-case-report.py         # narrative case-report.md 생성기
 │   ├── smoke-check.py                  # clean-tree smoke check
 │   └── acceptance-check.py             # remediation acceptance check
 ├── schemas/                            # events, meta, routing, review JSON schema
 ├── tests/                              # unit test 및 fixture case
-├── agents/                             # 8 하위 에이전트 (gitignored, setup.sh로 설치)
+├── agents/                             # 4 하위 에이전트 (gitignored, setup.sh로 설치)
 └── output/                             # 런타임 케이스 아티팩트 (gitignored)
 ```
 

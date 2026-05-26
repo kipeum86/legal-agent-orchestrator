@@ -23,8 +23,8 @@ class McpPinTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         payload = json.loads(result.stdout)
         specs = {item["server"]: item["spec"] for item in payload["packages"]}
-        self.assertEqual(specs["korean-law"], "korean-law-mcp@3.5.4")
-        self.assertEqual(specs["kordoc"], "kordoc@2.5.2")
+        self.assertEqual(specs["korean-law"], "korean-law-mcp@4.0.6")
+        self.assertEqual(specs["kordoc"], "kordoc@2.9.0")
 
     def test_latest_and_bare_specs_fail_validation(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -62,15 +62,15 @@ class McpPinTests(unittest.TestCase):
                             {
                                 "server": "korean-law",
                                 "package": "korean-law-mcp",
-                                "version": "3.5.4",
-                                "latest": "3.5.5",
+                                "version": "4.0.5",
+                                "latest": "4.0.6",
                                 "update_available": True,
                             },
                             {
                                 "server": "kordoc",
                                 "package": "kordoc",
-                                "version": "2.5.2",
-                                "latest": "2.5.2",
+                                "version": "2.9.0",
+                                "latest": "2.9.0",
                                 "update_available": False,
                             },
                         ]

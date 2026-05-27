@@ -24,7 +24,7 @@ Every step is logged to `events.jsonl`, and the final delivery step folds the wh
 
 ## Meet the Team — Legal Agent Orchestrator Specialist Agents
 
-This repository is the central coordinator for **Legal Agent Orchestrator**, a fictional AI legal workflow system. Each of the four specialists below lives in its own independent GitHub repository as a standalone Claude Code agent. When you run `./setup.sh` they are all cloned into `agents/` and ready to be dispatched.
+This repository is the central coordinator for **Legal Agent Orchestrator**, a local-first AI legal workflow system. Each of the four specialists below lives in its own independent GitHub repository as a standalone Claude Code agent. When you run `./setup.sh` they are all cloned into `agents/` and ready to be dispatched.
 
 | Specialist | Agent repository | What they actually do |
 |----------|------------------|-----------------------|
@@ -105,7 +105,7 @@ flowchart TB
 | **2 · Sequential handoff** | `A → writing → review` | Single-jurisdiction or focused domain work (Phase 1 default) | ✅ validated Phase 1 E2E |
 | **3 · Multi-round debate** | `[A ∥ B] → rebuttal rounds → deterministic transcript → writing verdict → review` | Cross-jurisdiction questions where specialists are likely to disagree | ✅ control plane validated |
 
-Pattern 3 is the killer feature — two specialists from different jurisdictions, each with their own knowledge base, actually argue. No single LLM can genuinely produce that kind of depth because "role-playing two different foreign-law specialists" still comes from the same priors. Two real agents genuinely don't share context. The orchestration control plane now builds the debate transcript deterministically from round files and decides whether Round 3 is needed from recorded concessions, so the debate shape is reproducible instead of improvised.
+Pattern 3 is the core differentiator: two specialists from different jurisdictions can reason independently before the orchestrator assembles a final view. No single LLM can produce the same separation by role-playing both sides from one shared context. The orchestration control plane now builds the debate transcript deterministically from round files and decides whether Round 3 is needed from recorded concessions, so the debate shape is reproducible instead of improvised.
 
 ---
 
@@ -143,19 +143,19 @@ We inverted the tradeoff: **Claude Code as the runtime, agents preserved 100% in
 
 ### 3. The Process Is the Product
 
-Most commercial legal AI products are black boxes. You get an answer; you don't know how.
+Many legal AI workflows optimize for a single final answer. Legal Agent Orchestrator optimizes for traceability.
 
-Legal Agent Orchestrator is the opposite. Which specialist was assigned, which sources were consulted, what the fact-checker flagged, how revision cycles resolved — all visible in `events.jsonl`, one line per event.
+Which specialist was assigned, which sources were consulted, what the fact-checker flagged, and how revision cycles resolved are all visible in `events.jsonl`, one line per event.
 
 Failure modes are in the permanent record too. If a mid-revision rate-limit error occurs, the orchestrator can trigger a meta-verification rescue instead of dying as a dead chat tab. Here it's a typed event in an append-only log. **That's what "the process is the product" means in practice.**
 
-### 4. Yes, it burns a lot of tokens — on purpose
+### 4. It Uses Substantial Context by Design
 
-A single case can consume 60K–170K tokens per specialist. Phase 1 E2E burned north of 200K across all subagents. That's not a bug.
+A single case can consume 60K–170K tokens per specialist. Phase 1 E2E used more than 200K tokens across all subagents. That is an intentional quality tradeoff.
 
-Every subagent gets its own full 200K context window so it can load its CLAUDE.md, every skill it needs, its knowledge base, and run live MCP queries against primary sources. Context-sharing and aggressive truncation could cut token usage sharply — and would degrade quality by roughly the same amount. **Quality-per-case is the objective function; token spend is the price we pay for it.** On Claude Code Max, the marginal dollar cost is zero. The real cost is wall-clock time.
+Every subagent gets its own full 200K context window so it can load its CLAUDE.md, every skill it needs, its knowledge base, and run live MCP queries against primary sources. Context-sharing and aggressive truncation could cut token usage sharply, but would also reduce coverage and review quality. This project favors source coverage, independent review, and auditability over minimum token usage. On Claude Code Max, the marginal dollar cost is zero. The real cost is wall-clock time.
 
-If you want a cheap legal chatbot, this is the wrong project. If you want a defensible legal opinion with a full audit trail, that burn rate is the price of admission.
+If you need a lightweight legal Q&A bot, this architecture may be more than you need. It is designed for workflows where traceability, source review, and a defensible final artifact matter.
 
 ### Comparison
 

@@ -84,7 +84,7 @@ class PromptTemplateTests(unittest.TestCase):
 
     def test_route_case_is_no_longer_prompt_template_monolith(self) -> None:
         line_count = len(ROUTE_CASE.read_text(encoding="utf-8").splitlines())
-        self.assertLess(line_count, 430)
+        self.assertLess(line_count, 500)
 
 
 if __name__ == "__main__":

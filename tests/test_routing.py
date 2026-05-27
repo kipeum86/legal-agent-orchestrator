@@ -12,18 +12,32 @@ CLI = REPO_ROOT / "scripts" / "select-route.py"
 sys.path.insert(0, str(REPO_ROOT))
 
 from scripts.lib.routing import (  # noqa: E402
+    RETIRED_AGENT_IDS,
     derive_research_mode,
     normalize_classification,
     select_route,
 )
 
 
+def route_agent_ids(route: dict[str, object]) -> set[str]:
+    result: set[str] = set()
+    for key in ("pipeline", "parallel_agents", "debate_participants"):
+        values = route.get(key)
+        if isinstance(values, list):
+            result.update(str(value) for value in values)
+    return result
+
+
 class RoutingTests(unittest.TestCase):
+    def assertNoRetiredAgents(self, route: dict[str, object]) -> None:
+        self.assertTrue(RETIRED_AGENT_IDS.isdisjoint(route_agent_ids(route)))
+
     def test_fixture_routes_match_expected_pipeline(self) -> None:
         cases = json.loads(FIXTURE.read_text(encoding="utf-8"))
         for case in cases:
             with self.subTest(case=case["name"]):
                 route = select_route(case["classification"])
+                self.assertNoRetiredAgents(route)
                 self.assertEqual(route["pattern"], case["expected_pattern"])
                 self.assertEqual(route["pipeline"], case["expected_pipeline"])
                 if "expected_route_mode" in case:
@@ -58,6 +72,7 @@ class RoutingTests(unittest.TestCase):
                 "confidence": 1.0,
             }
         )
+        self.assertNoRetiredAgents(route)
         self.assertEqual(route["pattern"], "out_of_scope")
         self.assertEqual(route["route_mode"], "contract_or_translation_not_orchestrated")
         self.assertEqual(route["pipeline"], [])
@@ -72,8 +87,24 @@ class RoutingTests(unittest.TestCase):
                 "confidence": 1.0,
             }
         )
+        self.assertNoRetiredAgents(route)
         self.assertEqual(route["pattern"], "out_of_scope")
         self.assertEqual(route["route_mode"], "contract_or_translation_not_orchestrated")
+
+    def test_out_of_scope_notes_do_not_reference_retired_repositories(self) -> None:
+        route = select_route(
+            {
+                "jurisdictions": [],
+                "domains": ["contract", "translation"],
+                "tasks": ["contract_review", "translation"],
+                "complexity": "compound",
+                "confidence": 1.0,
+            }
+        )
+        notes = "\n".join(str(note) for note in route.get("notes", []))
+        for retired in RETIRED_AGENT_IDS:
+            with self.subTest(retired=retired):
+                self.assertNotIn(retired, notes)
 
     def test_kr_eu_privacy_routes_to_data_protection_agent(self) -> None:
         route = select_route(
@@ -85,13 +116,12 @@ class RoutingTests(unittest.TestCase):
                 "confidence": 1.0,
             }
         )
+        self.assertNoRetiredAgents(route)
         self.assertEqual(route["route_mode"], "multi_jurisdiction_data")
         self.assertEqual(
             route["pipeline"],
             ["data-protection-agent", "legal-writing-agent", "second-review-agent"],
         )
-        self.assertNotIn("PIPA-expert", route["pipeline"])
-        self.assertNotIn("GDPR-expert", route["pipeline"])
 
     def test_derive_research_mode_maps_domains_correctly(self) -> None:
         self.assertEqual(derive_research_mode(["general"]), "general")
@@ -114,6 +144,7 @@ class RoutingTests(unittest.TestCase):
                 "confidence": 1.0,
             }
         )
+        self.assertNoRetiredAgents(route)
         self.assertEqual(route["pipeline"][0], "legal-research-agent")
         self.assertEqual(route.get("agent_research_mode"), "general")
 
@@ -127,6 +158,7 @@ class RoutingTests(unittest.TestCase):
                 "confidence": 1.0,
             }
         )
+        self.assertNoRetiredAgents(route)
         self.assertEqual(route["route_mode"], "game_regulation")
         self.assertEqual(route.get("agent_research_mode"), "game_regulation")
 
@@ -140,11 +172,32 @@ class RoutingTests(unittest.TestCase):
                 "confidence": 1.0,
             }
         )
+        self.assertNoRetiredAgents(route)
         self.assertEqual(route["route_mode"], "single_jurisdiction_data")
         self.assertEqual(
             route["pipeline"],
             ["data-protection-agent", "legal-writing-agent", "second-review-agent"],
         )
+
+    def test_setup_sh_does_not_reference_retired_repositories(self) -> None:
+        setup = (REPO_ROOT / "setup.sh").read_text(encoding="utf-8")
+        for retired in RETIRED_AGENT_IDS:
+            with self.subTest(retired=retired):
+                self.assertNotIn(retired, setup)
+
+    def test_docs_do_not_link_retired_repositories(self) -> None:
+        docs = [
+            REPO_ROOT / "CLAUDE.md",
+            REPO_ROOT / "README.md",
+            REPO_ROOT / "README.ko.md",
+            REPO_ROOT / "skills" / "route-case.md",
+            REPO_ROOT / "skills" / "prompt-templates" / "common-blocks.md",
+        ]
+        for path in docs:
+            text = path.read_text(encoding="utf-8")
+            for retired in RETIRED_AGENT_IDS:
+                with self.subTest(path=path.name, retired=retired):
+                    self.assertNotIn(f"github.com/lowtidebuild/{retired}", text)
 
     def test_cli_reads_classification_file(self) -> None:
         result = subprocess.run(

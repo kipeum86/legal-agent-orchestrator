@@ -33,13 +33,11 @@
 | **시니어 리뷰 스페셜리스트** | [second-review-agent](https://github.com/lowtidebuild/second-review-agent) | AI 생성 법률 문서 최종 품질 게이트. 인용을 **여러 primary legal database**(law.go.kr, congress.gov, eur-lex 등)에 대해 verbatim 대조하고, 법적 논리와 작성 품질을 점검하며, tracked change가 들어간 redlined DOCX를 생성합니다. 독립 release 게이트(Pass / Pass with Warnings / Manual Review Required / Not Recommended). 환각 인용 zero tolerance. |
 | **데이터보호 스페셜리스트** | [data-protection-agent](https://github.com/lowtidebuild/data-protection-agent) | KR 개인정보보호법(PIPA), EU GDPR, 캘리포니아 CCPA/CPRA 통합 전문가. 관할권별 namespaced 로컬 KB, 결정론적 retrieval, golden-set 평가. 다관할권 개인정보 업무를 단일 에이전트에서 처리. |
 
-> **이 오케스트레이터에서 다루지 않는 작업 (각자 별도 레포):**
-> - [`contract-review-agent`](https://github.com/lowtidebuild/contract-review-agent) — 계약서 review/redline/분석/협상 권고 파이프라인.
-> - [`legal-translation-agent`](https://github.com/lowtidebuild/legal-translation-agent) — 5개 언어 법률 문서 번역, zero-omission 보장.
+> **이 오케스트레이터에서 다루지 않는 작업:** 계약 검토와 문서 번역.
 >
-> 계약 검토와 번역은 위 스탠드얼론 에이전트에서 단독으로 수행하며, 이 오케스트레이터는 라우팅하지 않습니다. 해당 도메인으로 분류된 질의는 별도 레포로의 안내 메시지를 받습니다.
+> 계약 검토와 번역은 이 오케스트레이터에서 라우팅하지 않습니다. 해당 도메인으로 분류된 질의는 라우팅 파이프라인이나 리포지토리 링크 없이 `out_of_scope` 응답을 받습니다.
 
-**오케스트레이터는 하위 에이전트의 `CLAUDE.md`, skills, 지식 베이스를 절대 수정하지 않습니다.** 이것이 "100% 재활용"의 실천입니다. 하위 에이전트는 각자 GitHub 리포의 `main` 브랜치를 따라가며, `./setup.sh`가 shallow clone으로 받아오고 `./setup.sh update`가 최신 `main`으로 fast-forward합니다. **모든 신규 케이스는 접수 시점에 자동으로 `./setup.sh update`를 실행**하므로, 어느 스페셜리스트가 버그 픽스를 푸시하면 다음 케이스부터 사용자 조작 없이 즉시 반영됩니다 (`LEGAL_ORCHESTRATOR_SKIP_AGENT_SYNC=1`로 끌 수 있음).
+**오케스트레이터는 하위 에이전트의 `CLAUDE.md`, skills, 지식 베이스를 절대 수정하지 않습니다.** 이것이 "100% 재활용"의 실천입니다. 하위 에이전트는 각자 GitHub 리포의 `main` 브랜치를 따라가며, `./setup.sh`가 shallow clone으로 받아오고 `./setup.sh update`가 최신 `main`으로 fast-forward합니다. **모든 신규 케이스는 라우팅으로 선택된 에이전트만 dispatch 직전에 동기화**하며, 반복 로컬 실행에는 짧은 TTL cache를 사용합니다. `LEGAL_ORCHESTRATOR_SKIP_AGENT_SYNC=1`로 sync를 끄고, `LEGAL_ORCHESTRATOR_FORCE_AGENT_SYNC=1`로 TTL을 무시하고, `LEGAL_ORCHESTRATOR_AGENT_SYNC_TTL_SECONDS=0`으로 TTL cache를 비활성화할 수 있습니다.
 
 > `setup.sh`는 이 오케스트레이터가 직접 사용하는 리포지토리만 clone합니다. 이 워크플로우 밖의 standalone 프로젝트는 포함되지 않습니다.
 
@@ -209,9 +207,11 @@ agents/
 각 폴더는 자체 `CLAUDE.md`, `skills/`, 지식 베이스, MCP 설정을 가진 **독립된 Claude Code 에이전트**입니다. 오케스트레이터가 케이스를 처리할 때 Claude Code의 `Agent` tool로 이 에이전트들을 `cwd: agents/{agent-id}/`로 호출하므로, 각 서브에이전트는 자기 작업 디렉토리에서 자기 context로 동작합니다.
 
 `setup.sh`의 다른 명령:
-- `./setup.sh update` — 모든 에이전트를 각자 upstream 리포의 최신 `main`으로 fast-forward합니다 (멱등; 인자 없는 `./setup.sh`와 동일). **오케스트레이터가 모든 케이스 시작 시점에 자동으로 실행합니다.**
-- `./setup.sh status` — 각 에이전트의 로컬 SHA와 upstream `main` SHA를 비교해 `behind` / `up to date` / `unreachable` / `symlink` (dev 모드) 상태를 표시합니다
-- `./setup.sh link` — **개발 모드**: `~/코딩 프로젝트/` 아래에 이미 에이전트 리포들을 체크아웃해놓았다면, 새 clone 대신 심볼릭 링크를 만들어서 로컬 수정이 즉시 반영되도록 합니다
+- `./setup.sh update [agent-id ...]` — 모든 에이전트 또는 지정한 에이전트만 upstream 리포의 최신 `main`으로 fast-forward합니다 (agent id를 생략하면 인자 없는 `./setup.sh`와 동일).
+- `./setup.sh status [agent-id ...]` — 선택한 에이전트의 로컬 SHA와 upstream `main` SHA를 비교해 `behind` / `up to date` / `unreachable` / `symlink` (dev 모드) 상태를 표시합니다
+- `./setup.sh link [agent-id ...]` — **개발 모드**: `~/코딩 프로젝트/` 아래에 선택한 에이전트 리포들을 체크아웃해놓았다면, 새 clone 대신 심볼릭 링크를 만들어서 로컬 수정이 즉시 반영되도록 합니다
+
+케이스 실행 중에는 `scripts/resolve-sync-targets.py`가 route별 sync 대상을 계산하고 `scripts/sync-agents.py`가 TTL-aware sync를 수행하므로, out-of-scope 케이스와 반복 실행은 불필요한 네트워크 작업을 피합니다.
 
 각 에이전트는 shallow clone (`--depth 1 --single-branch`)으로 받아옵니다 — `main`의 최신 스냅샷만 디스크에 있고, git history나 다른 브랜치는 받지 않습니다.
 

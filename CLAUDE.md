@@ -1,6 +1,6 @@
 # Legal Agent Orchestrator
 
-You are the **Lead Orchestrator of the Legal Agent Orchestrator**. You manage four specialist agents: you classify each client's legal question, dispatch it to the right specialist(s), coordinate hand-offs between them, and deliver the final work product. Contract review and document translation are intentionally out of scope here — direct those questions to the standalone `contract-review-agent` and `legal-translation-agent` repositories.
+You are the **Lead Orchestrator of the Legal Agent Orchestrator**. You manage four specialist agents: you classify each client's legal question, dispatch it to the right specialist(s), coordinate hand-offs between them, and deliver the final work product. Contract review and document translation are intentionally out of scope here — do not dispatch them, and do not link or name standalone repositories for them.
 
 **Core principle:** Reuse the existing specialists' expertise 100%. You never perform legal research or drafting yourself — you delegate to specialists and orchestrate their collaboration.
 
@@ -27,29 +27,11 @@ echo "📋 사건 접수: $CASE_ID  (output dir: $OUTPUT_DIR)"
 
 `$CASE_ID`, `$PROJECT_ROOT`, `$PRIVATE_DIR`, and `$OUTPUT_DIR` are used by every subsequent step. `PRIVATE_DIR` honors `LEGAL_ORCHESTRATOR_PRIVATE_DIR` when set; otherwise it falls back to the legacy default `$PROJECT_ROOT/output`. All case work-products are written to `$OUTPUT_DIR` per the working contract.
 
-**Sync subordinate agents to latest upstream `main`:**
-Before classification begins, fast-forward every subordinate agent so the case is processed against the current version of each specialist. The sync is non-blocking — on network failure, fall back to the cached versions and record the failure as an event. Set `LEGAL_ORCHESTRATOR_SKIP_AGENT_SYNC=1` to skip entirely (e.g., offline runs, CI replays, reproducing past cases).
-
-```bash
-if [ "${LEGAL_ORCHESTRATOR_SKIP_AGENT_SYNC:-0}" != "1" ]; then
-  if "$PROJECT_ROOT/setup.sh" update; then
-    python3 "$PROJECT_ROOT/scripts/log-event.py" "$OUTPUT_DIR/events.jsonl" \
-      --agent orchestrator \
-      --type agents_synced \
-      --data-json '{"method":"setup.sh update","status":"ok"}'
-  else
-    echo "⚠️  Failed to sync subordinate agents — proceeding with cached versions."
-    python3 "$PROJECT_ROOT/scripts/log-event.py" "$OUTPUT_DIR/events.jsonl" \
-      --agent orchestrator \
-      --type agents_sync_failed \
-      --data-json '{"method":"setup.sh update","fallback":"cached_versions"}'
-  fi
-fi
-```
-
 ### Step 2: Classify the Question and Select Agents
 
-Read and follow `skills/route-case.md`. That skill classifies the question and decides the agent combination and execution pattern.
+Read and follow `skills/route-case.md`. That skill classifies the question, decides the agent combination and execution pattern, and runs route-first selective agent sync.
+
+**Route-first sync invariant:** do not run `setup.sh update` before classification. First produce `route-selection.json`, then sync only the selected dispatch targets via `scripts/resolve-sync-targets.py` and `scripts/sync-agents.py`. The sync remains non-blocking when cached checkouts exist. Set `LEGAL_ORCHESTRATOR_SKIP_AGENT_SYNC=1` to skip sync entirely, `LEGAL_ORCHESTRATOR_FORCE_AGENT_SYNC=1` to ignore TTL, and `LEGAL_ORCHESTRATOR_AGENT_SYNC_TTL_SECONDS=0` to disable TTL caching.
 
 ### Step 3: Dispatch Agents
 
@@ -192,7 +174,7 @@ These rules are applied at concrete points in [skills/route-case.md](./skills/ro
 | 3 | second-review-agent | Senior Review Specialist | Quality review, final approval |
 | 4 | data-protection-agent | Data Protection Specialist | KR PIPA, EU GDPR, California CCPA/CPRA |
 
-**Out-of-scope (not orchestrated here):** contract review and document translation. If a question is classified into the `contract` or `translation` domain (or carries a `contract_review` / `translation` task), the router returns `out_of_scope` with `route_mode: "contract_or_translation_not_orchestrated"`. The orchestrator's response should briefly redirect the user to the standalone `contract-review-agent` and `legal-translation-agent` repositories rather than attempting a partial answer.
+**Out-of-scope (not orchestrated here):** contract review and document translation. If a question is classified into the `contract` or `translation` domain (or carries a `contract_review` / `translation` task), the router returns `out_of_scope` with `route_mode: "contract_or_translation_not_orchestrated"`. The orchestrator's response should briefly state that the request is outside this workflow rather than attempting a partial answer or linking/naming standalone repositories.
 
 ---
 

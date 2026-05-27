@@ -1,9 +1,9 @@
 #!/bin/bash
 # setup.sh — 4명의 하위 에이전트를 항상 최신 main으로 동기화 (shallow clone)
-# 사용법: ./setup.sh           (clone 또는 최신 main으로 fast-forward)
-#         ./setup.sh update    (alias for default — 모든 에이전트 최신 main 동기화)
-#         ./setup.sh status    (각 에이전트의 로컬 SHA vs 원격 main 비교)
-#         ./setup.sh link      (개발용: 로컬 레포를 심볼릭 링크로 연결)
+# 사용법: ./setup.sh                         (clone 또는 최신 main으로 fast-forward)
+#         ./setup.sh update [agent-id ...]    (선택 에이전트만 최신 main 동기화)
+#         ./setup.sh status [agent-id ...]    (선택 에이전트의 로컬 SHA vs 원격 main 비교)
+#         ./setup.sh link [agent-id ...]      (개발용: 로컬 레포를 심볼릭 링크로 연결)
 
 set -euo pipefail
 
@@ -24,7 +24,47 @@ REPOS=(
   "data-protection-agent"
 )
 
-mkdir -p "$AGENTS_DIR"
+usage() {
+  echo "Usage: ./setup.sh [setup|update|status|link] [agent-id ...]" >&2
+  echo "Known agent ids: ${REPOS[*]}" >&2
+}
+
+is_known_repo() {
+  local candidate="$1"
+  local repo
+  for repo in "${REPOS[@]}"; do
+    if [ "$candidate" = "$repo" ]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+select_targets() {
+  TARGET_REPOS=()
+  if [ "$#" -eq 0 ]; then
+    TARGET_REPOS=("${REPOS[@]}")
+    return
+  fi
+
+  local repo
+  for repo in "$@"; do
+    if ! is_known_repo "$repo"; then
+      echo "Unknown agent id: $repo" >&2
+      usage
+      exit 2
+    fi
+    TARGET_REPOS+=("$repo")
+  done
+}
+
+sync_complete_message() {
+  if [ "${#TARGET_REPOS[@]}" -eq "${#REPOS[@]}" ]; then
+    echo "✅ All 4 subordinate agents are at latest $DEFAULT_BRANCH."
+  else
+    echo "✅ Selected subordinate agents are at latest $DEFAULT_BRANCH: ${TARGET_REPOS[*]}"
+  fi
+}
 
 sync_one() {
   local repo="$1"
@@ -38,8 +78,19 @@ sync_one() {
 
   if [ -d "$target/.git" ]; then
     git -C "$target" fetch --depth 1 origin "$DEFAULT_BRANCH"
-    git -C "$target" reset --hard "origin/$DEFAULT_BRANCH"
-    echo "⬆️  $repo synced to latest $DEFAULT_BRANCH"
+    local local_sha
+    local_sha=$(git -C "$target" rev-parse HEAD)
+    local remote_sha
+    remote_sha=$(git -C "$target" rev-parse "origin/$DEFAULT_BRANCH")
+    local dirty
+    dirty=$(git -C "$target" status --porcelain --untracked-files=no)
+
+    if [ "$local_sha" = "$remote_sha" ] && [ -z "$dirty" ]; then
+      echo "✅ $repo already at latest $DEFAULT_BRANCH"
+    else
+      git -C "$target" reset --hard "origin/$DEFAULT_BRANCH"
+      echo "⬆️  $repo synced to latest $DEFAULT_BRANCH"
+    fi
   elif [ -e "$target" ]; then
     echo "⚠️  $target exists but is not a git repo — skipping" >&2
     return 1
@@ -80,22 +131,32 @@ status_one() {
   fi
 }
 
-case "${1:-setup}" in
+COMMAND="${1:-setup}"
+if [ "$#" -gt 0 ]; then
+  shift
+fi
+
+case "$COMMAND" in
   setup|update)
-    for repo in "${REPOS[@]}"; do
+    select_targets "$@"
+    mkdir -p "$AGENTS_DIR"
+    for repo in "${TARGET_REPOS[@]}"; do
       sync_one "$repo"
     done
-    echo "✅ All 4 subordinate agents are at latest $DEFAULT_BRANCH."
+    sync_complete_message
     ;;
   status)
+    select_targets "$@"
     echo "📊 Subordinate agent status (local vs origin/$DEFAULT_BRANCH):"
-    for repo in "${REPOS[@]}"; do
+    for repo in "${TARGET_REPOS[@]}"; do
       status_one "$repo"
     done
     ;;
   link)
+    select_targets "$@"
+    mkdir -p "$AGENTS_DIR"
     # 로컬 개발용: 기존 레포를 심볼릭 링크로 연결
-    for repo in "${REPOS[@]}"; do
+    for repo in "${TARGET_REPOS[@]}"; do
       if [ -d "$LOCAL_BASE/$repo" ]; then
         if [ -e "$AGENTS_DIR/$repo" ]; then
           echo "⏭️  $repo already exists, skipping"
@@ -110,7 +171,7 @@ case "${1:-setup}" in
     echo "✅ Done linking."
     ;;
   *)
-    echo "Usage: ./setup.sh [setup|update|status|link]" >&2
+    usage
     exit 2
     ;;
 esac

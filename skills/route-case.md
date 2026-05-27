@@ -8,6 +8,8 @@ This skill analyzes the client's legal question and selects the right combinatio
 
 **Legal-research routing:** general legal research and game-industry regulation are unified under `legal-research-agent`. The orchestrator picks an `agent_research_mode` from the classification's `domains` and injects it into the dispatch prompt:
 
+**Retired repo guard:** never emit, link, clone, or redirect to legacy/out-of-scope agent/repo IDs such as `general-legal-research`, `game-legal-research`, `PIPA-expert`, `GDPR-expert`, `contract-review-agent`, or `legal-translation-agent`. Fallback means `legal-research-agent` with `agent_research_mode="fallback"`, not a separate repository.
+
 | Domains contain | `agent_research_mode` |
 |-----------------|------------------------|
 | `["general"]` only or empty | `general` |
@@ -59,9 +61,9 @@ Classify the client's question along the four dimensions below:
 | "미국 CCPA와 한국 PIPA의 동의 요건 차이" | `["US-CA","KR"]` | `["data_protection"]` | `["research"]` | `multi_domain` | data-protection-agent → writing → review |
 | "일본 게임사가 한국 출시할 때 규제" | `["JP","KR"]` | `["game_regulation"]` | `["research"]` | `simple` | legal-research-agent (mode=`game_regulation`) → writing → review |
 | "확률형 아이템 규제가 EU 소비자법과 어떻게 상호작용하는지" | `["KR","EU"]` | `["game_regulation","data_protection"]` | `["research"]` | `multi_domain` | **[legal-research-agent (mode=`game_regulation`) ∥ data-protection-agent]** → writing → review |
-| "이 계약서 검토해줘" / "NDA 초안 작성해줘" | `[]` | `["contract"]` | `["contract_review"\|"drafting"]` | — | **Out of scope.** Redirect to standalone `contract-review-agent`. |
+| "이 계약서 검토해줘" / "NDA 초안 작성해줘" | `[]` | `["contract"]` | `["contract_review"\|"drafting"]` | — | **Out of scope.** Do not dispatch or link a repo. |
 | "법률 의견서를 작성해줘" (도메인 모호) | `[]` | `["general"]` | `["drafting"]` | `compound` | legal-research-agent (mode=`general`) → writing → review |
-| "이 문서를 영어로 번역해줘" / "계약서 번역" | `[]` | `["translation"\|"contract"]` | `["translation"]` | — | **Out of scope.** Redirect to standalone `legal-translation-agent`. |
+| "이 문서를 영어로 번역해줘" / "계약서 번역" | `[]` | `["translation"\|"contract"]` | `["translation"]` | — | **Out of scope.** Do not dispatch or link a repo. |
 | "한국 게임사의 EU 진출 시 GDPR 컴플라이언스 종합 의견서" | `["KR","EU"]` | `["game_regulation","data_protection"]` | `["drafting"]` | `multi_domain` | **[legal-research-agent (mode=`game_regulation`) ∥ data-protection-agent]** → writing → review |
 | "양측 의견을 들려줘" / "논쟁 보고 싶다" | `["multi"]` | situational | `["debate"]` | `adversarial` | Pattern 3 → `manage-debate.md` |
 | "이 분야 최신 동향" | `[]` | situational | `["briefing"]` | `simple` | **Not routable here** — briefing tools are standalone Python apps. |
@@ -79,7 +81,7 @@ Classify the client's question along the four dimensions below:
 
 **Note on built-in subagents:** `legal-research-agent`'s deep-researcher subagent **does not run** when invoked through the orchestrator (Phase 0 spike #6). The agent's KB remains accessible, but be aware that the built-in quality-verification layer is bypassed. `data-protection-agent` exposes its own local output-contract runner and KB indexes.
 
-**Out-of-scope domains:** `contract` and `translation` are no longer dispatched by this orchestrator. When a question is classified into either domain, return an `out_of_scope` route and direct the user to the standalone `contract-review-agent` and `legal-translation-agent` repositories.
+**Out-of-scope domains:** `contract` and `translation` are no longer dispatched by this orchestrator. When a question is classified into either domain, return an `out_of_scope` route without linking or naming a standalone repository.
 
 ---
 
@@ -102,8 +104,7 @@ question input
   │
   ├─ "contract" in domains || "translation" in domains ||
   │  "contract_review" in tasks || "translation" in tasks
-  │   → out_of_scope. Direct user to the standalone contract-review-agent
-  │     and legal-translation-agent repositories.
+  │   → out_of_scope. Do not dispatch, link, or name any standalone repo.
   │
   ├─ complexity == "adversarial" || "debate" in tasks
   │   → see skills/manage-debate.md (Pattern 3 multi-round debate)
@@ -135,6 +136,72 @@ question input
       → legal-research-agent (mode=`fallback`) → legal-writing → second-review
 ```
 
+### Step 3a: Route-First Agent Sync
+
+After `route-selection.json` exists and before any Agent tool dispatch, sync only the agents required by the selected route. Do **not** run all-agent sync before classification.
+
+Resolve selected sync targets:
+
+```bash
+python3 "$PROJECT_ROOT/scripts/resolve-sync-targets.py" \
+  "$OUTPUT_DIR/route-selection.json" \
+  > "$OUTPUT_DIR/agent-sync-targets.json"
+```
+
+Log the sync plan:
+
+```bash
+python3 "$PROJECT_ROOT/scripts/log-event.py" "$OUTPUT_DIR/events.jsonl" \
+  --agent orchestrator \
+  --type agents_sync_planned \
+  --data-json "$(python3 -c 'import json, sys; targets=json.load(open(sys.argv[1], encoding="utf-8")); route=json.load(open(sys.argv[2], encoding="utf-8")); print(json.dumps({"method":"route_first_selective_sync","targets":targets,"route_mode":route.get("route_mode"),"pattern":route.get("pattern")}, ensure_ascii=False))' "$OUTPUT_DIR/agent-sync-targets.json" "$OUTPUT_DIR/route-selection.json")"
+```
+
+Run TTL-aware sync:
+
+```bash
+python3 "$PROJECT_ROOT/scripts/sync-agents.py" \
+  --targets-file "$OUTPUT_DIR/agent-sync-targets.json" \
+  --json > "$OUTPUT_DIR/agent-sync-result.json"
+```
+
+Record the sync result:
+
+```bash
+SYNC_STATUS=$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1], encoding="utf-8")).get("status","unknown"))' "$OUTPUT_DIR/agent-sync-result.json")
+case "$SYNC_STATUS" in
+  ok)
+    python3 "$PROJECT_ROOT/scripts/log-event.py" "$OUTPUT_DIR/events.jsonl" \
+      --agent orchestrator \
+      --type agents_synced \
+      --data-json "$(cat "$OUTPUT_DIR/agent-sync-result.json")"
+    ;;
+  skipped|dry_run)
+    python3 "$PROJECT_ROOT/scripts/log-event.py" "$OUTPUT_DIR/events.jsonl" \
+      --agent orchestrator \
+      --type agents_sync_skipped \
+      --data-json "$(cat "$OUTPUT_DIR/agent-sync-result.json")"
+    ;;
+  failed)
+    python3 "$PROJECT_ROOT/scripts/log-event.py" "$OUTPUT_DIR/events.jsonl" \
+      --agent orchestrator \
+      --type agents_sync_failed \
+      --data-json "$(cat "$OUTPUT_DIR/agent-sync-result.json")"
+    if ! python3 -c 'import json, sys; raise SystemExit(0 if json.load(open(sys.argv[1], encoding="utf-8")).get("recoverable") else 1)' "$OUTPUT_DIR/agent-sync-result.json"; then
+      echo "Unrecoverable agent sync failure; abort before dispatch." >&2
+      exit 1
+    fi
+    ;;
+esac
+```
+
+Sync controls:
+
+- `LEGAL_ORCHESTRATOR_SKIP_AGENT_SYNC=1` skips sync for all selected targets.
+- `LEGAL_ORCHESTRATOR_FORCE_AGENT_SYNC=1` ignores TTL and syncs selected targets.
+- `LEGAL_ORCHESTRATOR_AGENT_SYNC_TTL_SECONDS=600` is the default TTL.
+- `LEGAL_ORCHESTRATOR_AGENT_SYNC_TTL_SECONDS=0` disables TTL caching.
+
 ### Debate Participant Matrix
 
 When `complexity == "adversarial"`, use the table below to pick the two participants. If three or more jurisdictions/positions are involved, issue a `user_prompt` to narrow to two camps before entering Step 6.
@@ -161,8 +228,8 @@ Explicit rules where agent scopes overlap:
 | International game-law (multi-jurisdiction) | **legal-research-agent** (mode=`game_regulation`) alone | Cross-jurisdiction is its design intent. |
 | US/JP/other single jurisdiction (non-privacy, non-game) | **legal-research-agent** (mode=`general`) | No jurisdictional specialist available; the research agent's `general` mode covers it via MCP. |
 | Game + data-protection composite | **[legal-research-agent (mode=`game_regulation`) ∥ data-protection-agent]** | Pattern 1 parallel: research agent covers game regulation, data-protection-agent covers privacy. |
-| Contract review / drafting | **out_of_scope** — redirect to `contract-review-agent` repo | Contract work is performed in the standalone repository, not orchestrated here. |
-| Translation request | **out_of_scope** — redirect to `legal-translation-agent` repo | Translation is performed in the standalone repository, not orchestrated here. |
+| Contract review / drafting | **out_of_scope** — no repo dispatch/link | Contract work is not orchestrated here. |
+| Translation request | **out_of_scope** — no repo dispatch/link | Translation is not orchestrated here. |
 
 ### Multi_domain Matrix (Pattern 1 agent combinations)
 
@@ -331,8 +398,10 @@ Event types added or extended in v2. This is the central reference maintained fo
 | Event type | Phase | Required `data` fields | Purpose |
 |------------|-------|------------------------|---------|
 | `case_received` | P1 | `query`, `case_id` | Case intake |
-| `agents_synced` | **v2** | `method`, `status` | Auto-sync of subordinate agents at case start succeeded (latest upstream `main` for all). |
-| `agents_sync_failed` | **v2** | `method`, `fallback` | Auto-sync at case start failed (e.g., network); the case proceeded against cached versions. |
+| `agents_sync_planned` | **v2** | `method`, `targets[]`, `route_mode` | Route-first selected sync target plan before dispatch. |
+| `agents_synced` | **v2** | `method`, `status`, `targets[]`, `synced[]` | Selected subordinate agents synced successfully. |
+| `agents_sync_skipped` | **v2** | `method`, `status`, `targets[]`, `skipped[]` | Selected sync skipped by TTL, symlink, explicit env skip, or empty target set. |
+| `agents_sync_failed` | **v2** | `method`, `status`, `targets[]`, `failed[]`, `recoverable` | Selected sync failed; recoverable failures proceed with cached versions. |
 | `case_classified` | P1 | `jurisdictions[]`, `domains[]`, `tasks[]`, `complexity`, `confidence`, `pipeline[]`, `pattern` | Array-based classification result. `ambiguity[]`, `route_mode`, `parallel_agents[]` are optional. |
 | `agent_assigned` | P1 | `agent_id`, `name`, `role` | Agent dispatch |
 | `source_graded` | P1 | `agent_id`, `source`, `grade`, `citation` | Per-agent source grading |

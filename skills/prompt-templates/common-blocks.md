@@ -71,4 +71,10 @@ meta.json 스키마:
 오케스트레이터는 meta.json 존재 → summary/sources 파싱, 부재 → 반환 텍스트에서
 fallback 추출합니다. meta.json을 저장하지 않으면 fallback 경로로 진행되어 데이터 손실
 가능성이 있으므로 반드시 저장하세요.
+
+주의: 여기서 fallback은 오케스트레이터의 텍스트 추출 경로만 의미합니다.
+`general-legal-research`, `game-legal-research`, `PIPA-expert`, `GDPR-expert` 같은
+legacy agent/repo id와 `contract-review-agent`, `legal-translation-agent` 같은
+out-of-scope repo id를
+출력하거나 링크하지 마세요.
 ```

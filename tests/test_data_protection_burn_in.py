@@ -11,7 +11,16 @@ ROUTING_SCHEMA = REPO_ROOT / "schemas" / "routing.schema.json"
 
 sys.path.insert(0, str(REPO_ROOT))
 
-from scripts.lib.routing import select_route  # noqa: E402
+from scripts.lib.routing import RETIRED_AGENT_IDS, select_route  # noqa: E402
+
+
+def route_agent_ids(route: dict[str, object]) -> set[str]:
+    result: set[str] = set()
+    for key in ("pipeline", "parallel_agents", "debate_participants"):
+        values = route.get(key)
+        if isinstance(values, list):
+            result.update(str(value) for value in values)
+    return result
 
 
 class DataProtectionBurnInTests(unittest.TestCase):
@@ -31,8 +40,7 @@ class DataProtectionBurnInTests(unittest.TestCase):
                 self.assertEqual(route["pipeline"], case["expected_pipeline"])
                 self.assertEqual(route["route_mode"], case["expected_route_mode"])
                 self.assertIn("data-protection-agent", route["pipeline"])
-                self.assertNotIn("PIPA-expert", route["pipeline"])
-                self.assertNotIn("GDPR-expert", route["pipeline"])
+                self.assertTrue(RETIRED_AGENT_IDS.isdisjoint(route_agent_ids(route)))
                 if "expected_agent_research_mode" in case:
                     self.assertEqual(
                         route.get("agent_research_mode"),
@@ -55,8 +63,7 @@ class DataProtectionBurnInTests(unittest.TestCase):
             route["debate_participants"],
             ["data-protection-agent", "legal-research-agent"],
         )
-        self.assertNotIn("PIPA-expert", route["debate_participants"])
-        self.assertNotIn("GDPR-expert", route["debate_participants"])
+        self.assertTrue(RETIRED_AGENT_IDS.isdisjoint(route_agent_ids(route)))
 
 
 if __name__ == "__main__":

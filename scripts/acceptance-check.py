@@ -209,11 +209,17 @@ def check_docx_injection_residue() -> CheckResult:
 def check_dependency_pinning() -> CheckResult:
     return result(
         11,
-        "하위 에이전트는 setup.sh로 재현 가능하게 설치되고, MCP dependency는 정확한 버전으로 pin된다",
+        "하위 에이전트는 route-first selective sync로 재현 가능하게 설치되고, MCP dependency는 정확한 버전으로 pin된다",
         [
             (exists("setup.sh"), "setup.sh exists"),
             (has("setup.sh", "--depth 1"), "setup.sh uses shallow clone (--depth 1)"),
             (has("setup.sh", "legal-research-agent") and has("setup.sh", "data-protection-agent"), "setup.sh enumerates all 4 subordinate agents"),
+            (exists("scripts/resolve-sync-targets.py"), "route-first sync target resolver exists"),
+            (exists("scripts/sync-agents.py"), "TTL-aware sync helper exists"),
+            (has("CLAUDE.md", "Route-first sync invariant"), "CLAUDE.md forbids pre-classification all-agent sync"),
+            (has("skills/route-case.md", "agents_sync_planned"), "route-case logs selected sync plan"),
+            (has("tests/test_sync_agents.py", "LEGAL_ORCHESTRATOR_AGENT_SYNC_TTL_SECONDS"), "TTL sync policy tests exist"),
+            (has("tests/test_resolve_sync_targets.py", "test_debate_route_syncs_participants_plus_writing_and_review"), "debate sync target tests exist"),
             (exact_mcp_pins(), ".mcp.json pins exact MCP package versions"),
             (exists("tests/test_mcp_pins.py"), "MCP pin tests exist"),
         ],

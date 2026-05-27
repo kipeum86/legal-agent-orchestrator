@@ -33,13 +33,11 @@ This repository is the central coordinator for **Legal Agent Orchestrator**, a f
 | **Senior Review Specialist** | [second-review-agent](https://github.com/lowtidebuild/second-review-agent) | Final quality gate for AI-generated legal documents. Verifies citations against primary legal databases (law.go.kr, congress.gov, eur-lex, and more), checks legal logic, and ships redlined DOCX with tracked changes. Independent release gate (Pass / Pass with Warnings / Manual Review Required / Not Recommended). Zero tolerance for hallucinated citations. |
 | **Data Protection Specialist** | [data-protection-agent](https://github.com/lowtidebuild/data-protection-agent) | Unified KR PIPA, EU GDPR, and California CCPA/CPRA specialist with namespaced local KBs, deterministic retrieval, and golden-set evaluation. Single agent for cross-jurisdiction privacy work. |
 
-> **Out of scope (handled in their own repositories):**
-> - [`contract-review-agent`](https://github.com/lowtidebuild/contract-review-agent) — drop-in contract review with tracked-change redlines, margin comments, and a negotiation report.
-> - [`legal-translation-agent`](https://github.com/lowtidebuild/legal-translation-agent) — 5-language legal document translation with zero-omission guarantee.
+> **Out of scope:** contract review and document translation.
 >
-> Contract and translation work runs end-to-end inside those agents, not through this orchestrator. Questions classified into those domains receive a redirect message instead of a routed pipeline.
+> Contract and translation work is not routed through this orchestrator. Questions classified into those domains receive an `out_of_scope` response without a routed pipeline or repository link.
 
-**The orchestrator never modifies a subordinate agent's `CLAUDE.md`, skills, or knowledge base.** That's what "100% reuse" means in practice. Subordinate agents are tracked at the `main` branch of their respective GitHub repositories — `./setup.sh` shallow-clones them and `./setup.sh update` fast-forwards each one to the latest `main`. **Every new case automatically runs `./setup.sh update` at intake**, so when a specialist ships a bug fix the next case picks it up without any user action (set `LEGAL_ORCHESTRATOR_SKIP_AGENT_SYNC=1` to opt out).
+**The orchestrator never modifies a subordinate agent's `CLAUDE.md`, skills, or knowledge base.** That's what "100% reuse" means in practice. Subordinate agents are tracked at the `main` branch of their respective GitHub repositories — `./setup.sh` shallow-clones them and `./setup.sh update` fast-forwards them to the latest `main`. **Every new case syncs only the agents selected by routing before dispatch**, with a short TTL cache for repeated local runs. Set `LEGAL_ORCHESTRATOR_SKIP_AGENT_SYNC=1` to opt out, `LEGAL_ORCHESTRATOR_FORCE_AGENT_SYNC=1` to ignore TTL, or `LEGAL_ORCHESTRATOR_AGENT_SYNC_TTL_SECONDS=0` to disable TTL caching.
 
 > `setup.sh` only clones the repositories used directly by this orchestrator. Standalone projects outside this workflow are not included.
 
@@ -209,9 +207,11 @@ agents/
 Each folder is an independent Claude Code agent with its own `CLAUDE.md`, `skills/`, knowledge base, and MCP configuration. When the orchestrator dispatches a case, it calls into these agents via Claude Code's `Agent` tool with `cwd: agents/{agent-id}/`, so each subagent runs in its own working directory with its own context.
 
 Other `setup.sh` commands:
-- `./setup.sh update` — fast-forward every agent to the latest `main` of its upstream repository (idempotent; same as the default `./setup.sh`). **The orchestrator runs this automatically at the start of every case.**
-- `./setup.sh status` — show each agent's local SHA next to the upstream `main` SHA, and flag any that are `behind` / `up to date` / `unreachable` / `symlink` (dev mode)
-- `./setup.sh link` — **development mode**: if you already have the agent repositories checked out under `~/코딩 프로젝트/`, create symlinks instead of fresh clones so your local edits flow through immediately
+- `./setup.sh update [agent-id ...]` — fast-forward every agent, or only the listed agents, to the latest `main` of its upstream repository (idempotent; same as the default `./setup.sh` when no agent IDs are supplied).
+- `./setup.sh status [agent-id ...]` — show each selected agent's local SHA next to the upstream `main` SHA, and flag any that are `behind` / `up to date` / `unreachable` / `symlink` (dev mode)
+- `./setup.sh link [agent-id ...]` — **development mode**: if you already have the selected agent repositories checked out under `~/코딩 프로젝트/`, create symlinks instead of fresh clones so your local edits flow through immediately
+
+During case execution the orchestrator now resolves route-specific sync targets with `scripts/resolve-sync-targets.py` and applies TTL-aware sync with `scripts/sync-agents.py`, so out-of-scope cases and repeated runs avoid unnecessary network work.
 
 Each agent is shallow-cloned (`--depth 1 --single-branch`), so only the latest snapshot of `main` lives on disk — no git history, no other branches.
 

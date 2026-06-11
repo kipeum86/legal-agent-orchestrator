@@ -189,7 +189,6 @@ class RoutingTests(unittest.TestCase):
         docs = [
             REPO_ROOT / "CLAUDE.md",
             REPO_ROOT / "README.md",
-            REPO_ROOT / "README.ko.md",
             REPO_ROOT / "skills" / "route-case.md",
             REPO_ROOT / "skills" / "prompt-templates" / "common-blocks.md",
         ]

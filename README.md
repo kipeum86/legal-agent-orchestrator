@@ -1,70 +1,48 @@
-# Legal Agent Orchestrator · KP 리걸 오케스트레이터
+# Legal Agent Orchestrator
 
-**한국어:** [README.ko.md](README.ko.md)
+A Claude Code-based workflow that routes legal questions to specialist agents. The lead orchestrator classifies each incoming question, dispatches it to the right specialist(s), coordinates hand-offs, and assembles the final work product with a per-case event log.
 
-> An AI-based legal workflow system running on Claude Code. Four specialist agents collaborate to produce audit-friendly legal analysis with transparent process logs.
->
-> Disclaimer: This repository supports legal research, drafting, review, and workflow orchestration. It is designed as an AI workflow system for legal work and should not be relied on as a substitute for advice from qualified counsel in the relevant jurisdiction. AI outputs may contain errors, inaccurate citations, or incomplete analysis, and no attorney-client relationship is created through use of this repository.
-
-![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
-![Runtime: Claude Code](https://img.shields.io/badge/Runtime-Claude_Code-orange)
-![MCP: korean-law](https://img.shields.io/badge/MCP-korean--law-green)
+> Disclaimer: This repository supports legal research, drafting, review, and workflow orchestration. It should not be relied on as a substitute for advice from qualified counsel in the relevant jurisdiction. AI outputs may contain errors, inaccurate citations, or incomplete analysis, and no attorney-client relationship is created through use of this repository.
 
 ---
 
-## Overview
+## Agents
 
-Most "legal AI" products are a single LLM you throw questions at. This one is different.
+Each specialist lives in its own repository as a standalone Claude Code agent. Running `./setup.sh` clones them into `agents/`.
 
-The **lead orchestrator** classifies each incoming question, routes it to the right specialist agent, and picks the collaboration pattern (sequential handoff / parallel research / multi-round debate). The four subordinate agents are real Claude Code agents — each with its own jurisdiction, knowledge base, and MCP tools — and this project reuses them **100% unmodified**.
+| Specialist | Agent repository | Role |
+|----------|------------------|------|
+| Legal Research Specialist | [legal-research-agent](https://github.com/lowtidebuild/legal-research-agent) | Source-first legal research (general + game-industry regulation) with four research modes (`general` / `game_regulation` / `game_plus_general` / `fallback`) selected by the orchestrator. |
+| Legal Writing Specialist | [legal-writing-agent](https://github.com/lowtidebuild/legal-writing-agent) | Bilingual (KR/EN) drafting for non-contract legal documents, with a tracked-change revision pipeline. |
+| Senior Review Specialist | [second-review-agent](https://github.com/lowtidebuild/second-review-agent) | Citation verification against primary legal databases, legal-logic review, and a final release gate. |
+| Data Protection Specialist | [data-protection-agent](https://github.com/lowtidebuild/data-protection-agent) | KR PIPA, EU GDPR, and California CCPA/CPRA work with namespaced local knowledge bases. |
 
-Every step is logged to `events.jsonl`, and the final delivery step folds the whole case folder into a single `case-report.md`. Which specialist was assigned, which sources (Grade A/B/C) were cited, what the fact-checker flagged, and how revisions resolved — it's all visible in one narrative artifact.
+> Out of scope: contract review and document translation. Questions classified into those domains receive an `out_of_scope` response without a routed pipeline.
 
----
-
-## Meet the Team — Legal Agent Orchestrator Specialist Agents
-
-This repository is the central coordinator for **Legal Agent Orchestrator**, a local-first AI legal workflow system. Each of the four specialists below lives in its own independent GitHub repository as a standalone Claude Code agent. When you run `./setup.sh` they are all cloned into `agents/` and ready to be dispatched.
-
-| Specialist | Agent repository | What they actually do |
-|----------|------------------|-----------------------|
-| **Legal Research Specialist** | [legal-research-agent](https://github.com/lowtidebuild/legal-research-agent) | Source-first legal research across general legal questions and game-industry regulation. Four explicit research modes (`general` / `game_regulation` / `game_plus_general` / `fallback`) injected by the orchestrator. Grade-A primary-source-first workflow over 17+ jurisdictions. |
-| **Legal Writing Specialist** | [legal-writing-agent](https://github.com/lowtidebuild/legal-writing-agent) | Bilingual (KR/EN) drafter for **non-contract** legal documents. Drafts via a D1–D6 pipeline, revises via an R1–R7 tracked-change pipeline. Korean drafts follow 쟁점→결론→분석 conventions; English drafts follow IRAC/CRAC with Bluebook/OSCOLA. |
-| **Senior Review Specialist** | [second-review-agent](https://github.com/lowtidebuild/second-review-agent) | Final quality gate for AI-generated legal documents. Verifies citations against primary legal databases (law.go.kr, congress.gov, eur-lex, and more), checks legal logic, and ships redlined DOCX with tracked changes. Independent release gate (Pass / Pass with Warnings / Manual Review Required / Not Recommended). Zero tolerance for hallucinated citations. |
-| **Data Protection Specialist** | [data-protection-agent](https://github.com/lowtidebuild/data-protection-agent) | Unified KR PIPA, EU GDPR, and California CCPA/CPRA specialist with namespaced local KBs, deterministic retrieval, and golden-set evaluation. Single agent for cross-jurisdiction privacy work. |
-
-> **Out of scope:** contract review and document translation.
->
-> Contract and translation work is not routed through this orchestrator. Questions classified into those domains receive an `out_of_scope` response without a routed pipeline or repository link.
-
-**The orchestrator never modifies a subordinate agent's `CLAUDE.md`, skills, or knowledge base.** That's what "100% reuse" means in practice. Subordinate agents are tracked at the `main` branch of their respective GitHub repositories — `./setup.sh` shallow-clones them and `./setup.sh update` fast-forwards them to the latest `main`. **Every new case syncs only the agents selected by routing before dispatch**, with a short TTL cache for repeated local runs. Set `LEGAL_ORCHESTRATOR_SKIP_AGENT_SYNC=1` to opt out, `LEGAL_ORCHESTRATOR_FORCE_AGENT_SYNC=1` to ignore TTL, or `LEGAL_ORCHESTRATOR_AGENT_SYNC_TTL_SECONDS=0` to disable TTL caching.
-
-> `setup.sh` only clones the repositories used directly by this orchestrator. Standalone projects outside this workflow are not included.
+The orchestrator never modifies a subordinate agent's `CLAUDE.md`, skills, or knowledge base. `./setup.sh` shallow-clones each agent's `main` branch and `./setup.sh update` fast-forwards it. Each new case syncs only the agents selected by routing, with a short TTL cache for repeated local runs. Set `LEGAL_ORCHESTRATOR_SKIP_AGENT_SYNC=1` to opt out, `LEGAL_ORCHESTRATOR_FORCE_AGENT_SYNC=1` to ignore TTL, or `LEGAL_ORCHESTRATOR_AGENT_SYNC_TTL_SECONDS=0` to disable TTL caching.
 
 ---
 
 ## How It Works
 
-Send a legal question. The orchestrator routes it, the specialists do the work, and you get an opinion. A typical pipeline looks like this:
+A typical pipeline:
 
-| Stage | Agent | What it did | Output |
-|-------|-------|-------------|--------|
-| **1. Research** | Legal Research Specialist · `legal-research-agent` | Pulls primary sources from the relevant MCP and legal databases — statute text, precedents, regulator guidance, and enforcement path. Mode (`general` / `game_regulation` / etc.) is selected by the orchestrator from the classification | `{agent}-result.md`, `{agent}-meta.json` |
-| **2. Drafting** | Legal Writing Specialist · `legal-writing-agent` | Produces the first opinion draft in a structured legal memorandum format | `opinion.md` |
-| **3. Review** | Senior Review Specialist · `second-review-agent` | Runs verbatim source checks, identifies mismatches, and returns severity-ranked comments | `review-result.md`, `review-meta.json` |
-| **4. Revision rescue** | `legal-writing-agent` + orchestrator | If revision stalls, the orchestrator can take over and verify citations directly against primary sources | `verbatim-verification.md` |
-| **5. Delivery** | orchestrator | Validates the case folder, gates delivery on review approval, merges sources, and generates client-facing files | `opinion.docx`, `sources.json`, `case-report.md` |
+| Stage | Agent | Output |
+|-------|-------|--------|
+| 1. Research | `legal-research-agent` | `{agent}-result.md`, `{agent}-meta.json` |
+| 2. Drafting | `legal-writing-agent` | `opinion.md` |
+| 3. Review | `second-review-agent` | `review-result.md`, `review-meta.json` |
+| 4. Revision rescue | `legal-writing-agent` + orchestrator | `verbatim-verification.md` |
+| 5. Delivery | orchestrator | `opinion.docx`, `sources.json`, `case-report.md` |
 
-**Result:** audited sources, a typed event log, review findings, and a final deliverable bundle.
-
-### System diagram
+Every step is appended to `events.jsonl`, and the delivery step folds the case folder into a single `case-report.md`.
 
 ```mermaid
 flowchart TB
     Q([Incoming legal question])
     Q --> I
 
-    subgraph OrcTop["Orchestrator · Claude Code main session (~25-40K ctx)"]
+    subgraph OrcTop["Orchestrator · Claude Code main session"]
         direction TB
         I["1 · Intake<br/>generate CASE_ID<br/>init events.jsonl"]
         C["2 · Classify<br/><i>skills/route-case.md</i><br/>jurisdiction × domain × task"]
@@ -76,7 +54,7 @@ flowchart TB
     D --> SB
     D --> SC
 
-    subgraph Subs["Subagents · independent Claude instances, each with fresh 200K ctx"]
+    subgraph Subs["Subagents · independent Claude instances"]
         direction LR
         SA["Subagent A<br/>own CLAUDE.md + skills + KB + MCP"]
         SB["Subagent B<br/>own CLAUDE.md + skills + KB + MCP"]
@@ -97,77 +75,15 @@ flowchart TB
     F --> OUT([opinion.md + opinion.docx<br/>case-report.md + events.jsonl + sources.json])
 ```
 
-### Three collaboration patterns
+### Collaboration patterns
 
-| Pattern | Shape | When | Status |
-|---------|-------|------|--------|
-| **1 · Parallel research → merge** | `[A ∥ B] → writing → review` | Cross-domain or cross-jurisdiction that doesn't need debate (e.g. GDPR + international game-regulation analysis for an EU market launch) | ✅ validated Phase 2.2 |
-| **2 · Sequential handoff** | `A → writing → review` | Single-jurisdiction or focused domain work (Phase 1 default) | ✅ validated Phase 1 E2E |
-| **3 · Multi-round debate** | `[A ∥ B] → rebuttal rounds → deterministic transcript → writing verdict → review` | Cross-jurisdiction questions where specialists are likely to disagree | ✅ control plane validated |
+| Pattern | Shape | When |
+|---------|-------|------|
+| 1 · Parallel research → merge | `[A ∥ B] → writing → review` | Cross-domain or cross-jurisdiction work without debate |
+| 2 · Sequential handoff | `A → writing → review` | Single-jurisdiction or focused domain work (default) |
+| 3 · Multi-round debate | `[A ∥ B] → rebuttal rounds → transcript → writing verdict → review` | Cross-jurisdiction questions where specialists may disagree |
 
-Pattern 3 is the core differentiator: two specialists from different jurisdictions can reason independently before the orchestrator assembles a final view. No single LLM can produce the same separation by role-playing both sides from one shared context. The orchestration control plane now builds the debate transcript deterministically from round files and decides whether Round 3 is needed from recorded concessions, so the debate shape is reproducible instead of improvised.
-
----
-
-## Why This Architecture
-
-The standard playbook for multi-agent systems is to wrap a framework (LangGraph, CrewAI, AutoGen, Claude Agent SDK) in a web server. Using Claude Code itself as the orchestration runtime is non-standard. Four misconceptions usually come up first:
-
-### 1. "Doesn't stuffing 4 agents into one orchestrator kill performance?"
-
-No — that's a misconception about how Claude Code's `Agent` tool works.
-
-Each subagent is a **completely independent new Claude instance** with its own fresh 200K context window. The orchestrator doesn't carry their weight — it just coordinates.
-
-```mermaid
-flowchart LR
-    O["Orchestrator<br/>200K ctx<br/><i>actual ~25-40K</i>"]
-    A["Subagent A<br/><i>fresh 200K</i>"]
-    B["Subagent B<br/><i>fresh 200K</i>"]
-    C["Subagent C<br/><i>fresh 200K</i>"]
-    O -->|Agent tool call| A
-    O -->|Agent tool call| B
-    O -->|Agent tool call| C
-    A -.->|result file| O
-    B -.->|result file| O
-    C -.->|result file| O
-```
-
-The orchestrator spends tokens only on classification, dispatch prompts, and reading result summaries (~25–40K total). Each specialist runs at full capacity with its own CLAUDE.md, skills, knowledge base, and MCP tools. **This is the opposite of "stuffing" — it's the most context-efficient multi-agent architecture possible.**
-
-### 2. "Why not LangGraph or Agent SDK?"
-
-Wrapping existing Claude Code agents in a web framework loses 40–50% of their capability: MCP breaks, the skills system needs reimplementation, knowledge-base browsing changes. You end up with a pretty demo producing legal opinions at half quality.
-
-We inverted the tradeoff: **Claude Code as the runtime, agents preserved 100% intact, and final delivery collapsed into a single `case-report.md` artifact instead of a web UI.** Real legal work, not a demo.
-
-### 3. The Process Is the Product
-
-Many legal AI workflows optimize for a single final answer. Legal Agent Orchestrator optimizes for traceability.
-
-Which specialist was assigned, which sources were consulted, what the fact-checker flagged, and how revision cycles resolved are all visible in `events.jsonl`, one line per event.
-
-Failure modes are in the permanent record too. If a mid-revision rate-limit error occurs, the orchestrator can trigger a meta-verification rescue instead of dying as a dead chat tab. Here it's a typed event in an append-only log. **That's what "the process is the product" means in practice.**
-
-### 4. It Uses Substantial Context by Design
-
-A single case can consume 60K–170K tokens per specialist. Phase 1 E2E used more than 200K tokens across all subagents. That is an intentional quality tradeoff.
-
-Every subagent gets its own full 200K context window so it can load its CLAUDE.md, every skill it needs, its knowledge base, and run live MCP queries against primary sources. Context-sharing and aggressive truncation could cut token usage sharply, but would also reduce coverage and review quality. This project favors source coverage, independent review, and auditability over minimum token usage. On Claude Code Max, the marginal dollar cost is zero. The real cost is wall-clock time.
-
-If you need a lightweight legal Q&A bot, this architecture may be more than you need. It is designed for workflows where traceability, source review, and a defensible final artifact matter.
-
-### Comparison
-
-| Aspect | Single LLM | LangGraph / Agent SDK | **Legal Agent Orchestrator** |
-|--------|-----------|----------------------|---------------------|
-| Multi-specialist reasoning | Prompt personas | Agents reimplemented in the framework | **Real Claude Code agents, 100% reused** |
-| Knowledge bases | Stuffed into context | Rebuilt for the framework | Each agent's native KB, untouched |
-| MCP / primary sources | Inherits caller's tools | Rewired server-side | Each agent keeps its own MCP config |
-| Fact-checker | None, or bolted on | Custom implementation | Real `second-review-agent` with its own CLAUDE.md |
-| Audit trail | Chat log | Custom logging layer | Native `events.jsonl` per case |
-| Cross-jurisdiction debate | One model playing both sides | Sequential state machine | Parallel dispatch + meta-verification fallback |
-| Demo persistence | Dies with the tab | Requires a running server | Static files you can `cat` |
+In Pattern 3, the control plane builds the debate transcript deterministically from round files and decides whether a third round is needed from recorded concessions.
 
 ---
 
@@ -175,9 +91,9 @@ If you need a lightweight legal Q&A bot, this architecture may be more than you 
 
 ### Prerequisites
 
-- **[Claude Code](https://docs.claude.com/claude-code)** installed and logged in. Max subscription strongly recommended — a single case can burn 200K+ tokens across subagents, and on metered API pricing that adds up. On Max, marginal cost is zero.
-- **macOS or Linux** with `git`, `bash` or `zsh`, and `python3` (3.10+).
-- **[법제처 Open API](https://open.law.go.kr/) account.** Free, sign up with an email. You'll get an `LAW_OC` key which the `korean-law` MCP server uses to query Korean statutes, precedents, and administrative interpretations in real time.
+- [Claude Code](https://docs.claude.com/claude-code) installed and logged in. A single case can use 200K+ tokens across subagents.
+- macOS or Linux with `git`, `bash` or `zsh`, and `python3` (3.10+).
+- A [법제처 Open API](https://open.law.go.kr/) account (free). The resulting `LAW_OC` key lets the `korean-law` MCP server query Korean statutes, precedents, and administrative interpretations.
 
 ### 1. Clone the orchestrator
 
@@ -186,34 +102,69 @@ git clone https://github.com/lowtidebuild/legal-agent-orchestrator.git
 cd legal-agent-orchestrator
 ```
 
-What you have now: the orchestrator itself — `CLAUDE.md` (the lead orchestrator system prompt), `.mcp.json` (MCP server config), `skills/` (routing and assembly logic), and `setup.sh`. The four subordinate agents are **not yet installed**.
-
-### 2. Install the four subordinate agents
+### 2. Install the subordinate agents
 
 ```bash
 ./setup.sh
 ```
 
-This script shallow-clones all four specialists' GitHub repositories into `agents/` under their Agent ID names, tracking each one's `main` branch:
+This shallow-clones the four specialist repositories into `agents/` under their agent IDs, tracking each one's `main` branch:
 
 ```
 agents/
-├── legal-research-agent/       ← Legal Research Specialist (general + game)
-├── legal-writing-agent/        ← Legal Writing Specialist
-├── second-review-agent/        ← Senior Review Specialist
-└── data-protection-agent/      ← Data Protection Specialist
+├── legal-research-agent/
+├── legal-writing-agent/
+├── second-review-agent/
+└── data-protection-agent/
 ```
 
-Each folder is an independent Claude Code agent with its own `CLAUDE.md`, `skills/`, knowledge base, and MCP configuration. When the orchestrator dispatches a case, it calls into these agents via Claude Code's `Agent` tool with `cwd: agents/{agent-id}/`, so each subagent runs in its own working directory with its own context.
+Each folder is an independent Claude Code agent with its own `CLAUDE.md`, `skills/`, knowledge base, and MCP configuration. The orchestrator dispatches cases via Claude Code's `Agent` tool with `cwd: agents/{agent-id}/`.
 
 Other `setup.sh` commands:
-- `./setup.sh update [agent-id ...]` — fast-forward every agent, or only the listed agents, to the latest `main` of its upstream repository (idempotent; same as the default `./setup.sh` when no agent IDs are supplied).
-- `./setup.sh status [agent-id ...]` — show each selected agent's local SHA next to the upstream `main` SHA, and flag any that are `behind` / `up to date` / `unreachable` / `symlink` (dev mode)
-- `./setup.sh link [agent-id ...]` — **development mode**: if you already have the selected agent repositories checked out under `~/코딩 프로젝트/`, create symlinks instead of fresh clones so your local edits flow through immediately
+- `./setup.sh update [agent-id ...]` — fast-forward every agent (or only the listed ones) to the latest upstream `main`
+- `./setup.sh status [agent-id ...]` — compare each agent's local SHA against upstream
+- `./setup.sh link [agent-id ...]` — development mode: symlink local checkouts instead of cloning
 
-During case execution the orchestrator now resolves route-specific sync targets with `scripts/resolve-sync-targets.py` and applies TTL-aware sync with `scripts/sync-agents.py`, so out-of-scope cases and repeated runs avoid unnecessary network work.
+During case execution the orchestrator resolves route-specific sync targets with `scripts/resolve-sync-targets.py` and applies TTL-aware sync with `scripts/sync-agents.py`.
 
-Each agent is shallow-cloned (`--depth 1 --single-branch`), so only the latest snapshot of `main` lives on disk — no git history, no other branches.
+### 3. Set your Korean Open Law API key
+
+```bash
+export LAW_OC=your_law_oc_key
+```
+
+Required every shell session — Claude Code does not auto-load `.env`. Putting the export in `~/.zshrc` or `~/.bashrc` is the simplest option.
+
+### 4. Launch Claude Code from the orchestrator directory
+
+```bash
+claude
+```
+
+Claude Code auto-loads [CLAUDE.md](CLAUDE.md) (the orchestrator system prompt), `.mcp.json` (MCP servers, inherited by subagents on dispatch), and `skills/*.md`. Ask a legal question in Korean or English.
+
+### 5. Find your results
+
+```
+$OUTPUT_DIR/  # defaults to output/{CASE_ID}/
+├── events.jsonl            ← full timeline, one event per line
+├── {agent}-result.md       ← each subagent's detailed analysis
+├── {agent}-meta.json       ← compact summary + issue map + graded sources
+├── sources.json            ← merged source table with grade distribution
+├── opinion.md              ← final opinion in markdown
+├── debate-opinion.md       ← Pattern 3 verdict, when debate is used
+├── debate-transcript.md    ← debate transcript, when debate is used
+├── case-report.md          ← single-file narrative case archive
+└── opinion.docx            ← final opinion as DOCX
+```
+
+Set `LEGAL_ORCHESTRATOR_PRIVATE_DIR` to write case files outside the repository.
+
+`case-report.md` is generated automatically at delivery; for a completed case it can also be generated manually:
+
+```bash
+python3 scripts/generate-case-report.py "$OUTPUT_DIR"
+```
 
 ### Smoke checks
 
@@ -224,111 +175,6 @@ python3 -m pytest
 python3 scripts/sanitize-check.py --self-test
 python3 scripts/smoke-check.py
 ```
-
-### 3. Set your Korean Open Law API key
-
-```bash
-export LAW_OC=your_law_oc_key
-```
-
-⚠️ This is required **every shell session**. Claude Code does not auto-load `.env`, and without `LAW_OC` the `korean-law` MCP server will fail to answer the first statute lookup. The simplest solution is to put `export LAW_OC=...` in your `~/.zshrc` or `~/.bashrc`.
-
-### 4. Launch Claude Code from the orchestrator directory
-
-```bash
-claude
-```
-
-When Claude Code starts, it auto-loads:
-- **[CLAUDE.md](CLAUDE.md)** — the orchestrator system prompt that tells the main Claude session "you are the lead orchestrator of Legal Agent Orchestrator, here is your workflow, here are your four specialists, here are the skills you can invoke"
-- **[.mcp.json](.mcp.json)** — the MCP servers available (`korean-law` and `kordoc`); each subagent inherits these on dispatch
-- **`skills/*.md`** — markdown procedure documents the orchestrator executes as subroutines
-
-You're now talking to the lead orchestrator. Ask a legal question in Korean or English.
-
-### 5. Your first case
-
-Try one of these:
-
-```
-독일 본사의 SaaS 회사가 프랑스·이탈리아 사용자 데이터를 미국 subprocessors로
-이전하려고 합니다. SCC만으로 충분한가요, 추가 보호조치가 필요한가요?
-```
-
-```
-Our Delaware-incorporated AI health startup stores EU patient data in
-Ireland and wants to transfer model-training datasets to U.S.
-infrastructure. What transfer mechanism and supplementary measures are
-required after Schrems II?
-```
-
-What happens next:
-1. The orchestrator classifies the question (jurisdiction × domain × task), picks a pipeline, creates `$OUTPUT_DIR`, and starts appending to `events.jsonl`. By default `$OUTPUT_DIR` is `output/{CASE_ID}/`; if `LEGAL_ORCHESTRATOR_PRIVATE_DIR` is set, case files are written there instead.
-2. It dispatches the first subagent via `Agent` tool. You'll see the subagent run in a nested context — calling MCP, reading its KB, writing results.
-3. Control returns to the orchestrator, which reads the subagent's compact `{agent}-meta.json` summary, issue map, and graded sources before dispatching the next agent in the pipeline.
-4. When all agents finish, `skills/deliver-output.md` validates the case folder, checks senior-review approval, merges `sources.json`, assembles `opinion.md`, converts it to `opinion.docx`, and generates `case-report.md`.
-
-Expect 5–15 minutes of wall-clock time per case. The orchestrator is not trying to minimize latency — it's trying to minimize the number of things you have to manually double-check afterwards.
-
-### 6. Find your results
-
-```
-$OUTPUT_DIR/  # defaults to output/{CASE_ID}/
-├── events.jsonl            ← full timeline, one event per line
-├── {agent}-result.md       ← each subagent's detailed analysis
-├── {agent}-meta.json       ← compact summary + issue map + graded sources
-├── sources.json            ← merged source table with grade distribution
-├── opinion.md              ← final opinion in markdown
-├── debate-opinion.md       ← Pattern 3 verdict, when debate is used
-├── debate-transcript.md    ← deterministic debate transcript, when debate is used
-├── case-report.md          ← single-file narrative case archive
-└── opinion.docx            ← final opinion as DOCX (client-ready)
-```
-
-### 7. Generate `case-report.md`
-
-The orchestrator does not ship a web viewer anymore. Instead, every completed case can be collapsed into a single Markdown archive that renders directly on GitHub.
-
-Generate it manually for a completed live case:
-
-```bash
-python3 "$PROJECT_ROOT/scripts/generate-case-report.py" "$OUTPUT_DIR"
-```
-
-You can also pass a bare case ID. In that form, the script resolves it under `LEGAL_ORCHESTRATOR_PRIVATE_DIR` when set, otherwise under `output/`.
-
-`skills/deliver-output.md` now calls this automatically at the final delivery step, so completed cases should end with:
-
-- `opinion.md`
-- `opinion.docx`
-- `sources.json`
-- `events.jsonl`
-- `case-report.md`
-
-The generated report is designed to be the one file you open first. It includes:
-- case metadata and status
-- human-readable timeline derived from `events.jsonl`
-- participating specialists and their contributions
-- partner review findings grouped by severity
-- source table with grade breakdown
-- the final opinion inlined under one document
-- relative links to the original raw artifacts
-
----
-
-## FAQ
-
-**How does it handle client confidentiality?**
-Everything runs locally on your machine under your own Claude Code session. No intermediate SaaS. Claude Code itself sends prompts to Anthropic for inference — whether that's acceptable for a given matter depends on your firm. `output/`, `agents/`, and `.env` are gitignored so case files and API keys don't leak into commits.
-
-**What does `./setup.sh` actually do to my machine?**
-It creates an `agents/` folder inside this repository and clones four GitHub repositories into it, one per specialist agent. Nothing outside this directory is touched. No global package installs, no environment mutations beyond whatever `git clone` does. Each agent folder is roughly 10–80 MB depending on its knowledge base size.
-
-**Can I add my own specialist agent?**
-Yes. Write it as a standalone Claude Code agent (its own `CLAUDE.md`, `skills/`, optional `library/`, optional `.mcp.json`), drop it under `agents/` (or symlink it), add one line to the `REPOS` array in `setup.sh`, and add one row to [`skills/route-case.md`](skills/route-case.md) so the router knows when to call it. No orchestrator code changes needed. The design is plugin-shaped.
-
-**How much does it cost per opinion?**
-On Claude Code Max: zero marginal dollars. On metered API pricing: roughly $3–10 per opinion depending on complexity. The real cost is wall-clock time (5–15 minutes per pipeline).
 
 ---
 
@@ -350,19 +196,7 @@ legal-agent-orchestrator/
 │   ├── generate-case-report.md         # single-file case archive generation
 │   ├── manage-debate.md                # Pattern 3 debate orchestration
 │   └── prompt-templates/               # reusable dispatch prompt blocks
-├── scripts/
-│   ├── log-event.py                    # typed events.jsonl writer
-│   ├── select-route.py                 # deterministic routing helper
-│   ├── validate-case.py                # event/meta contract validation
-│   ├── merge-sources.py                # sources.json generation
-│   ├── finalize-case.py                # review approval gate + final_output event
-│   ├── build-debate-transcript.py      # deterministic Pattern 3 transcript builder
-│   ├── decide-debate-round3.py         # deterministic Round 3 decision
-│   ├── sanitize-check.py               # trust-boundary and deliverable residue scan
-│   ├── md-to-docx.py                   # DOCX conversion (style guide §17.1)
-│   ├── generate-case-report.py         # narrative case-report.md generator
-│   ├── smoke-check.py                  # clean-tree smoke checks
-│   └── acceptance-check.py             # remediation acceptance checks
+├── scripts/                            # logging, routing, validation, delivery, and check scripts
 ├── schemas/                            # JSON schemas for events, meta, routing, review
 ├── tests/                              # unit tests and fixture cases
 ├── agents/                             # 4 subordinate agents (gitignored, populated by setup.sh)
@@ -373,6 +207,6 @@ legal-agent-orchestrator/
 
 ## License
 
-**Apache License 2.0** — see [LICENSE](LICENSE).
+Apache License 2.0 — see [LICENSE](LICENSE).
 
 Subordinate agents are hosted in separate repositories with their own licenses. Legal data comes from Korean Ministry of Government Legislation public APIs and court judgments (public-domain government works).

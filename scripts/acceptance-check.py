@@ -58,8 +58,8 @@ def exact_mcp_pins() -> bool:
         for name, server in servers.items()
     }
     return (
-        specs.get("korean-law") == "korean-law-mcp@4.0.6"
-        and specs.get("kordoc") == "kordoc@2.9.0"
+        specs.get("korean-law") == "korean-law-mcp@4.4.1"
+        and specs.get("kordoc") == "kordoc@3.0.1"
         and all("@latest" not in spec for spec in specs.values())
     )
 

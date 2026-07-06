@@ -3,51 +3,20 @@
 from __future__ import annotations
 
 import argparse
-import importlib.util
 import json
 import sys
+import zipfile
 from pathlib import Path
 from typing import Any
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from scripts.lib.events import append_event  # noqa: E402
+from scripts.lib.io_utils import parse_jsonl, read_json  # noqa: E402
 
 APPROVED_STATUSES = {"approved", "approved_with_revisions"}
 BLOCKING_STATUSES = {"revision_needed"}
 VALID_STATUSES = APPROVED_STATUSES | BLOCKING_STATUSES
-
-
-def load_log_event_module():
-    module_path = Path(__file__).with_name("log-event.py")
-    spec = importlib.util.spec_from_file_location("log_event", module_path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"cannot load log-event module from {module_path}")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-def read_json(path: Path) -> Any | None:
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return None
-
-
-def parse_jsonl(path: Path) -> list[dict[str, Any]]:
-    try:
-        lines = path.read_text(encoding="utf-8").splitlines()
-    except OSError:
-        return []
-    events: list[dict[str, Any]] = []
-    for line in lines:
-        if not line.strip():
-            continue
-        try:
-            payload = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        if isinstance(payload, dict):
-            events.append(payload)
-    return events
-
 
 def load_review_meta(case_dir: Path) -> tuple[dict[str, Any] | None, Path | None]:
     candidates = [case_dir / "review-meta.json", case_dir / "second-review-agent-meta.json"]
@@ -57,6 +26,16 @@ def load_review_meta(case_dir: Path) -> tuple[dict[str, Any] | None, Path | None
         if isinstance(payload, dict):
             return payload, path
     return None, None
+
+
+def load_writing_meta(case_dir: Path) -> dict[str, Any] | None:
+    candidates = [case_dir / "writing-meta.json", case_dir / "legal-writing-agent-meta.json"]
+    candidates.extend(path for path in sorted(case_dir.glob("*writing*-meta.json")) if path not in candidates)
+    for path in candidates:
+        payload = read_json(path)
+        if isinstance(payload, dict):
+            return payload
+    return None
 
 
 def normalize_approval(value: Any) -> str:
@@ -86,7 +65,7 @@ def first_string(*values: Any) -> str | None:
 def derive_summary(case_dir: Path, review_meta: dict[str, Any], explicit_summary: str | None) -> str:
     if explicit_summary:
         return explicit_summary
-    writing_meta = read_json(case_dir / "writing-meta.json")
+    writing_meta = load_writing_meta(case_dir)
     return (
         first_string(
             review_meta.get("summary"),
@@ -97,7 +76,7 @@ def derive_summary(case_dir: Path, review_meta: dict[str, Any], explicit_summary
 
 
 def derive_pattern(case_dir: Path) -> str | None:
-    writing_meta = read_json(case_dir / "writing-meta.json")
+    writing_meta = load_writing_meta(case_dir)
     if isinstance(writing_meta, dict):
         pattern = first_string(writing_meta.get("pattern"))
         if pattern:
@@ -124,7 +103,15 @@ def detect_deliverables(case_dir: Path) -> list[Path]:
         "case-report.md",
         "sources.json",
     ]
-    return [case_dir / name for name in candidates if (case_dir / name).exists()]
+    deliverables: list[Path] = []
+    for name in candidates:
+        path = case_dir / name
+        if not path.exists():
+            continue
+        if path.suffix == ".docx" and not zipfile.is_zipfile(path):
+            continue
+        deliverables.append(path)
+    return deliverables
 
 
 def choose_primary(case_dir: Path, explicit_path: str | None) -> Path | None:
@@ -139,7 +126,6 @@ def choose_primary(case_dir: Path, explicit_path: str | None) -> Path | None:
 
 
 def append_abort_event(case_dir: Path, reason: str, approval: str, review_path: Path | None) -> dict[str, Any]:
-    log_event = load_log_event_module()
     data = {
         "reason": reason,
         "last_completed_step": "second-review-agent",
@@ -147,7 +133,7 @@ def append_abort_event(case_dir: Path, reason: str, approval: str, review_path: 
         "review_meta": review_path.name if review_path else None,
         "recovery": "request_revision_cycle_before_final_output",
     }
-    return log_event.append_event(
+    return append_event(
         case_dir / "events.jsonl",
         agent="orchestrator",
         event_type="pipeline_aborted",
@@ -198,16 +184,16 @@ def finalize_case(
 ) -> tuple[int, dict[str, Any]]:
     review_meta, review_path = load_review_meta(case_dir)
     if not isinstance(review_meta, dict):
-        event = append_abort_event(case_dir, "missing_review_meta", "missing", review_path)
+        event = None if check_only else append_abort_event(case_dir, "missing_review_meta", "missing", review_path)
         return 2, {"status": "aborted", "reason": "missing_review_meta", "event": event}
 
     approval = normalize_approval(review_meta.get("approval"))
     if approval not in VALID_STATUSES:
-        event = append_abort_event(case_dir, "invalid_review_approval", approval or "missing", review_path)
+        event = None if check_only else append_abort_event(case_dir, "invalid_review_approval", approval or "missing", review_path)
         return 2, {"status": "aborted", "reason": "invalid_review_approval", "approval": approval, "event": event}
 
     if approval in BLOCKING_STATUSES and not allow_unapproved:
-        event = append_abort_event(case_dir, "review_revision_needed", approval, review_path)
+        event = None if check_only else append_abort_event(case_dir, "review_revision_needed", approval, review_path)
         return 3, {"status": "aborted", "reason": "review_revision_needed", "approval": approval, "event": event}
 
     primary = choose_primary(case_dir, primary_deliverable)
@@ -228,8 +214,7 @@ def finalize_case(
     if existing is not None:
         return 0, {"status": "already_finalized", "approval": approval, "final_output": existing}
 
-    log_event = load_log_event_module()
-    event = log_event.append_event(
+    event = append_event(
         case_dir / "events.jsonl",
         agent="orchestrator",
         event_type="final_output",

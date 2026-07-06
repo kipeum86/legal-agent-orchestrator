@@ -29,7 +29,7 @@ On entry to this skill, the following must already be set:
 
 Validation rules:
 - If three or more participants are detected, do **not** start the debate; ask the user to **narrow to two camps**.
-- Confirm both participants exist in the 8-agent roster.
+- Confirm both participants exist in the active 4-agent roster (CLAUDE.md Agent Roster / `sync_targets.ACTIVE_AGENT_IDS`).
 - Frame the topic as `Position A vs Position B`.
 - If participants or topic are ambiguous, log a `user_prompt` event and clarify first.
 
@@ -237,6 +237,7 @@ Agent A surrebuttal prompt template:
   "key_claims": ["..."],
   "final_position": "최종 입장 1-2문장",
   "conceded_points": ["..."],
+  "key_findings": ["..."],
   "sources": [{"title": "...", "grade": "A|B|C", "citation": "..."}],
   "error": null
 }
@@ -349,7 +350,7 @@ R3-B: {OUTPUT_DIR}/debate-round-3-{AGENT_B_ID}-result.md
 저장:
 1. {OUTPUT_DIR}/debate-opinion.md
 2. {OUTPUT_DIR}/writing-meta.json
-   {"pattern":"pattern_3","debate_rounds":N,"participants":["AGENT_A_ID","AGENT_B_ID"],"summary":"...","sources":[...],"error":null}
+   {"pattern":"pattern_3","debate_rounds":N,"participants":["AGENT_A_ID","AGENT_B_ID"],"summary":"...","key_findings":["..."],"sources":[...],"error":null}
 ```
 
 `writing-meta.json` must always include `pattern: "pattern_3"` so that `deliver-output` can branch on it.

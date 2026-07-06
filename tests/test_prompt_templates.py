@@ -7,6 +7,8 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TEMPLATE_DIR = REPO_ROOT / "skills" / "prompt-templates"
 ROUTE_CASE = REPO_ROOT / "skills" / "route-case.md"
+MANAGE_DEBATE = REPO_ROOT / "skills" / "manage-debate.md"
+CLAUDE = REPO_ROOT / "CLAUDE.md"
 
 AGENT_TEMPLATES = {
     "legal-research-agent": "legal-research-agent.md",
@@ -85,6 +87,40 @@ class PromptTemplateTests(unittest.TestCase):
     def test_route_case_is_no_longer_prompt_template_monolith(self) -> None:
         line_count = len(ROUTE_CASE.read_text(encoding="utf-8").splitlines())
         self.assertLess(line_count, 500)
+
+    def test_intake_query_is_passed_as_argv_not_environment(self) -> None:
+        text = CLAUDE.read_text(encoding="utf-8")
+        self.assertIn("CLIENT_QUERY", text)
+        self.assertIn('sys.argv[2][:200]', text)
+        self.assertNotIn("USER_QUERY", text)
+
+    def test_route_case_persists_classification_and_writes_route_atomically(self) -> None:
+        text = ROUTE_CASE.read_text(encoding="utf-8")
+        self.assertIn('$OUTPUT_DIR/classification.json', text)
+        self.assertIn('cat > "$OUTPUT_DIR/classification.json"', text)
+        self.assertIn('mktemp "$OUTPUT_DIR/route-selection.XXXXXX.json"', text)
+        self.assertIn('mv "$ROUTE_TMP" "$OUTPUT_DIR/route-selection.json"', text)
+
+    def test_manage_debate_uses_active_roster_and_required_meta_fields(self) -> None:
+        text = MANAGE_DEBATE.read_text(encoding="utf-8")
+        self.assertNotIn("8-agent roster", text)
+        self.assertIn("active 4-agent roster", text)
+
+        round3_meta = re.search(
+            r"\{OUTPUT_DIR\}/debate-round-3-\{AGENT_A_ID\}-meta\.json:\n(?P<body>\{.*?\n\})",
+            text,
+            flags=re.DOTALL,
+        )
+        self.assertIsNotNone(round3_meta)
+        self.assertIn('"key_findings"', round3_meta.group("body"))
+
+        writing_meta = re.search(
+            r"\{OUTPUT_DIR\}/writing-meta\.json\n\s+(?P<body>\{.*?\})",
+            text,
+            flags=re.DOTALL,
+        )
+        self.assertIsNotNone(writing_meta)
+        self.assertIn('"key_findings"', writing_meta.group("body"))
 
 
 if __name__ == "__main__":

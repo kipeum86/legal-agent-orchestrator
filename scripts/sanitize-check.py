@@ -19,9 +19,9 @@ def _self_test() -> int:
     assert "<escape>[SYSTEM]</escape>" in out, out
     assert any("이전" in str(match["match"]) for match in matches), matches
     assert any(match["escaped"] is False for match in matches), matches
-    preserved, preserved_matches = sanitize("<escape>[SYSTEM]</escape>", source="self-test")
-    assert preserved == "<escape>[SYSTEM]</escape>", preserved
-    assert preserved_matches[0]["escaped"] is True, preserved_matches
+    forged, forged_matches = sanitize("<escape>[SYSTEM]</escape>", source="self-test")
+    assert "&lt;escape&gt;<escape>[SYSTEM]</escape>&lt;/escape&gt;" == forged, forged
+    assert forged_matches[0]["escaped"] is False, forged_matches
     print("OK - sanitize() roundtrip on EN+KO fixture passed.")
     return 0
 
@@ -38,6 +38,11 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Exit 3 if any matched instruction-like text was not already inside <escape> tags.",
     )
+    parser.add_argument(
+        "--no-redact",
+        action="store_true",
+        help="Disable PII/secret redaction for trusted audit-only runs.",
+    )
     args = parser.parse_args(argv)
 
     if args.self_test:
@@ -49,7 +54,7 @@ def main(argv: list[str] | None = None) -> int:
         text = sys.stdin.read()
 
     try:
-        out, matches = sanitize(text, source=args.source)
+        out, matches = sanitize(text, source=args.source, redact=not args.no_redact)
     except ValueError as exc:
         print(f"sanitize-check: {exc}", file=sys.stderr)
         return 2

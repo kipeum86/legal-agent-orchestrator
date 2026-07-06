@@ -100,6 +100,54 @@ sync_one() {
   fi
 }
 
+prefix_file() {
+  local repo="$1"
+  local file="$2"
+  local line
+  while IFS= read -r line; do
+    printf '[%s] %s\n' "$repo" "$line"
+  done < "$file"
+}
+
+run_sync_jobs() {
+  local tmpdir
+  tmpdir=$(mktemp -d "${TMPDIR:-/tmp}/legal-agent-sync.XXXXXX")
+  local -a pids=()
+  local -a repos=()
+  local repo
+
+  for repo in "${TARGET_REPOS[@]}"; do
+    (
+      sync_one "$repo"
+    ) > "$tmpdir/$repo.out" 2> "$tmpdir/$repo.err" &
+    pids+=("$!")
+    repos+=("$repo")
+  done
+
+  local -a failed=()
+  local i
+  local status
+  for i in "${!pids[@]}"; do
+    repo="${repos[$i]}"
+    if wait "${pids[$i]}"; then
+      status=0
+    else
+      status=$?
+      failed+=("$repo")
+    fi
+    prefix_file "$repo" "$tmpdir/$repo.out"
+    prefix_file "$repo" "$tmpdir/$repo.err" >&2
+  done
+
+  rm -rf "$tmpdir"
+
+  if [ "${#failed[@]}" -gt 0 ]; then
+    echo "❌ Agent sync failed for: ${failed[*]}" >&2
+    return 1
+  fi
+  return 0
+}
+
 status_one() {
   local repo="$1"
   local target="$AGENTS_DIR/$repo"
@@ -140,17 +188,20 @@ case "$COMMAND" in
   setup|update)
     select_targets "$@"
     mkdir -p "$AGENTS_DIR"
-    for repo in "${TARGET_REPOS[@]}"; do
-      sync_one "$repo"
-    done
+    run_sync_jobs
     sync_complete_message
     ;;
   status)
     select_targets "$@"
     echo "📊 Subordinate agent status (local vs origin/$DEFAULT_BRANCH):"
+    STATUS_FAILED=()
     for repo in "${TARGET_REPOS[@]}"; do
-      status_one "$repo"
+      status_one "$repo" || STATUS_FAILED+=("$repo")
     done
+    if [ "${#STATUS_FAILED[@]}" -gt 0 ]; then
+      echo "❌ Agent status failed for: ${STATUS_FAILED[*]}" >&2
+      exit 1
+    fi
     ;;
   link)
     select_targets "$@"

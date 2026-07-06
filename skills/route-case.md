@@ -21,7 +21,7 @@ This skill analyzes the client's legal question and selects the right combinatio
 
 ## Step 1: Classify the Question (4 Dimensions)
 
-**Mechanism:** the orchestrator (Claude) derives the four dimensions below by LLM reasoning. The 16 few-shot examples below are the canonical reference for the classification rubric — map borderline cases onto the closest example. **Always** record the classification result as a `case_classified` event in `events.jsonl`, then continue to Step 7.
+**Mechanism:** the orchestrator (Claude) derives the four dimensions below by LLM reasoning. The 16 few-shot examples below are the canonical reference for the classification rubric — map borderline cases onto the closest example. **Always** write the classification result to `$OUTPUT_DIR/classification.json` and record it as a `case_classified` event in `events.jsonl`, then continue to Step 3.
 
 **Classification failure handling:** if confidence is low on any of the four dimensions (for example, jurisdiction is not stated, or domain admits multiple readings), record the ambiguous dimensions in the `data.ambiguity` field of the `case_classified` event and follow the fallback path (end of Step 3). For severe ambiguity, you may ask the user a clarifying question (record a `user_prompt` event).
 
@@ -36,6 +36,21 @@ Classify the client's question along the four dimensions below:
   "confidence": 0.0,
   "ambiguity": []
 }
+```
+
+Persist the derived classification before route selection. Replace the JSON body below with the actual four-dimensional result:
+
+```bash
+cat > "$OUTPUT_DIR/classification.json" <<'JSON'
+{
+  "jurisdictions": ["KR", "EU"],
+  "domains": ["data_protection"],
+  "tasks": ["research"],
+  "complexity": "multi_domain",
+  "confidence": 0.95,
+  "ambiguity": []
+}
+JSON
 ```
 
 ### Dimension definitions
@@ -90,8 +105,13 @@ Classify the client's question along the four dimensions below:
 Decide the pipeline from the classification result. Prefer the deterministic selector first:
 
 ```bash
-python3 "$PROJECT_ROOT/scripts/select-route.py" "$OUTPUT_DIR/classification.json" \
-  > "$OUTPUT_DIR/route-selection.json"
+ROUTE_TMP="$(mktemp "$OUTPUT_DIR/route-selection.XXXXXX.json")"
+if python3 "$PROJECT_ROOT/scripts/select-route.py" "$OUTPUT_DIR/classification.json" > "$ROUTE_TMP"; then
+  mv "$ROUTE_TMP" "$OUTPUT_DIR/route-selection.json"
+else
+  rm -f "$ROUTE_TMP"
+  exit 1
+fi
 ```
 
 Treat the `pipeline`, `pattern`, `parallel_agents`, and `route_mode` fields in `route-selection.json` as the canonical execution contract. When manual judgment is required, apply the same array-based conditions in the routing tree below. **Priority is top-to-bottom**; apply the first matching rule.

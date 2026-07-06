@@ -113,6 +113,29 @@ class DecideDebateRound3Tests(unittest.TestCase):
         self.assertIsNone(payload["conceded_ratio"])
         self.assertTrue(payload["warnings"])
 
+    def test_duplicate_event_participants_return_insufficient_meta_not_traceback(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = Path(directory) / "case"
+            case_dir.mkdir()
+            write_json(
+                case_dir / "events.jsonl",
+                {
+                    "id": "evt_001",
+                    "ts": "2026-04-24T00:00:00Z",
+                    "agent": "orchestrator",
+                    "type": "debate_initiated",
+                    "data": {
+                        "participants": ["legal-research-agent", "legal-research-agent"],
+                    },
+                },
+            )
+
+            payload = self.run_cli(case_dir)
+
+        self.assertEqual(payload["proceed"], True)
+        self.assertEqual(payload["reason"], "insufficient_meta")
+        self.assertTrue(payload["warnings"])
+
 
 if __name__ == "__main__":
     unittest.main()

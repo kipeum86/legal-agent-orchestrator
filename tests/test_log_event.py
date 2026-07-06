@@ -115,6 +115,27 @@ class LogEventCliTests(unittest.TestCase):
             self.assertEqual(len(ids), 20)
             self.assertEqual(ids, [f"evt_{index:03d}" for index in range(1, 21)])
 
+    def test_append_after_truncated_line_preserves_monotonic_id_and_newline(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            events_path = Path(directory) / "events.jsonl"
+            events_path.write_text('{"id":"evt_009","ts":"broken"', encoding="utf-8")
+
+            result = run_log_event(
+                events_path,
+                "--agent",
+                "orchestrator",
+                "--type",
+                "case_received",
+                "--data-json",
+                "{}",
+            )
+            lines = events_path.read_text(encoding="utf-8").splitlines()
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertEqual(len(lines), 2)
+        appended = json.loads(lines[1])
+        self.assertEqual(appended["id"], "evt_010")
+
 
 if __name__ == "__main__":
     unittest.main()

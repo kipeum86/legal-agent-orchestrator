@@ -8,6 +8,7 @@ import re
 import subprocess
 import sys
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Callable
 
@@ -23,6 +24,7 @@ class CheckResult:
     evidence: list[str]
 
 
+@lru_cache(maxsize=None)
 def read_text(path: str) -> str:
     return (REPO_ROOT / path).read_text(encoding="utf-8")
 
@@ -104,7 +106,8 @@ def check_event_writer() -> CheckResult:
         "모든 이벤트는 JSON writer를 통해 기록된다",
         [
             (exists("scripts/log-event.py"), "scripts/log-event.py exists"),
-            (has("scripts/log-event.py", "fcntl.flock"), "log-event.py uses file locking"),
+            (exists("scripts/lib/events.py"), "scripts/lib/events.py exists"),
+            (has("scripts/lib/events.py", "fcntl.flock"), "events helper uses file locking"),
             (exists("tests/test_log_event.py"), "log-event regression tests exist"),
             (has("CLAUDE.md", "scripts/log-event.py"), "orchestrator prompt references log-event.py"),
         ],
@@ -258,7 +261,20 @@ CHECKS: tuple[Callable[[], CheckResult], ...] = (
 
 
 def run_checks() -> list[CheckResult]:
-    return [check() for check in CHECKS]
+    results: list[CheckResult] = []
+    for index, check in enumerate(CHECKS, start=1):
+        try:
+            results.append(check())
+        except Exception as exc:  # noqa: BLE001 - acceptance must report checker failures
+            results.append(
+                CheckResult(
+                    id=index,
+                    title=check.__name__.replace("check_", "").replace("_", " "),
+                    passed=False,
+                    evidence=[f"FAIL: {type(exc).__name__}: {exc}"],
+                )
+            )
+    return results
 
 
 def to_json(results: list[CheckResult]) -> str:

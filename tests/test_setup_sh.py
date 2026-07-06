@@ -159,6 +159,41 @@ esac
             self.assertIn("legal-research-agent synced to latest main", result.stdout)
             self.assertIn("reset --hard origin/main", calls)
 
+    def test_update_reports_failures_after_attempting_all_selected_agents(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            script = self.copy_setup(root)
+            bin_dir = self.write_fake_git(root)
+            (root / "agents" / "legal-research-agent").mkdir(parents=True)
+            (root / "agents" / "legal-writing-agent" / ".git").mkdir(parents=True)
+            log_path = root / "git.log"
+
+            result = self.run_setup(
+                script,
+                "update",
+                "legal-research-agent",
+                "legal-writing-agent",
+                cwd=root,
+                env={
+                    "PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}",
+                    "FAKE_GIT_LOG": str(log_path),
+                },
+            )
+            calls = log_path.read_text(encoding="utf-8")
+
+            self.assertEqual(result.returncode, 1)
+            self.assertIn(
+                "agents/legal-research-agent exists but is not a git repo",
+                result.stderr,
+            )
+            self.assertIn("Agent sync failed for: legal-research-agent", result.stderr)
+            self.assertIn(
+                "[legal-writing-agent] ✅ legal-writing-agent already at latest main",
+                result.stdout,
+            )
+            self.assertIn("legal-writing-agent fetch --depth 1 origin main", calls)
+            self.assertNotIn("Selected subordinate agents", result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

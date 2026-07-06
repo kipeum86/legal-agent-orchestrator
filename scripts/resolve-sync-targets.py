@@ -8,15 +8,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from scripts.lib.cli import load_payload
 from scripts.lib.sync_targets import resolve_sync_targets
-
-
-def load_payload(path: Path | None) -> dict:
-    raw = sys.stdin.read() if path is None else path.read_text(encoding="utf-8")
-    payload = json.loads(raw)
-    if not isinstance(payload, dict):
-        raise ValueError("route input must be a JSON object")
-    return payload
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -25,7 +18,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        targets = resolve_sync_targets(load_payload(args.route_json))
+        targets = resolve_sync_targets(load_payload(args.route_json, label="route input"))
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print(f"resolve-sync-targets: {exc}", file=sys.stderr)
         return 2

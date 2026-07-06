@@ -8,15 +8,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from scripts.lib.cli import load_payload
 from scripts.lib.routing import select_route
-
-
-def load_payload(path: Path | None) -> dict:
-    raw = sys.stdin.read() if path is None else path.read_text(encoding="utf-8")
-    payload = json.loads(raw)
-    if not isinstance(payload, dict):
-        raise ValueError("classification input must be a JSON object")
-    return payload
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -25,7 +18,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        route = select_route(load_payload(args.classification_json))
+        route = select_route(load_payload(args.classification_json, label="classification input"))
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print(f"select-route: {exc}", file=sys.stderr)
         return 2

@@ -12,14 +12,15 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
-KST = ZoneInfo("Asia/Seoul")
+REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))
 
-TEAM = {
-    "legal-research-agent": {"name": "법률 리서치 스페셜리스트", "role": "범용 + 게임산업 법률 리서치"},
-    "legal-writing-agent": {"name": "법률문서 작성 스페셜리스트", "role": "법률문서 작성"},
-    "second-review-agent": {"name": "시니어 리뷰 스페셜리스트", "role": "품질 검토, 최종 승인"},
-    "data-protection-agent": {"name": "데이터보호 스페셜리스트", "role": "KR PIPA, EU GDPR, California CCPA/CPRA"},
-}
+from scripts.lib.sanitize import sanitize  # noqa: E402
+from scripts.lib.agents import AGENT_PROFILES, agent_id_from_meta_filename, is_debate_round_meta  # noqa: E402
+from scripts.lib.io_utils import parse_jsonl, read_json, read_text  # noqa: E402
+
+KST = ZoneInfo("Asia/Seoul")
+TEAM = AGENT_PROFILES
 
 EVENT_ALIASES = {
     "research_completed": "agent_completed",
@@ -42,49 +43,39 @@ def _resolve_private_dir(project_root: Path) -> Path:
     ).expanduser()
 
 
+def _is_relative_to(path: Path, root: Path) -> bool:
+    try:
+        path.relative_to(root)
+        return True
+    except ValueError:
+        return False
+
+
+def _allowed_case_roots(project_root: Path) -> list[Path]:
+    return [
+        _resolve_private_dir(project_root).resolve(),
+        (project_root / "output").resolve(),
+        (project_root / "samples").resolve(),
+    ]
+
+
 def _resolve_case_dir(case_arg: str, project_root: Path) -> Path:
     raw = Path(case_arg).expanduser()
+    project_root = project_root.resolve()
+    allowed_roots = _allowed_case_roots(project_root)
     if raw.is_absolute():
-        return raw.resolve()
+        resolved = raw.resolve()
+        if _is_relative_to(resolved, project_root) and not any(
+            _is_relative_to(resolved, root) for root in allowed_roots
+        ):
+            raise ValueError(f"case directory must stay under output/ or samples/: {case_arg}")
+        return resolved
     if len(raw.parts) == 1:
         return (_resolve_private_dir(project_root) / raw).resolve()
-    return (project_root / raw).resolve()
-
-
-def read_text(path: Path) -> str | None:
-    try:
-        return path.read_text(encoding="utf-8")
-    except OSError:
-        return None
-
-
-def read_json(path: Path) -> Any | None:
-    text = read_text(path)
-    if text is None:
-        return None
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        return None
-
-
-def parse_jsonl(path: Path) -> list[dict[str, Any]]:
-    text = read_text(path)
-    if text is None:
-        return []
-
-    events: list[dict[str, Any]] = []
-    for raw_line in text.splitlines():
-        line = raw_line.strip()
-        if not line:
-            continue
-        try:
-            payload = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        if isinstance(payload, dict):
-            events.append(payload)
-    return events
+    resolved = (project_root / raw).resolve()
+    if not any(_is_relative_to(resolved, root) for root in allowed_roots):
+        raise ValueError(f"case directory must stay under output/ or samples/: {case_arg}")
+    return resolved
 
 
 def parse_iso(value: str | None) -> datetime | None:
@@ -176,6 +167,8 @@ def canonical_event_type(raw_type: str) -> str:
 def infer_pattern(events: list[dict[str, Any]]) -> int:
     classified = next((event for event in events if event.get("type") == "case_classified"), None)
     data = classified.get("data", {}) if isinstance(classified, dict) else {}
+    if not isinstance(data, dict):
+        data = {}
     pattern = data.get("pattern")
 
     if isinstance(pattern, str):
@@ -282,22 +275,11 @@ def derive_key_findings(
     return []
 
 
-def agent_id_from_meta_filename(path: Path) -> str:
-    name = path.name
-    if name == "research-meta.json":
-        return "legal-research-agent"
-    if name == "writing-meta.json":
-        return "legal-writing-agent"
-    if name == "review-meta.json":
-        return "second-review-agent"
-    if name.endswith("-meta.json"):
-        return name[: -len("-meta.json")]
-    return path.stem
-
-
 def load_meta_bundle(case_dir: Path) -> dict[str, dict[str, Any] | None]:
     bundle: dict[str, dict[str, Any] | None] = {}
     for meta_path in sorted(case_dir.glob("*-meta.json")):
+        if is_debate_round_meta(meta_path):
+            continue
         payload = read_json(meta_path)
         if isinstance(payload, dict):
             bundle[agent_id_from_meta_filename(meta_path)] = payload
@@ -672,7 +654,7 @@ def render_single_event(event: dict[str, Any], pattern: int) -> tuple[str, list[
     if who:
         bullets.append(f"- 담당: {who}")
     if data:
-        bullets.append(f"- 메타: `{json.dumps(data, ensure_ascii=False, sort_keys=True)}`")
+        bullets.append("- 메타: 세부 필드는 내부 이벤트 로그에 보관됩니다.")
     return heading, bullets
 
 
@@ -902,8 +884,18 @@ def transform_opinion_markdown(body: str) -> str:
     lines = body.splitlines()
     transformed: list[str] = []
     skipped_first_h1 = False
+    in_fence = False
 
     for line in lines:
+        if re.match(r"^\s*(```|~~~)", line):
+            in_fence = not in_fence
+            transformed.append(line)
+            continue
+
+        if in_fence:
+            transformed.append(line)
+            continue
+
         if not skipped_first_h1 and re.match(r"^#\s+", line):
             skipped_first_h1 = True
             continue
@@ -1090,7 +1082,11 @@ def generate_case_report(case_dir: Path) -> tuple[Path | None, list[str]]:
     report_lines.extend(["", *build_attachment_lines(case_dir, final_output), ""])
 
     report_path = case_dir / "case-report.md"
-    report_path.write_text("\n".join(report_lines).rstrip() + "\n", encoding="utf-8")
+    report_text, _ = sanitize(
+        "\n".join(report_lines).rstrip(),
+        source=f"case-report:{case_dir.name}",
+    )
+    report_path.write_text(report_text + "\n", encoding="utf-8")
     return report_path, warnings
 
 
@@ -1102,13 +1098,17 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    case_dir = _resolve_case_dir(args.case_dir, Path.cwd().resolve())
+    try:
+        case_dir = _resolve_case_dir(args.case_dir, Path.cwd().resolve())
+    except ValueError as exc:
+        print(f"generate-case-report: {exc}", file=sys.stderr)
+        return 2
     report_path, warnings = generate_case_report(case_dir)
     for warning in warnings:
         print(f"[warn] {warning}", file=sys.stderr)
 
     if report_path is None:
-        return 0
+        return 1
 
     print(report_path)
     return 0

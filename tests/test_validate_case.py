@@ -56,6 +56,71 @@ class ValidateCaseTests(unittest.TestCase):
         self.assertEqual(strict_result.returncode, 1)
         self.assertIn("missing citation", strict_result.stderr)
 
+    def test_second_review_agent_meta_uses_review_schema(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = Path(directory)
+            event = {
+                "id": "evt_001",
+                "ts": "2026-04-24T00:00:00Z",
+                "agent": "second-review-agent",
+                "type": "review_completed",
+                "data": {},
+            }
+            (case_dir / "events.jsonl").write_text(
+                json.dumps(event, ensure_ascii=False) + "\n",
+                encoding="utf-8",
+            )
+            (case_dir / "second-review-agent-meta.json").write_text(
+                json.dumps(
+                    {
+                        "approval": "approved",
+                        "comments": [],
+                        "summary": "review ok",
+                    },
+                    ensure_ascii=False,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            result = run_validate(case_dir, "strict")
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        report = json.loads(result.stdout)
+        self.assertEqual(report["errors"], [])
+
+    def test_duplicate_evt_final_is_an_error_but_missing_ids_do_not_collide(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = Path(directory)
+            events = [
+                {"ts": "2026-04-24T00:00:00Z", "agent": "a", "type": "noop", "data": {}},
+                {"ts": "2026-04-24T00:00:01Z", "agent": "b", "type": "noop", "data": {}},
+                {
+                    "id": "evt_final",
+                    "ts": "2026-04-24T00:00:02Z",
+                    "agent": "orchestrator",
+                    "type": "final_output",
+                    "data": {},
+                },
+                {
+                    "id": "evt_final",
+                    "ts": "2026-04-24T00:00:03Z",
+                    "agent": "orchestrator",
+                    "type": "final_output",
+                    "data": {},
+                },
+            ]
+            (case_dir / "events.jsonl").write_text(
+                "\n".join(json.dumps(event, ensure_ascii=False) for event in events) + "\n",
+                encoding="utf-8",
+            )
+
+            result = run_validate(case_dir, "strict")
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("duplicate event id evt_final", result.stderr)
+        self.assertNotIn("duplicate event id ", result.stderr.replace("duplicate event id evt_final", ""))
+
 
 if __name__ == "__main__":
     unittest.main()

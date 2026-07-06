@@ -26,6 +26,7 @@ import argparse
 import os
 import re
 import sys
+import tempfile
 from pathlib import Path
 
 from docx import Document
@@ -59,6 +60,29 @@ def _resolve_work_product_path(raw_arg: str, project_root: Path) -> Path:
         return private_candidate.resolve()
 
     return (project_root / path).resolve()
+
+
+def _is_relative_to(path: Path, root: Path) -> bool:
+    try:
+        path.relative_to(root)
+        return True
+    except ValueError:
+        return False
+
+
+def _resolve_output_docx_path(raw_arg: str, project_root: Path, case_dir: Path) -> Path:
+    path = Path(raw_arg).expanduser()
+    case_root = case_dir.resolve()
+    if path.is_absolute():
+        resolved = path.resolve()
+    elif path.parts and path.parts[0] in {"output", "samples"}:
+        resolved = (project_root / path).resolve()
+    else:
+        resolved = (case_root / path).resolve()
+
+    if not _is_relative_to(resolved, case_root):
+        raise ValueError(f"output_docx must stay inside the case directory: {raw_arg}")
+    return resolved
 
 
 def set_run_font(run, size_pt: float = BODY_SIZE_PT, bold: bool = False, italic: bool = False, mono: bool = False) -> None:
@@ -202,7 +226,7 @@ def parse_table_rows(buf: list[str]) -> list[list[str]]:
         if re.match(r"^\|[\s\-:|]+\|$", ln):
             continue
         if ln.startswith("|") and ln.endswith("|"):
-            cells = [c.strip() for c in ln[1:-1].split("|")]
+            cells = [c.strip().replace(r"\|", "|") for c in re.split(r"(?<!\\)\|", ln[1:-1])]
             rows.append(cells)
     return rows
 
@@ -264,9 +288,30 @@ def convert(md_path: Path, docx_path: Path, *, preserve_escaped_text: bool = Fal
 
     quote_buf: list[str] = []
     table_buf: list[str] = []
+    in_fence = False
     i = 0
     while i < len(lines):
         ln = lines[i]
+        stripped = ln.strip()
+
+        if re.match(r"^\s*(```|~~~)", ln):
+            if quote_buf:
+                add_statute_block(doc, quote_buf)
+                quote_buf = []
+            if table_buf:
+                add_md_table(doc, table_buf)
+                table_buf = []
+            in_fence = not in_fence
+            i += 1
+            continue
+
+        if in_fence:
+            p = doc.add_paragraph()
+            style_paragraph(p, line_spacing=1.0, space_after_pt=3)
+            run = p.add_run(ln)
+            set_run_font(run, size_pt=BODY_SIZE_PT, mono=True)
+            i += 1
+            continue
 
         # Blockquote accumulation
         if ln.startswith(">"):
@@ -281,7 +326,6 @@ def convert(md_path: Path, docx_path: Path, *, preserve_escaped_text: bool = Fal
             quote_buf = []
 
         # Table accumulation
-        stripped = ln.strip()
         if stripped.startswith("|") and stripped.endswith("|"):
             table_buf.append(ln)
             i += 1
@@ -345,7 +389,21 @@ def convert(md_path: Path, docx_path: Path, *, preserve_escaped_text: bool = Fal
         add_md_table(doc, table_buf)
 
     docx_path.parent.mkdir(parents=True, exist_ok=True)
-    doc.save(docx_path)
+    tmp_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            prefix=f".{docx_path.name}.",
+            suffix=".tmp",
+            dir=docx_path.parent,
+            delete=False,
+        ) as handle:
+            tmp_path = Path(handle.name)
+        doc.save(tmp_path)
+        os.replace(tmp_path, docx_path)
+        tmp_path = None
+    finally:
+        if tmp_path is not None and tmp_path.exists():
+            tmp_path.unlink()
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -359,8 +417,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     project_root = Path.cwd().resolve()
-    md = _resolve_work_product_path(args.input_md, project_root)
-    docx = _resolve_work_product_path(args.output_docx, project_root)
+    try:
+        md = _resolve_work_product_path(args.input_md, project_root)
+        docx = _resolve_output_docx_path(args.output_docx, project_root, md.parent)
+    except ValueError as exc:
+        print(f"md-to-docx: {exc}", file=sys.stderr)
+        return 2
     if not md.exists():
         print(f"Input not found: {md}", file=sys.stderr)
         return 1

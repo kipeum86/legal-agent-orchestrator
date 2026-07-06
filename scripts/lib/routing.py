@@ -46,7 +46,8 @@ def _split_token(value: Any) -> list[str]:
     text = str(value).strip()
     if not text or text == "—":
         return []
-    parts = [part.strip() for part in text.replace("|", "+").split("+")]
+    separators_normalized = text.replace("|", "+").replace(",", "+").replace("/", "+")
+    parts = [part.strip() for part in separators_normalized.split("+")]
     return [part for part in parts if part]
 
 
@@ -145,7 +146,7 @@ def _debate_participants(domains: list[str], jurisdictions: list[str]) -> list[s
         return [LEGAL_RESEARCH_AGENT, DATA_PROTECTION_AGENT]
     if "data_protection" in domains:
         return [DATA_PROTECTION_AGENT, LEGAL_RESEARCH_AGENT]
-    return [LEGAL_RESEARCH_AGENT, "second-review-agent"]
+    return [LEGAL_RESEARCH_AGENT]
 
 
 def _annotate_research_mode(route: dict[str, Any], domains: list[str]) -> dict[str, Any]:
@@ -171,6 +172,11 @@ def _assert_no_retired_agents(route: dict[str, Any]) -> dict[str, Any]:
     return route
 
 
+def _finalize_route(route: dict[str, Any], classification: dict[str, Any]) -> dict[str, Any]:
+    route["classification"] = classification
+    return _assert_no_retired_agents(_annotate_research_mode(route, classification["domains"]))
+
+
 def select_route(raw: dict[str, Any]) -> dict[str, Any]:
     classification = normalize_classification(raw)
     jurisdictions = classification["jurisdictions"]
@@ -182,29 +188,30 @@ def select_route(raw: dict[str, Any]) -> dict[str, Any]:
     notes: list[str] = []
 
     if "briefing" in task_set:
-        return _assert_no_retired_agents({
-            "classification": classification,
+        return _finalize_route({
             "pattern": "out_of_scope",
             "execution": "external_tool",
             "pipeline": [],
             "route_mode": "briefing_not_orchestrated",
             "notes": ["briefing tools are operated outside the agent orchestrator"],
-        })
+        }, classification)
 
     if complexity == "adversarial" or "debate" in task_set:
         participants = _debate_participants(domains, jurisdictions)
-        route = {
+        route: dict[str, Any] = {
             "classification": classification,
-            "pattern": "pattern_3",
-            "execution": "debate",
-            "pipeline": ["manage-debate"],
+            "pattern": "pattern_3" if len(participants) == 2 else "needs_scope",
+            "execution": "debate" if len(participants) == 2 else "user_prompt",
+            "pipeline": ["manage-debate"] if len(participants) == 2 else [],
             "debate_participants": participants,
-            "route_mode": "adversarial_debate",
-            "notes": notes,
+            "route_mode": "adversarial_debate" if len(participants) == 2 else "debate_scope_required",
+            "notes": notes
+            if len(participants) == 2
+            else [
+                "debate requires two non-review participants; ask the user to define two opposing positions",
+            ],
         }
-        if LEGAL_RESEARCH_AGENT in participants:
-            route["agent_research_mode"] = derive_research_mode(domains)
-        return _assert_no_retired_agents(route)
+        return _finalize_route(route, classification)
 
     if (
         "contract" in domain_set
@@ -212,8 +219,7 @@ def select_route(raw: dict[str, Any]) -> dict[str, Any]:
         or "contract_review" in task_set
         or "translation" in task_set
     ):
-        return _assert_no_retired_agents({
-            "classification": classification,
+        return _finalize_route({
             "pattern": "out_of_scope",
             "execution": "external_agent",
             "pipeline": [],
@@ -221,23 +227,21 @@ def select_route(raw: dict[str, Any]) -> dict[str, Any]:
             "notes": [
                 "contract review and translation are outside this orchestrator; no agent dispatch is produced",
             ],
-        })
+        }, classification)
 
     if len(jurisdictions) >= 4:
-        return _assert_no_retired_agents({
-            "classification": classification,
+        return _finalize_route({
             "pattern": "needs_scope",
             "execution": "user_prompt",
             "pipeline": [],
             "route_mode": "multi_domain_truncated",
             "notes": ["more than three jurisdictions require scope reduction"],
-        })
+        }, classification)
 
     if {"game_regulation", "data_protection"}.issubset(domain_set):
         agents = [LEGAL_RESEARCH_AGENT, *_data_protection_agents(jurisdictions)]
         route = _parallel(agents, route_mode="game_and_data_protection")
-        route["classification"] = classification
-        return _assert_no_retired_agents(_annotate_research_mode(route, domains))
+        return _finalize_route(route, classification)
 
     if "data_protection" in domain_set and (complexity == "multi_domain" or len(jurisdictions) > 1):
         agents = _data_protection_agents(jurisdictions)
@@ -248,28 +252,24 @@ def select_route(raw: dict[str, Any]) -> dict[str, Any]:
                 _with_writing_review(agents),
                 route_mode="multi_jurisdiction_data",
             )
-        route["classification"] = classification
-        return _assert_no_retired_agents(_annotate_research_mode(route, domains))
+        return _finalize_route(route, classification)
 
     if "game_regulation" in domain_set:
         route = _sequential(
             [LEGAL_RESEARCH_AGENT, "legal-writing-agent", "second-review-agent"],
             route_mode="game_regulation",
         )
-        route["classification"] = classification
-        return _assert_no_retired_agents(_annotate_research_mode(route, domains))
+        return _finalize_route(route, classification)
 
     if "data_protection" in domain_set:
         route = _sequential(
             _with_writing_review(_data_protection_agents(jurisdictions)[:1]),
             route_mode="single_jurisdiction_data",
         )
-        route["classification"] = classification
-        return _assert_no_retired_agents(_annotate_research_mode(route, domains))
+        return _finalize_route(route, classification)
 
     route = _sequential(
         [LEGAL_RESEARCH_AGENT, "legal-writing-agent", "second-review-agent"],
         route_mode="general_fallback",
     )
-    route["classification"] = classification
-    return _assert_no_retired_agents(_annotate_research_mode(route, domains))
+    return _finalize_route(route, classification)

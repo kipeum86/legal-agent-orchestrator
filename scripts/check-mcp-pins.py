@@ -7,6 +7,7 @@ import json
 import re
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
@@ -107,16 +108,18 @@ def npm_latest(package: str) -> str:
 
 
 def latest_report(pins: list[dict[str, str]]) -> dict[str, Any]:
-    packages = []
-    for pin in pins:
-        latest = npm_latest(pin["package"])
-        packages.append(
-            {
-                **pin,
-                "latest": latest,
-                "update_available": pin["version"] != latest,
-            }
-        )
+    if not pins:
+        return {"packages": [], "updates_available": False}
+    with ThreadPoolExecutor(max_workers=min(8, len(pins))) as executor:
+        latest_versions = list(executor.map(lambda pin: npm_latest(pin["package"]), pins))
+    packages = [
+        {
+            **pin,
+            "latest": latest,
+            "update_available": pin["version"] != latest,
+        }
+        for pin, latest in zip(pins, latest_versions, strict=True)
+    ]
     return {"packages": packages, "updates_available": any(item["update_available"] for item in packages)}
 
 

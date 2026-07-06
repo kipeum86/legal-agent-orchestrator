@@ -39,6 +39,74 @@ class MergeSourcesTests(unittest.TestCase):
             agents["legal-research-agent"]["sources"][0]["citation"], "Article 25"
         )
 
+    def test_debate_round_meta_uses_real_agent_id_for_deduplication(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = Path(directory) / "case"
+            case_dir.mkdir()
+            source = {
+                "title": "Personal Information Protection Act",
+                "grade": "A",
+                "citation": "Article 28-8",
+            }
+            (case_dir / "debate-round-1-data-protection-agent-meta.json").write_text(
+                json.dumps(
+                    {
+                        "round": 1,
+                        "summary": "opening",
+                        "key_findings": ["finding"],
+                        "sources": [source],
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            event = {
+                "id": "evt_001",
+                "agent": "data-protection-agent",
+                "type": "source_graded",
+                "data": {
+                    "agent_id": "data-protection-agent",
+                    "source": source["title"],
+                    "grade": source["grade"],
+                    "citation": source["citation"],
+                },
+            }
+            (case_dir / "events.jsonl").write_text(
+                json.dumps(event, ensure_ascii=False) + "\n",
+                encoding="utf-8",
+            )
+
+            result = subprocess.run(
+                [sys.executable, str(CLI), str(case_dir)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, msg=result.stderr)
+            payload = json.loads((case_dir / "sources.json").read_text(encoding="utf-8"))
+
+        self.assertEqual(payload["total_sources"], 1)
+        self.assertEqual(payload["grade_distribution"], {"A": 1, "B": 0, "C": 0, "D": 0})
+        self.assertEqual(len(payload["agents"]), 1)
+        self.assertEqual(payload["agents"][0]["agent_id"], "data-protection-agent")
+
+    def test_corrupt_existing_meta_file_fails_loudly(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = Path(directory) / "case"
+            case_dir.mkdir()
+            (case_dir / "legal-research-agent-meta.json").write_text("{bad-json", encoding="utf-8")
+
+            result = subprocess.run(
+                [sys.executable, str(CLI), str(case_dir)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("skipped meta files", result.stderr)
+        self.assertIn("legal-research-agent-meta.json", result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

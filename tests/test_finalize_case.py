@@ -106,6 +106,75 @@ class FinalizeCaseTests(unittest.TestCase):
         report = json.loads(result.stdout)
         self.assertEqual(report["status"], "ready")
 
+    def test_check_only_revision_needed_does_not_log_abort_event(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = Path(directory) / "case"
+            shutil.copytree(FIXTURE, case_dir)
+            strip_final_output(case_dir)
+            review_meta = json.loads((case_dir / "review-meta.json").read_text(encoding="utf-8"))
+            review_meta["approval"] = "revision_needed"
+            (case_dir / "review-meta.json").write_text(
+                json.dumps(review_meta, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
+            result = run_finalize(case_dir, "--check-only")
+            events = [
+                json.loads(line)
+                for line in (case_dir / "events.jsonl").read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+
+        self.assertEqual(result.returncode, 3)
+        self.assertFalse(any(event.get("type") == "pipeline_aborted" for event in events))
+        report = json.loads(result.stdout)
+        self.assertIsNone(report["event"])
+
+    def test_corrupt_docx_is_not_selected_as_primary_deliverable(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = Path(directory) / "case"
+            shutil.copytree(FIXTURE, case_dir)
+            strip_final_output(case_dir)
+            (case_dir / "opinion.docx").write_bytes(b"not-a-zip")
+            (case_dir / "opinion.md").write_text("# Opinion\n", encoding="utf-8")
+
+            result = run_finalize(case_dir)
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        report = json.loads(result.stdout)
+        final_output = report["event"]["data"]
+        self.assertTrue(final_output["primary_deliverable"].endswith("opinion.md"))
+        self.assertFalse(any(path.endswith("opinion.docx") for path in final_output["deliverables"]))
+
+    def test_legal_writing_agent_meta_can_supply_summary_and_pattern(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = Path(directory) / "case"
+            shutil.copytree(FIXTURE, case_dir)
+            strip_final_output(case_dir)
+            review_meta = json.loads((case_dir / "review-meta.json").read_text(encoding="utf-8"))
+            review_meta["summary"] = ""
+            (case_dir / "review-meta.json").write_text(
+                json.dumps(review_meta, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            (case_dir / "writing-meta.json").unlink()
+            (case_dir / "legal-writing-agent-meta.json").write_text(
+                json.dumps(
+                    {"summary": "legacy writing summary", "pattern": "pattern_3", "sources": []},
+                    ensure_ascii=False,
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            result = run_finalize(case_dir)
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        final_output = json.loads(result.stdout)["event"]["data"]
+        self.assertEqual(final_output["summary"], "legacy writing summary")
+        self.assertEqual(final_output["pattern"], "pattern_3")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -12,39 +12,14 @@ import sys
 from pathlib import Path
 from typing import Any
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from scripts.lib.io_utils import parse_jsonl_strict, read_json  # noqa: E402
+
 GRADES = {"A", "B", "C", "D"}
 REVIEW_APPROVALS = {"approved", "approved_with_revisions", "revision_needed"}
 REVIEW_SEVERITIES = {"critical", "major", "minor", "suggestion"}
 ROUTING_COMPLEXITIES = {"simple", "compound", "multi_domain", "adversarial"}
-
-
-def read_json(path: Path) -> Any | None:
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return None
-
-
-def parse_jsonl(path: Path) -> tuple[list[dict[str, Any]], list[str]]:
-    errors: list[str] = []
-    events: list[dict[str, Any]] = []
-    try:
-        lines = path.read_text(encoding="utf-8").splitlines()
-    except OSError:
-        return [], [f"missing events file: {path.name}"]
-    for index, line in enumerate(lines, start=1):
-        if not line.strip():
-            continue
-        try:
-            payload = json.loads(line)
-        except json.JSONDecodeError as exc:
-            errors.append(f"events.jsonl:{index}: invalid JSON: {exc}")
-            continue
-        if not isinstance(payload, dict):
-            errors.append(f"events.jsonl:{index}: event must be an object")
-            continue
-        events.append(payload)
-    return events, errors
 
 
 def require_mapping(value: Any, label: str, errors: list[str]) -> dict[str, Any]:
@@ -57,19 +32,27 @@ def require_mapping(value: Any, label: str, errors: list[str]) -> dict[str, Any]
 def validate_events(case_dir: Path) -> tuple[list[str], list[str]]:
     errors: list[str] = []
     warnings: list[str] = []
-    events, parse_errors = parse_jsonl(case_dir / "events.jsonl")
+    events, parse_errors = parse_jsonl_strict(case_dir / "events.jsonl")
     errors.extend(parse_errors)
 
     seen_ids: set[str] = set()
+    final_event_count = 0
     for index, event in enumerate(events, start=1):
         label = f"events.jsonl:{index}"
         for key in ("id", "ts", "agent", "type", "data"):
             if key not in event:
                 errors.append(f"{label}: missing {key}")
         event_id = str(event.get("id") or "")
-        if event_id in seen_ids and event_id != "evt_final":
+        if not event_id:
+            pass
+        elif event_id == "evt_final":
+            final_event_count += 1
+            if final_event_count > 1:
+                errors.append(f"{label}: duplicate event id evt_final")
+        elif event_id in seen_ids:
             errors.append(f"{label}: duplicate event id {event_id}")
-        seen_ids.add(event_id)
+        elif event_id:
+            seen_ids.add(event_id)
 
         data = require_mapping(event.get("data"), f"{label}.data", errors)
         event_type = str(event.get("type") or "")
@@ -163,6 +146,14 @@ def validate_review_meta(path: Path) -> tuple[list[str], list[str]]:
     return errors, warnings
 
 
+def is_review_meta_path(path: Path) -> bool:
+    return (
+        path.name == "review-meta.json"
+        or path.name == "second-review-agent-meta.json"
+        or (path.name.endswith("-meta.json") and "review" in path.stem)
+    )
+
+
 def validate_case(case_dir: Path) -> dict[str, list[str]]:
     errors: list[str] = []
     warnings: list[str] = []
@@ -172,7 +163,7 @@ def validate_case(case_dir: Path) -> dict[str, list[str]]:
     warnings.extend(event_warnings)
 
     for meta_path in sorted(case_dir.glob("*-meta.json")):
-        if meta_path.name == "review-meta.json":
+        if is_review_meta_path(meta_path):
             meta_errors, meta_warnings = validate_review_meta(meta_path)
         else:
             meta_errors, meta_warnings = validate_agent_meta(meta_path)

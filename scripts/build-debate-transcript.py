@@ -14,6 +14,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
 from scripts.lib.sanitize import sanitize  # noqa: E402
+from scripts.lib.io_utils import parse_jsonl, read_json  # noqa: E402
 
 RESULT_RE = re.compile(r"^debate-round-(\d+)-(.+)-result\.md$")
 
@@ -37,31 +38,6 @@ class DebateRoundArtifact:
     result_path: Path
     meta_path: Path
     position: str
-
-
-def read_json(path: Path) -> Any | None:
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return None
-
-
-def parse_jsonl(path: Path) -> list[dict[str, Any]]:
-    try:
-        lines = path.read_text(encoding="utf-8").splitlines()
-    except OSError:
-        return []
-    events: list[dict[str, Any]] = []
-    for line in lines:
-        if not line.strip():
-            continue
-        try:
-            payload = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        if isinstance(payload, dict):
-            events.append(payload)
-    return events
 
 
 def debate_info(case_dir: Path) -> dict[str, Any]:

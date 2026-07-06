@@ -9,32 +9,11 @@ import sys
 from pathlib import Path
 from typing import Any
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from scripts.lib.io_utils import parse_jsonl, read_json  # noqa: E402
+
 ROUND_META_RE = re.compile(r"^debate-round-(\d+)-(.+)-meta\.json$")
-
-
-def read_json(path: Path) -> Any | None:
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return None
-
-
-def parse_jsonl(path: Path) -> list[dict[str, Any]]:
-    try:
-        lines = path.read_text(encoding="utf-8").splitlines()
-    except OSError:
-        return []
-    events: list[dict[str, Any]] = []
-    for line in lines:
-        if not line.strip():
-            continue
-        try:
-            payload = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        if isinstance(payload, dict):
-            events.append(payload)
-    return events
 
 
 def participants_from_events(case_dir: Path) -> list[str]:
@@ -94,7 +73,7 @@ def decide_round3(case_dir: Path) -> dict[str, Any]:
     case_dir = case_dir.resolve()
     warnings: list[str] = []
     participants = participants_from_events(case_dir)
-    if len(participants) != 2:
+    if len(participants) != 2 or len(set(participants)) != 2:
         derived = participants_from_meta(case_dir)
         if len(derived) == 2:
             warnings.append("debate_initiated participants missing or not exactly 2; derived from meta files")
@@ -128,7 +107,10 @@ def decide_round3(case_dir: Path) -> dict[str, Any]:
             return insufficient_payload(case_dir, participants, warnings)
         round2_concessions[agent_id] = concessions
 
-        default_rebuts = next(participant for participant in participants if participant != agent_id)
+        default_rebuts = next((participant for participant in participants if participant != agent_id), None)
+        if default_rebuts is None:
+            warnings.append("could not determine debate counterpart")
+            return insufficient_payload(case_dir, participants, warnings)
         rebuts_agent = str(round2_meta.get("rebuts_agent") or default_rebuts)
         if rebuts_agent not in participants or rebuts_agent == agent_id:
             warnings.append(

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from scripts.lib.routing import RETIRED_AGENT_IDS
+from scripts.lib.routing import RETIRED_AGENT_IDS, _dedupe
 
 ACTIVE_AGENT_IDS = frozenset(
     {
@@ -24,16 +24,6 @@ def _extend_route_values(route: dict[str, Any], key: str, values: list[str]) -> 
     if not isinstance(raw, list):
         raise ValueError(f"{key} must be a JSON array")
     values.extend(str(value) for value in raw if str(value).strip())
-
-
-def _dedupe(values: list[str]) -> list[str]:
-    seen: set[str] = set()
-    result: list[str] = []
-    for value in values:
-        if value not in seen:
-            seen.add(value)
-            result.append(value)
-    return result
 
 
 def _is_no_dispatch_route(route: dict[str, Any]) -> bool:

@@ -62,6 +62,22 @@ class RoutingTests(unittest.TestCase):
         self.assertEqual(normalized["domains"], ["contract", "translation"])
         self.assertEqual(normalized["tasks"], ["contract_review", "translation"])
 
+    def test_comma_delimited_jurisdictions_normalize_to_arrays(self) -> None:
+        normalized = normalize_classification(
+            {
+                "jurisdiction": "KR, EU",
+                "domain": "data_protection",
+                "task": "research",
+                "complexity": "simple",
+            }
+        )
+
+        self.assertEqual(normalized["jurisdictions"], ["KR", "EU"])
+
+        route = select_route(normalized)
+        self.assertEqual(route["route_mode"], "multi_jurisdiction_data")
+        self.assertIn("data-protection-agent", route["pipeline"])
+
     def test_contract_domain_returns_out_of_scope(self) -> None:
         route = select_route(
             {
@@ -178,6 +194,35 @@ class RoutingTests(unittest.TestCase):
             route["pipeline"],
             ["data-protection-agent", "legal-writing-agent", "second-review-agent"],
         )
+
+    def test_debate_participants_never_include_review_agent(self) -> None:
+        cases = [
+            {
+                "jurisdictions": ["KR", "EU"],
+                "domains": ["data_protection"],
+                "tasks": ["debate"],
+                "complexity": "adversarial",
+                "confidence": 1.0,
+            },
+            {
+                "jurisdictions": ["KR"],
+                "domains": ["general"],
+                "tasks": ["debate"],
+                "complexity": "adversarial",
+                "confidence": 1.0,
+            },
+            {
+                "jurisdictions": ["KR"],
+                "domains": ["game_regulation"],
+                "tasks": ["debate"],
+                "complexity": "adversarial",
+                "confidence": 1.0,
+            },
+        ]
+        for classification in cases:
+            with self.subTest(classification=classification):
+                route = select_route(classification)
+                self.assertNotIn("second-review-agent", route.get("debate_participants", []))
 
     def test_setup_sh_does_not_reference_retired_repositories(self) -> None:
         setup = (REPO_ROOT / "setup.sh").read_text(encoding="utf-8")

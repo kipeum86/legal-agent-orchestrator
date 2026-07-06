@@ -17,11 +17,12 @@ CASE_ID=$(date +%Y%m%d-%H%M%S)-$(openssl rand -hex 2)
 PROJECT_ROOT=$(pwd)
 PRIVATE_DIR="${LEGAL_ORCHESTRATOR_PRIVATE_DIR:-$PROJECT_ROOT/output}"
 OUTPUT_DIR="$PRIVATE_DIR/$CASE_ID"
+CLIENT_QUERY='의뢰 질문 원문을 여기에 붙여넣으세요'
 mkdir -p "$OUTPUT_DIR"
 python3 "$PROJECT_ROOT/scripts/log-event.py" "$OUTPUT_DIR/events.jsonl" \
   --agent orchestrator \
   --type case_received \
-  --data-json "$(python3 -c 'import json, os, sys; print(json.dumps({"query": os.environ.get("USER_QUERY", "")[:200], "case_id": sys.argv[1]}, ensure_ascii=False))' "$CASE_ID")"
+  --data-json "$(python3 -c 'import json, sys; print(json.dumps({"query": sys.argv[2][:200], "case_id": sys.argv[1]}, ensure_ascii=False))' "$CASE_ID" "$CLIENT_QUERY")"
 echo "📋 사건 접수: $CASE_ID  (output dir: $OUTPUT_DIR)"
 ```
 

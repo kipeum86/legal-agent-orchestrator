@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from scripts.lib.io_utils import read_json
 from scripts.lib.routing import RETIRED_AGENT_IDS
 from scripts.lib.sync_targets import ACTIVE_AGENT_IDS
 
@@ -36,13 +37,6 @@ def parse_timestamp(value: Any) -> datetime | None:
 
 def format_timestamp(value: datetime) -> str:
     return value.astimezone(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
-
-
-def read_json(path: Path) -> Any:
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return None
 
 
 def read_targets(path: Path) -> list[str]:

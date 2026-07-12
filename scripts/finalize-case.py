@@ -13,19 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from scripts.lib.events import append_event  # noqa: E402
 from scripts.lib.io_utils import parse_jsonl, read_json  # noqa: E402
-
-APPROVED_STATUSES = {"approved", "approved_with_revisions"}
-BLOCKING_STATUSES = {"revision_needed"}
-VALID_STATUSES = APPROVED_STATUSES | BLOCKING_STATUSES
-
-def load_review_meta(case_dir: Path) -> tuple[dict[str, Any] | None, Path | None]:
-    candidates = [case_dir / "review-meta.json", case_dir / "second-review-agent-meta.json"]
-    candidates.extend(path for path in sorted(case_dir.glob("*review*-meta.json")) if path not in candidates)
-    for path in candidates:
-        payload = read_json(path)
-        if isinstance(payload, dict):
-            return payload, path
-    return None, None
+from scripts.lib.review_gate import evaluate_gate  # noqa: E402
 
 
 def load_writing_meta(case_dir: Path) -> dict[str, Any] | None:
@@ -36,10 +24,6 @@ def load_writing_meta(case_dir: Path) -> dict[str, Any] | None:
         if isinstance(payload, dict):
             return payload
     return None
-
-
-def normalize_approval(value: Any) -> str:
-    return str(value or "").strip().lower().replace("-", "_").replace(" ", "_")
 
 
 def load_sources_payload(case_dir: Path) -> dict[str, Any]:
@@ -182,19 +166,18 @@ def finalize_case(
     primary_deliverable: str | None = None,
     allow_unapproved: bool = False,
 ) -> tuple[int, dict[str, Any]]:
-    review_meta, review_path = load_review_meta(case_dir)
-    if not isinstance(review_meta, dict):
-        event = None if check_only else append_abort_event(case_dir, "missing_review_meta", "missing", review_path)
-        return 2, {"status": "aborted", "reason": "missing_review_meta", "event": event}
+    gate = evaluate_gate(case_dir)
+    review_meta = gate.review_meta if isinstance(gate.review_meta, dict) else {}
+    approval = gate.approval
 
-    approval = normalize_approval(review_meta.get("approval"))
-    if approval not in VALID_STATUSES:
-        event = None if check_only else append_abort_event(case_dir, "invalid_review_approval", approval or "missing", review_path)
-        return 2, {"status": "aborted", "reason": "invalid_review_approval", "approval": approval, "event": event}
-
-    if approval in BLOCKING_STATUSES and not allow_unapproved:
-        event = None if check_only else append_abort_event(case_dir, "review_revision_needed", approval, review_path)
-        return 3, {"status": "aborted", "reason": "review_revision_needed", "approval": approval, "event": event}
+    if not gate.ok:
+        overridable = gate.exit_code == 3 and allow_unapproved
+        if not overridable:
+            event = None if check_only else append_abort_event(case_dir, gate.reason, approval, gate.review_path)
+            report: dict[str, Any] = {"status": "aborted", "reason": gate.reason, "event": event}
+            if gate.reason != "missing_review_meta":
+                report["approval"] = approval
+            return gate.exit_code, report
 
     primary = choose_primary(case_dir, primary_deliverable)
     final_data = build_final_data(
@@ -204,8 +187,9 @@ def finalize_case(
         derive_summary(case_dir, review_meta, summary),
         primary,
     )
-    if approval in BLOCKING_STATUSES and allow_unapproved:
+    if not gate.ok and allow_unapproved:
         final_data["status"] = "not_approved"
+        final_data["gate_reason"] = gate.reason
 
     if check_only:
         return 0, {"status": "ready", "approval": approval, "would_write": final_data}

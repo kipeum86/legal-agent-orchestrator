@@ -148,6 +148,49 @@ class ValidateCaseTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("missing citation_verification", result.stderr)
 
+    def test_meta_mode_valid_agent_meta_exits_zero(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            meta = Path(directory) / "legal-research-agent-meta.json"
+            meta.write_text(
+                json.dumps(
+                    {
+                        "summary": "s",
+                        "key_findings": [],
+                        "sources": [{"title": "t", "grade": "A", "citation": "c"}],
+                        "error": None,
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            result = subprocess.run(
+                [sys.executable, str(CLI), "--meta", str(meta)],
+                capture_output=True, text=True, check=False,
+            )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+
+    def test_meta_mode_invalid_grade_exits_one(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            meta = Path(directory) / "legal-research-agent-meta.json"
+            meta.write_text(
+                json.dumps(
+                    {
+                        "summary": "s",
+                        "key_findings": [],
+                        "sources": [{"title": "t", "grade": "Z", "citation": "c"}],
+                        "error": None,
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            result = subprocess.run(
+                [sys.executable, str(CLI), "--meta", str(meta)],
+                capture_output=True, text=True, check=False,
+            )
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("invalid grade", result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

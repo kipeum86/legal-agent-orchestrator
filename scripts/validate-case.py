@@ -194,16 +194,30 @@ def validate_case(case_dir: Path) -> dict[str, list[str]]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Validate an orchestrator case directory.")
-    parser.add_argument("case_dir", type=Path)
+    parser.add_argument("case_dir", type=Path, nargs="?", default=None)
+    parser.add_argument("--meta", type=Path, default=None,
+                        help="Validate a single *-meta.json file (always strict).")
     parser.add_argument("--mode", choices=("warn", "strict"), default="warn")
     args = parser.parse_args(argv)
 
-    report = validate_case(args.case_dir)
+    if args.meta is not None:
+        if is_review_meta_path(args.meta):
+            errors, warnings = validate_review_meta(args.meta)
+        else:
+            errors, warnings = validate_agent_meta(args.meta)
+        report = {"errors": errors, "warnings": warnings}
+    elif args.case_dir is not None:
+        report = validate_case(args.case_dir)
+    else:
+        parser.error("provide a case_dir or --meta")
+
     print(json.dumps(report, ensure_ascii=False, indent=2))
     for item in report["errors"]:
         print(f"[error] {item}", file=sys.stderr)
     for item in report["warnings"]:
         print(f"[warn] {item}", file=sys.stderr)
+    if args.meta is not None:
+        return 1 if report["errors"] else 0
     return 1 if args.mode == "strict" and report["errors"] else 0
 
 

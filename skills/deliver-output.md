@@ -55,16 +55,14 @@ When the senior review returns `revision_needed`:
 
 ## Step 3: Validate the deliverable contract
 
-Check the case directory for structural errors. `warn` mode reports both warnings and errors but does not abort the pipeline immediately.
+Check the case directory for structural errors in strict mode.
 
 ```bash
-python3 "$PROJECT_ROOT/scripts/validate-case.py" "$OUTPUT_DIR" --mode warn \
+python3 "$PROJECT_ROOT/scripts/validate-case.py" "$OUTPUT_DIR" --mode strict \
   > "$OUTPUT_DIR/case-validation.json"
 ```
 
-If `case-validation.json` shows non-empty `errors`:
-- Repair missing required fields where possible (`citation`, `summary`, `sources`, review comment objects, etc.).
-- Where repair is impossible, disclose the structural errors in the final delivery message.
+`case-validation.json`에 `errors`가 있으면 배송을 멈추고 구조 오류를 먼저 수정한다(오케스트레이터 자신의 산출물이므로 수리 가능해야 한다).
 
 ---
 

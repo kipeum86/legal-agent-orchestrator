@@ -151,8 +151,6 @@ def build_final_data(
     pattern = derive_pattern(case_dir)
     if pattern:
         data["pattern"] = pattern
-    if approval == "approved_with_revisions":
-        data["revision_note"] = "review approved with revisions; confirm revisions are reflected before client delivery"
     comments = review_meta.get("comments")
     if isinstance(comments, list):
         data["review_comments_count"] = len(comments)

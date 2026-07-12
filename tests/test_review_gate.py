@@ -145,6 +145,14 @@ class EvaluateGateTests(unittest.TestCase):
             gate = evaluate_gate(case_dir)
         self.assertEqual((gate.ok, gate.reason), (False, "stale_review_binding"))
 
+    def test_approved_with_revisions_blocks_pending_rereview(self) -> None:
+        holder, case_dir = self.make_case()
+        with holder:
+            write_review_meta(case_dir, "approved_with_revisions")
+            bind(case_dir)
+            gate = evaluate_gate(case_dir)
+        self.assertEqual((gate.ok, gate.exit_code, gate.reason), (False, 3, "review_revisions_pending"))
+
 
 if __name__ == "__main__":
     unittest.main()

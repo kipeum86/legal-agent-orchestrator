@@ -40,7 +40,7 @@ python3 "$PROJECT_ROOT/scripts/finalize-case.py" "$OUTPUT_DIR" --check-only \
 
 Outcomes:
 - `approved`: proceed to the next step.
-- `approved_with_revisions`: confirm the revisions were applied, then proceed.
+- `approved_with_revisions`: 배포 불가 중간 상태다(`review_revisions_pending`). 리뷰 comments를 legal-writing-agent에 전달해 수정하게 하고, 수정본을 second-review-agent에 **재리뷰**시켜 `approved`를 받은 뒤 `bind-review.py`를 다시 실행한다. 최대 2 사이클 후에도 `approved`가 아니면 미승인 상태를 사용자에게 보고하고 종료한다.
 - `revision_needed`: `finalize-case.py` records a `pipeline_aborted` event and exits non-zero. In this case, do **not** emit `final_output`; loop back to a legal-writing-agent revision cycle.
 
 **Verbatim gate:** `verbatim_verified` 이벤트를 기록할 때는 반드시 `passed: true|false`를 포함하라. 최신 이벤트가 `passed: false`면 `finalize-case.py`가 `verbatim_verification_failed`로 배포를 차단한다. 이 경우 문제 인용을 수정하는 revision 사이클로 돌아가고, 재검증 후 `passed: true` 이벤트를 새로 기록해야 게이트가 열린다.

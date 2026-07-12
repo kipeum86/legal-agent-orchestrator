@@ -18,9 +18,10 @@ from typing import Any
 
 from scripts.lib.io_utils import parse_jsonl, read_json
 
-APPROVED_STATUSES = {"approved", "approved_with_revisions"}
+APPROVED_STATUSES = {"approved"}
+PENDING_STATUSES = {"approved_with_revisions"}
 BLOCKING_STATUSES = {"revision_needed"}
-VALID_STATUSES = APPROVED_STATUSES | BLOCKING_STATUSES
+VALID_STATUSES = APPROVED_STATUSES | PENDING_STATUSES | BLOCKING_STATUSES
 BINDING_FILENAME = "review-binding.json"
 BINDABLE_DELIVERABLES = ("opinion.md", "debate-opinion.md", "debate-transcript.md")
 
@@ -97,6 +98,9 @@ def evaluate_gate(case_dir: Path) -> GateResult:
 
     if approval in BLOCKING_STATUSES:
         return GateResult(False, 3, "review_revision_needed", approval, review_meta, review_path)
+
+    if approval in PENDING_STATUSES:
+        return GateResult(False, 3, "review_revisions_pending", approval, review_meta, review_path)
 
     detail: dict[str, Any] = {}
     reason, binding_detail = _check_binding(case_dir, review_path)

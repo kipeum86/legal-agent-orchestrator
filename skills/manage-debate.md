@@ -416,9 +416,9 @@ python3 "$PROJECT_ROOT/scripts/bind-review.py" "$OUTPUT_DIR"
 ```
 
 Revision cycle:
-- On `approved_with_revisions`, forward the comments to the writing-agent and request revisions to `debate-opinion.md`.
-- Repeat at most **2 cycles**.
-- If still not approved after 2 cycles, keep the current state and proceed to the deliver step.
+- `approved_with_revisions` 또는 `revision_needed`이면 comments를 writing-agent에 전달해 `debate-opinion.md`를 수정하게 하고, 수정본을 second-review-agent에 재리뷰시킨다. 재리뷰 후 `bind-review.py`를 다시 실행한다.
+- 최대 **2 사이클** 반복한다.
+- 2 사이클 후에도 `approved`가 아니면 **배포하지 않는다**: `pipeline_aborted` 이벤트를 기록하고 미승인 상태와 미해결 comments를 사용자에게 보고한 뒤 종료한다. (deliver-output Step 2의 게이트가 어차피 차단한다 — 우회를 시도하지 마라.)
 
 ---
 

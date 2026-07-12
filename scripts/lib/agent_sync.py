@@ -105,6 +105,11 @@ def checkout_head(agent_dir: Path, repo_root: Path) -> str | None:
     return result.stdout.strip() or None
 
 
+def collect_heads(targets: list[str], *, agents_dir: Path, repo_root: Path) -> dict[str, str | None]:
+    """Current checkout HEAD per target; None when not a resolvable git checkout."""
+    return {target: checkout_head(agents_dir / target, repo_root) for target in targets}
+
+
 def decide_sync_plan(
     targets: list[str],
     *,
@@ -229,6 +234,7 @@ def sync_agents(
         "dry_run": dry_run,
         "state_path": str(state_path),
     }
+    result["heads"] = collect_heads(targets, agents_dir=agents_dir, repo_root=repo_root)
 
     if not targets:
         result["status"] = "skipped"
@@ -253,6 +259,7 @@ def sync_agents(
         text=True,
         check=False,
     )
+    result["heads"] = collect_heads(targets, agents_dir=agents_dir, repo_root=repo_root)
     result["setup_returncode"] = completed.returncode
     result["setup_stdout"] = completed.stdout
     result["setup_stderr"] = completed.stderr

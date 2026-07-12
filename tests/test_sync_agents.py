@@ -19,6 +19,68 @@ NOW = datetime(2026, 5, 27, 10, 15, tzinfo=timezone.utc)
 
 
 class SyncAgentsTests(unittest.TestCase):
+    def make_real_git_checkout(self, agents_dir: Path, agent_id: str) -> str:
+        target = agents_dir / agent_id
+        target.mkdir(parents=True)
+        env = {
+            **os.environ,
+            "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
+            "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t",
+        }
+        subprocess.run(["git", "init", "-q"], cwd=target, check=True, env=env)
+        (target / "README.md").write_text("x\n", encoding="utf-8")
+        subprocess.run(["git", "add", "."], cwd=target, check=True, env=env)
+        subprocess.run(["git", "commit", "-q", "-m", "init"], cwd=target, check=True, env=env)
+        sha = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=target, check=True, env=env,
+            capture_output=True, text=True,
+        ).stdout.strip()
+        return sha
+
+    def test_result_includes_heads_even_when_ttl_skipped(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            agents_dir = root / "agents"
+            sha = self.make_real_git_checkout(agents_dir, "legal-research-agent")
+            state = root / "state.json"
+            self.write_state(state, "legal-research-agent", NOW - timedelta(seconds=60))
+            setup, _ = self.write_fake_setup(root)
+
+            result, code = sync_agents(
+                ["legal-research-agent"],
+                repo_root=root,
+                agents_dir=agents_dir,
+                state_path=state,
+                setup_script=setup,
+                env={"LEGAL_ORCHESTRATOR_AGENT_SYNC_TTL_SECONDS": "600"},
+                now=NOW,
+            )
+
+        self.assertEqual(code, 0)
+        self.assertEqual(result["status"], "skipped")
+        self.assertEqual(result["heads"]["legal-research-agent"], sha)
+
+    def test_result_includes_heads_key_on_env_skip(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            agents_dir = root / "agents"
+            agents_dir.mkdir()
+            setup, _ = self.write_fake_setup(root)
+
+            result, code = sync_agents(
+                ["legal-research-agent"],
+                repo_root=root,
+                agents_dir=agents_dir,
+                state_path=root / "state.json",
+                setup_script=setup,
+                env={"LEGAL_ORCHESTRATOR_SKIP_AGENT_SYNC": "1"},
+                now=NOW,
+            )
+
+        self.assertEqual(code, 0)
+        self.assertIn("heads", result)
+        self.assertIsNone(result["heads"]["legal-research-agent"])
+
     def write_fake_setup(self, root: Path, *, exit_code: int = 0) -> tuple[Path, Path]:
         setup = root / "fake-setup.sh"
         log_path = root / "setup.log"

@@ -417,11 +417,11 @@ Event types added or extended in v2. This is the central reference maintained fo
 
 | Event type | Phase | Required `data` fields | Purpose |
 |------------|-------|------------------------|---------|
-| `case_received` | P1 | `query`, `case_id` | Case intake |
+| `case_received` | P1 | `query`, `case_id`, `orchestrator_sha` | Case intake |
 | `agents_sync_planned` | **v2** | `method`, `targets[]`, `route_mode` | Route-first selected sync target plan before dispatch. |
-| `agents_synced` | **v2** | `method`, `status`, `targets[]`, `synced[]` | Selected subordinate agents synced successfully. |
-| `agents_sync_skipped` | **v2** | `method`, `status`, `targets[]`, `skipped[]` | Selected sync skipped by TTL, symlink, explicit env skip, or empty target set. |
-| `agents_sync_failed` | **v2** | `method`, `status`, `targets[]`, `failed[]`, `recoverable` | Selected sync failed; recoverable failures proceed with cached versions. |
+| `agents_synced` | **v2** | `method`, `status`, `targets[]`, `synced[]`, `heads{agent_id: sha}` | Selected subordinate agents synced successfully. |
+| `agents_sync_skipped` | **v2** | `method`, `status`, `targets[]`, `skipped[]`, `heads{agent_id: sha}` | Selected sync skipped by TTL, symlink, explicit env skip, or empty target set. |
+| `agents_sync_failed` | **v2** | `method`, `status`, `targets[]`, `failed[]`, `recoverable`, `heads{agent_id: sha}` | Selected sync failed; recoverable failures proceed with cached versions. |
 | `case_classified` | P1 | `jurisdictions[]`, `domains[]`, `tasks[]`, `complexity`, `confidence`, `pipeline[]`, `pattern` | Array-based classification result. `ambiguity[]`, `route_mode`, `parallel_agents[]` are optional. |
 | `agent_assigned` | P1 | `agent_id`, `name`, `role` | Agent dispatch |
 | `source_graded` | P1 | `agent_id`, `source`, `grade`, `citation` | Per-agent source grading |

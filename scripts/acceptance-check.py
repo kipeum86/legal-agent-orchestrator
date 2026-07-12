@@ -244,6 +244,48 @@ def check_mcp_monitoring() -> CheckResult:
     )
 
 
+def check_review_binding_gate() -> CheckResult:
+    return result(
+        13,
+        "리뷰 판정은 산출물 해시에 바인딩되고 stale 승인은 차단된다",
+        [
+            (exists("scripts/bind-review.py"), "bind-review.py exists"),
+            (exists("scripts/lib/review_gate.py"), "review_gate module exists"),
+            (has("scripts/lib/review_gate.py", "stale_review_binding"), "gate detects stale bindings"),
+            (has("skills/deliver-output.md", "bind-review.py"), "deliver-output requires binding"),
+            (has("tests/test_review_gate.py", "test_editing_opinion_after_bind_blocks"), "stale binding is tested"),
+        ],
+    )
+
+
+def check_citation_verification_gate() -> CheckResult:
+    return result(
+        14,
+        "인용 검증 실패(nonexistent/unverified)는 배포를 차단하고 sources.json에 표기된다",
+        [
+            (has("schemas/review-meta.schema.json", "citation_verification"), "schema requires citation_verification"),
+            (has("scripts/lib/review_gate.py", "citation_verification_failed"), "gate blocks failing citations"),
+            (has("scripts/merge-sources.py", "verification_status"), "merge-sources joins verification status"),
+            (has("skills/prompt-templates/second-review-agent.md", "citation_verification"), "review prompt demands the field"),
+            (has("tests/test_review_gate.py", "test_nonexistent_citation_blocks"), "blocking is tested"),
+        ],
+    )
+
+
+def check_reproducibility_and_override_audit() -> CheckResult:
+    return result(
+        15,
+        "에이전트 SHA가 이벤트에 남고 게이트 우회는 감사 흔적 없이는 불가능하다",
+        [
+            (has("scripts/lib/agent_sync.py", "collect_heads"), "sync result includes checkout heads"),
+            (has("CLAUDE.md", "orchestrator_sha"), "case_received records orchestrator SHA"),
+            (has("scripts/finalize-case.py", "LEGAL_ORCHESTRATOR_ALLOW_UNAPPROVED"), "override needs env token"),
+            (has("scripts/finalize-case.py", "gate_override"), "override logs gate_override event"),
+            (has("scripts/md-to-docx.py", "enforce_release_gate"), "docx converter enforces the gate"),
+        ],
+    )
+
+
 CHECKS: tuple[Callable[[], CheckResult], ...] = (
     check_style_guide,
     check_output_dir_contract,
@@ -257,6 +299,9 @@ CHECKS: tuple[Callable[[], CheckResult], ...] = (
     check_docx_injection_residue,
     check_dependency_pinning,
     check_mcp_monitoring,
+    check_review_binding_gate,
+    check_citation_verification_gate,
+    check_reproducibility_and_override_audit,
 )
 
 

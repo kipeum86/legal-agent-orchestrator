@@ -35,8 +35,8 @@ class AcceptanceCheckTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         payload = json.loads(result.stdout)
         self.assertTrue(payload["passed"])
-        self.assertEqual(payload["total"], 12)
-        self.assertEqual(payload["passed_count"], 12)
+        self.assertEqual(payload["total"], 15)
+        self.assertEqual(payload["passed_count"], 15)
 
     def test_acceptance_check_writes_markdown_report(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -51,7 +51,7 @@ class AcceptanceCheckTests(unittest.TestCase):
             text = report.read_text(encoding="utf-8")
 
         self.assertEqual(result.returncode, 0, msg=result.stderr)
-        self.assertIn("Status: PASS (12/12 criteria)", text)
+        self.assertIn("Status: PASS (15/15 criteria)", text)
         self.assertIn("Pattern 3 transcript", text)
         self.assertIn("MCP pinning", text)
 

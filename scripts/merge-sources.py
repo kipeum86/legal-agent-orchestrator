@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from scripts.lib.agents import AGENT_NAMES, agent_id_from_meta_filename  # noqa: E402
 from scripts.lib.io_utils import parse_jsonl  # noqa: E402
+from scripts.lib.review_gate import CITATION_STATUSES, load_review_meta  # noqa: E402
 
 GRADES = ("A", "B", "C", "D")
 
@@ -81,6 +82,22 @@ def merge_sources(case_dir: Path) -> dict[str, Any]:
         agent_id = str(data.get("agent_id") or event.get("agent") or "unknown")
         add_source(agent_id, data)
 
+    review_meta, _ = load_review_meta(case_dir)
+    verification_by_id: dict[str, str] = {}
+    verification_by_citation: dict[str, str] = {}
+    raw_entries = review_meta.get("citation_verification") if isinstance(review_meta, dict) else None
+    entries = [entry for entry in raw_entries if isinstance(entry, dict)] if isinstance(raw_entries, list) else []
+    for entry in entries:
+        status = str(entry.get("status") or "").strip().lower()
+        if status not in CITATION_STATUSES:
+            continue
+        source_id = str(entry.get("source_id") or "").strip()
+        citation_key = " ".join(str(entry.get("citation") or "").split()).casefold()
+        if source_id:
+            verification_by_id.setdefault(source_id, status)
+        if citation_key:
+            verification_by_citation.setdefault(citation_key, status)
+
     agents_payload = []
     grade_distribution = {grade: 0 for grade in GRADES}
     total_sources = 0
@@ -95,6 +112,13 @@ def merge_sources(case_dir: Path) -> dict[str, Any]:
         )
         for source in sources:
             grade_distribution[source["grade"]] += 1
+            source_id = str(source.get("id") or "").strip()
+            citation_key = " ".join(str(source.get("citation") or "").split()).casefold()
+            source["verification_status"] = (
+                verification_by_id.get(source_id)
+                or verification_by_citation.get(citation_key)
+                or "not_checked"
+            )
         total_sources += len(sources)
         agents_payload.append(
             {
@@ -111,6 +135,15 @@ def merge_sources(case_dir: Path) -> dict[str, Any]:
         "case_id": case_dir.name,
         "total_sources": total_sources,
         "grade_distribution": grade_distribution,
+        "verification_summary": {
+            status: sum(
+                1
+                for agent in agents_payload
+                for source in agent["sources"]
+                if source.get("verification_status") == status
+            )
+            for status in sorted(CITATION_STATUSES)
+        },
         "agents": agents_payload,
     }
     (case_dir / "sources.json").write_text(

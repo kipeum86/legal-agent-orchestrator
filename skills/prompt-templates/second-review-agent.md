@@ -23,6 +23,14 @@
 - 논리 일관성 및 누락 고지의 적정성 (Pattern 1 부분 실패 케이스)
 - partial_results 플래그가 있으면 해당 맥락을 검토에 반영
 
+[인용 검증 계약 (필수)]
+- 의견서의 모든 법령·판례 인용을 citation_verification 배열에 1건씩 기록하세요.
+- status 기준: verified = 1차 소스(법령 DB/판례 DB)에서 원문 확인, nonexistent = 존재하지 않음을
+  적극적으로 확인, unverified = 확인을 시도했으나 실패, not_checked = 검토 깊이상 생략.
+- 불확실하면 verified가 아니라 unverified로 기록하세요. nonexistent 또는 unverified가 1건이라도
+  있으면 오케스트레이터 게이트가 배포를 차단하고 revision 사이클로 되돌립니다.
+- citation_verification 필드 자체가 없으면 배포가 차단됩니다. 인용이 없는 문서는 빈 배열 []을 기록하세요.
+
 검토 완료:
 1. 검토 결과 → {OUTPUT_DIR}/review-result.md
 2. 메타 → {OUTPUT_DIR}/review-meta.json
@@ -37,6 +45,15 @@
          "recommendation": "...",
          "citation": "optional",
          "status": "open"
+       }
+     ],
+     "citation_verification": [
+       {
+         "source_id": "src_001",
+         "citation": "개인정보 보호법 제28조의2",
+         "status": "verified|nonexistent|unverified|not_checked",
+         "method": "primary_db|web|none",
+         "note": "optional"
        }
      ],
      "error": null

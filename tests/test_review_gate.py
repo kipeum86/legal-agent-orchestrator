@@ -13,11 +13,25 @@ sys.path.insert(0, str(REPO_ROOT))
 from scripts.lib.review_gate import evaluate_gate  # noqa: E402
 
 
-def write_review_meta(case_dir: Path, approval: str, summary: str = "s") -> None:
+def write_review_meta(
+    case_dir: Path,
+    approval: str,
+    summary: str = "s",
+    citation_verification: list | None = None,
+) -> None:
+    payload = {
+        "approval": approval,
+        "summary": summary,
+        "comments": [],
+        "citation_verification": (
+            citation_verification
+            if citation_verification is not None
+            else [{"citation": "테스트법 제1조", "status": "verified", "method": "primary_db"}]
+        ),
+        "error": None,
+    }
     (case_dir / "review-meta.json").write_text(
-        json.dumps({"approval": approval, "summary": summary, "comments": [], "error": None},
-                   ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8",
     )
 
 
@@ -152,6 +166,51 @@ class EvaluateGateTests(unittest.TestCase):
             bind(case_dir)
             gate = evaluate_gate(case_dir)
         self.assertEqual((gate.ok, gate.exit_code, gate.reason), (False, 3, "review_revisions_pending"))
+
+    def test_missing_citation_verification_blocks(self) -> None:
+        holder, case_dir = self.make_case()
+        with holder:
+            write_review_meta(case_dir, "approved", citation_verification=[])
+            payload = json.loads((case_dir / "review-meta.json").read_text(encoding="utf-8"))
+            del payload["citation_verification"]
+            (case_dir / "review-meta.json").write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            bind(case_dir)
+            gate = evaluate_gate(case_dir)
+        self.assertEqual((gate.ok, gate.exit_code, gate.reason), (False, 3, "citation_verification_missing"))
+
+    def test_nonexistent_citation_blocks(self) -> None:
+        holder, case_dir = self.make_case()
+        with holder:
+            write_review_meta(case_dir, "approved", citation_verification=[
+                {"citation": "가공의 법률 제99조", "status": "nonexistent", "method": "primary_db"},
+            ])
+            bind(case_dir)
+            gate = evaluate_gate(case_dir)
+        self.assertEqual((gate.ok, gate.reason), (False, "citation_verification_failed"))
+        self.assertEqual(gate.detail["citation_counts"]["nonexistent"], 1)
+
+    def test_unverified_citation_blocks(self) -> None:
+        holder, case_dir = self.make_case()
+        with holder:
+            write_review_meta(case_dir, "approved", citation_verification=[
+                {"citation": "테스트법 제1조", "status": "verified"},
+                {"citation": "미확인법 제2조", "status": "unverified"},
+            ])
+            bind(case_dir)
+            gate = evaluate_gate(case_dir)
+        self.assertEqual((gate.ok, gate.reason), (False, "citation_verification_failed"))
+
+    def test_verified_and_not_checked_pass(self) -> None:
+        holder, case_dir = self.make_case()
+        with holder:
+            write_review_meta(case_dir, "approved", citation_verification=[
+                {"citation": "테스트법 제1조", "status": "verified"},
+                {"citation": "부수 인용", "status": "not_checked"},
+            ])
+            bind(case_dir)
+            gate = evaluate_gate(case_dir)
+        self.assertTrue(gate.ok)
 
 
 if __name__ == "__main__":

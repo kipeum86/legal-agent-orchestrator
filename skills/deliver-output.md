@@ -82,6 +82,7 @@ python3 "$PROJECT_ROOT/scripts/merge-sources.py" "$OUTPUT_DIR"
   "case_id": "{CASE_ID}",
   "total_sources": 0,
   "grade_distribution": { "A": 0, "B": 0, "C": 0, "D": 0 },
+  "verification_summary": { "verified": 0, "nonexistent": 0, "unverified": 0, "not_checked": 0 },
   "agents": [
     {
       "agent_id": "legal-research-agent",
@@ -93,6 +94,8 @@ python3 "$PROJECT_ROOT/scripts/merge-sources.py" "$OUTPUT_DIR"
 ```
 
 `merge-sources.py` reads every `*-meta.json` together with the `source_graded` events in `events.jsonl`, and deduplicates within each agent on `(title, citation)`. Use this script rather than hand-merging — it keeps `agent_id`, grade distribution, and citation fields consistent.
+
+`merge-sources.py`는 review-meta의 `citation_verification`을 소스별로 조인해 `verification_status`를 표기한다.
 
 ---
 

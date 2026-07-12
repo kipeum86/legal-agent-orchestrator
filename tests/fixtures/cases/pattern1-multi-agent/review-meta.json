@@ -10,5 +10,10 @@
       "status": "open"
     }
   ],
+  "citation_verification": [
+    { "source_id": "dp_src_001", "citation": "제28조의8", "status": "verified", "method": "primary_db" },
+    { "source_id": "dp_src_002", "citation": "Article 28", "status": "verified", "method": "primary_db" },
+    { "source_id": "gen_src_001", "citation": "Article 25", "status": "verified", "method": "primary_db" }
+  ],
   "error": null
 }

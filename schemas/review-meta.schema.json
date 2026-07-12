@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Legal Agent Orchestrator Review Meta",
   "type": "object",
-  "required": ["approval", "comments"],
+  "required": ["approval", "comments", "citation_verification"],
   "properties": {
     "approval": {
       "enum": ["approved", "approved_with_revisions", "revision_needed"]
@@ -20,6 +20,20 @@
           "recommendation": { "type": "string" },
           "citation": { "type": "string" },
           "status": { "type": "string" }
+        }
+      }
+    },
+    "citation_verification": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["citation", "status"],
+        "properties": {
+          "source_id": { "type": "string" },
+          "citation": { "type": "string" },
+          "status": { "enum": ["verified", "nonexistent", "unverified", "not_checked"] },
+          "method": { "type": "string" },
+          "note": { "type": "string" }
         }
       }
     },

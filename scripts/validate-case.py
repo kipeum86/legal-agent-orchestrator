@@ -20,6 +20,7 @@ GRADES = {"A", "B", "C", "D"}
 REVIEW_APPROVALS = {"approved", "approved_with_revisions", "revision_needed"}
 REVIEW_SEVERITIES = {"critical", "major", "minor", "suggestion"}
 ROUTING_COMPLEXITIES = {"simple", "compound", "multi_domain", "adversarial"}
+CITATION_STATUSES = {"verified", "nonexistent", "unverified", "not_checked"}
 
 
 def require_mapping(value: Any, label: str, errors: list[str]) -> dict[str, Any]:
@@ -143,6 +144,22 @@ def validate_review_meta(path: Path) -> tuple[list[str], list[str]]:
             severity = str(comment.get("severity") or "")
             if severity and severity not in REVIEW_SEVERITIES:
                 errors.append(f"{path.name}: comments[{index}] invalid severity {severity}")
+
+    citation_entries = payload.get("citation_verification")
+    if citation_entries is None:
+        errors.append(f"{path.name}: missing citation_verification")
+    elif not isinstance(citation_entries, list):
+        errors.append(f"{path.name}: citation_verification must be an array")
+    else:
+        for index, entry in enumerate(citation_entries, start=1):
+            if not isinstance(entry, dict):
+                errors.append(f"{path.name}: citation_verification[{index}] must be an object")
+                continue
+            if not str(entry.get("citation") or "").strip():
+                errors.append(f"{path.name}: citation_verification[{index}] missing citation")
+            status = str(entry.get("status") or "").strip().lower()
+            if status not in CITATION_STATUSES:
+                errors.append(f"{path.name}: citation_verification[{index}] invalid status {status!r}")
     return errors, warnings
 
 

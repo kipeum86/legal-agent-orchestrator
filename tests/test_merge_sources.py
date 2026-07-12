@@ -14,6 +14,75 @@ FIXTURE = REPO_ROOT / "tests" / "fixtures" / "cases" / "pattern1-multi-agent"
 
 
 class MergeSourcesTests(unittest.TestCase):
+    def make_verification_case(self, root: Path, citation_verification: list) -> Path:
+        case_dir = root / "case"
+        case_dir.mkdir()
+        (case_dir / "events.jsonl").write_text("", encoding="utf-8")
+        (case_dir / "legal-research-agent-meta.json").write_text(
+            json.dumps(
+                {
+                    "summary": "s",
+                    "key_findings": [],
+                    "sources": [
+                        {"id": "src_001", "title": "테스트법", "grade": "A", "citation": "테스트법 제1조"}
+                    ],
+                    "error": None,
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+        (case_dir / "review-meta.json").write_text(
+            json.dumps(
+                {
+                    "approval": "approved",
+                    "summary": "s",
+                    "comments": [],
+                    "citation_verification": citation_verification,
+                    "error": None,
+                },
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+        return case_dir
+
+    def test_sources_json_carries_verification_status(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = self.make_verification_case(
+                Path(directory),
+                [{"source_id": "src_001", "citation": "테스트법 제1조", "status": "verified"}],
+            )
+            result = subprocess.run(
+                [sys.executable, str(CLI), str(case_dir)],
+                capture_output=True, text=True, check=False,
+            )
+            self.assertEqual(result.returncode, 0, msg=result.stderr)
+            payload = json.loads((case_dir / "sources.json").read_text(encoding="utf-8"))
+
+        agents = {agent["agent_id"]: agent for agent in payload["agents"]}
+        source = agents["legal-research-agent"]["sources"][0]
+        self.assertEqual(source["verification_status"], "verified")
+        self.assertEqual(
+            payload["verification_summary"],
+            {"nonexistent": 0, "not_checked": 0, "unverified": 0, "verified": 1},
+        )
+
+    def test_unmatched_source_defaults_to_not_checked(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = self.make_verification_case(Path(directory), [])
+            result = subprocess.run(
+                [sys.executable, str(CLI), str(case_dir)],
+                capture_output=True, text=True, check=False,
+            )
+            self.assertEqual(result.returncode, 0, msg=result.stderr)
+            payload = json.loads((case_dir / "sources.json").read_text(encoding="utf-8"))
+
+        agents = {agent["agent_id"]: agent for agent in payload["agents"]}
+        source = agents["legal-research-agent"]["sources"][0]
+        self.assertEqual(source["verification_status"], "not_checked")
+        self.assertEqual(payload["verification_summary"]["not_checked"], 1)
+
     def test_merges_multi_agent_meta_and_events_deterministically(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             case_dir = Path(directory) / "case"

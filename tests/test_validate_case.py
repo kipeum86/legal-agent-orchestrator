@@ -76,6 +76,7 @@ class ValidateCaseTests(unittest.TestCase):
                         "approval": "approved",
                         "comments": [],
                         "summary": "review ok",
+                        "citation_verification": [],
                     },
                     ensure_ascii=False,
                 )
@@ -120,6 +121,32 @@ class ValidateCaseTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("duplicate event id evt_final", result.stderr)
         self.assertNotIn("duplicate event id ", result.stderr.replace("duplicate event id evt_final", ""))
+
+    def test_review_meta_without_citation_verification_is_error(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = Path(directory)
+            event = {
+                "id": "evt_001",
+                "ts": "2026-07-12T00:00:00Z",
+                "agent": "second-review-agent",
+                "type": "review_completed",
+                "data": {},
+            }
+            (case_dir / "events.jsonl").write_text(
+                json.dumps(event, ensure_ascii=False) + "\n", encoding="utf-8",
+            )
+            (case_dir / "review-meta.json").write_text(
+                json.dumps(
+                    {"approval": "approved", "comments": [], "summary": "s"},
+                    ensure_ascii=False,
+                ) + "\n",
+                encoding="utf-8",
+            )
+
+            result = run_validate(case_dir, "strict")
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("missing citation_verification", result.stderr)
 
 
 if __name__ == "__main__":

@@ -24,6 +24,8 @@ BLOCKING_STATUSES = {"revision_needed"}
 VALID_STATUSES = APPROVED_STATUSES | PENDING_STATUSES | BLOCKING_STATUSES
 BINDING_FILENAME = "review-binding.json"
 BINDABLE_DELIVERABLES = ("opinion.md", "debate-opinion.md", "debate-transcript.md")
+CITATION_STATUSES = {"verified", "nonexistent", "unverified", "not_checked"}
+FAILING_CITATION_STATUSES = {"nonexistent", "unverified"}
 
 
 @dataclass
@@ -87,6 +89,24 @@ def _check_verbatim(case_dir: Path) -> tuple[str | None, dict[str, Any]]:
     return None, {"verbatim": "not_run"}
 
 
+def _check_citations(review_meta: dict[str, Any]) -> tuple[str | None, dict[str, Any]]:
+    entries = review_meta.get("citation_verification")
+    if not isinstance(entries, list):
+        return "citation_verification_missing", {}
+    counts: dict[str, int] = {}
+    for entry in entries:
+        if not isinstance(entry, dict):
+            return "citation_verification_missing", {"note": "entry is not an object"}
+        status = str(entry.get("status") or "").strip().lower()
+        if status not in CITATION_STATUSES:
+            return "citation_verification_missing", {"note": f"invalid status {status!r}"}
+        counts[status] = counts.get(status, 0) + 1
+    failing = sum(counts.get(status, 0) for status in FAILING_CITATION_STATUSES)
+    if failing:
+        return "citation_verification_failed", {"citation_counts": counts}
+    return None, {"citation_counts": counts}
+
+
 def evaluate_gate(case_dir: Path) -> GateResult:
     review_meta, review_path = load_review_meta(case_dir)
     if not isinstance(review_meta, dict):
@@ -105,6 +125,11 @@ def evaluate_gate(case_dir: Path) -> GateResult:
     detail: dict[str, Any] = {}
     reason, binding_detail = _check_binding(case_dir, review_path)
     detail.update(binding_detail)
+    if reason:
+        return GateResult(False, 3, reason, approval, review_meta, review_path, detail)
+
+    reason, citation_detail = _check_citations(review_meta)
+    detail.update(citation_detail)
     if reason:
         return GateResult(False, 3, reason, approval, review_meta, review_path, detail)
 

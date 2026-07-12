@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import zipfile
 from pathlib import Path
@@ -165,6 +166,7 @@ def finalize_case(
     summary: str | None = None,
     primary_deliverable: str | None = None,
     allow_unapproved: bool = False,
+    override_reason: str | None = None,
 ) -> tuple[int, dict[str, Any]]:
     gate = evaluate_gate(case_dir)
     review_meta = gate.review_meta if isinstance(gate.review_meta, dict) else {}
@@ -194,6 +196,19 @@ def finalize_case(
     if check_only:
         return 0, {"status": "ready", "approval": approval, "would_write": final_data}
 
+    if not gate.ok and allow_unapproved and not check_only:
+        append_event(
+            case_dir / "events.jsonl",
+            agent="orchestrator",
+            event_type="gate_override",
+            data={
+                "override": "allow_unapproved",
+                "reason_text": override_reason or "",
+                "approval": approval,
+                "gate_reason": gate.reason,
+            },
+        )
+
     existing = existing_final_output(case_dir)
     if existing is not None:
         return 0, {"status": "already_finalized", "approval": approval, "final_output": existing}
@@ -219,7 +234,21 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Write final_output with status=not_approved even when review requires revision.",
     )
+    parser.add_argument("--override-reason", default=None,
+                        help="Required with --allow-unapproved: why the gate is being bypassed.")
     args = parser.parse_args(argv)
+
+    if args.allow_unapproved:
+        if not (args.override_reason and args.override_reason.strip()):
+            print("finalize-case: --allow-unapproved requires --override-reason", file=sys.stderr)
+            return 2
+        if os.environ.get("LEGAL_ORCHESTRATOR_ALLOW_UNAPPROVED") != "1":
+            print(
+                "finalize-case: --allow-unapproved requires LEGAL_ORCHESTRATOR_ALLOW_UNAPPROVED=1 "
+                "(set it only on explicit user instruction)",
+                file=sys.stderr,
+            )
+            return 2
 
     code, report = finalize_case(
         args.case_dir,
@@ -227,6 +256,7 @@ def main(argv: list[str] | None = None) -> int:
         summary=args.summary,
         primary_deliverable=args.primary_deliverable,
         allow_unapproved=args.allow_unapproved,
+        override_reason=args.override_reason,
     )
     print(json.dumps(report, ensure_ascii=False, indent=2))
     return code

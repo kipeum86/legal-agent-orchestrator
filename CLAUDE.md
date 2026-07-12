@@ -226,3 +226,4 @@ python3 "$PROJECT_ROOT/scripts/log-event.py" "$OUTPUT_DIR/events.jsonl" \
 - Never modify a subagent's `CLAUDE.md`. Use it 100% as-is.
 - Orchestrator work-products (events, audits, case-report, DOCX) are written to `$OUTPUT_DIR`. When the env var is not set, the legacy `output/{case-id}` path is used.
 - Every agent invocation is recorded in `events.jsonl`.
+- `finalize-case.py --allow-unapproved`는 사용자의 명시적 지시가 현재 턴에 있을 때만 사용한다. `--override-reason`과 `LEGAL_ORCHESTRATOR_ALLOW_UNAPPROVED=1` 없이는 동작하지 않으며, 사용 시 `gate_override` 이벤트가 기록된다.

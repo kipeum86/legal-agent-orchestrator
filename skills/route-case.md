@@ -443,6 +443,7 @@ Event types added or extended in v2. This is the central reference maintained fo
 | `agent_out_of_scope` | **v2** | `agent_id`, `reason`, `fallback_to` | Misclassification or self-refusal by the agent |
 | `verbatim_verified` | P1 | `verifier`, `cycle`, `critical_pass`, ... | Pattern discovered in Session 4. Orchestrator meta-verification. |
 | `docx_generated` | P1 | `tool`, `input`, `output`, `size_bytes`, ... | Result of `md-to-docx.py` |
+| `gate_override` | **v3** | `override`, `reason_text`, `approval`, `gate_reason` | finalize 게이트를 명시적 지시로 우회한 사실의 감사 기록 |
 | `final_output` | P1 | `case_id`, `primary_deliverable`, `deliverables[]`, `summary` | Pipeline complete |
 | `pipeline_aborted` | **v2** | `reason`, `last_completed_step`, `recovery` | Unrecoverable abort |
 

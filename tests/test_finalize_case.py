@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -24,16 +25,70 @@ def strip_final_output(case_dir: Path) -> None:
     events_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def run_finalize(case_dir: Path, *args: str) -> subprocess.CompletedProcess[str]:
+def run_finalize(case_dir: Path, *args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+    merged = {**os.environ, **(env or {})}
     return subprocess.run(
         [sys.executable, str(FINALIZE_CLI), str(case_dir), *args],
         capture_output=True,
         text=True,
         check=False,
+        env=merged,
     )
 
 
 class FinalizeCaseTests(unittest.TestCase):
+    def _revision_needed_case(self, directory: str) -> Path:
+        case_dir = Path(directory) / "case"
+        shutil.copytree(FIXTURE, case_dir)
+        strip_final_output(case_dir)
+        review_meta = json.loads((case_dir / "review-meta.json").read_text(encoding="utf-8"))
+        review_meta["approval"] = "revision_needed"
+        (case_dir / "review-meta.json").write_text(
+            json.dumps(review_meta, ensure_ascii=False, indent=2) + "\n", encoding="utf-8",
+        )
+        return case_dir
+
+    def test_allow_unapproved_requires_override_reason(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = self._revision_needed_case(directory)
+            result = run_finalize(
+                case_dir, "--allow-unapproved",
+                env={"LEGAL_ORCHESTRATOR_ALLOW_UNAPPROVED": "1"},
+            )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("--override-reason", result.stderr)
+
+    def test_allow_unapproved_requires_env_token(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = self._revision_needed_case(directory)
+            env = {k: v for k, v in os.environ.items() if k != "LEGAL_ORCHESTRATOR_ALLOW_UNAPPROVED"}
+            result = subprocess.run(
+                [sys.executable, str(FINALIZE_CLI), str(case_dir),
+                 "--allow-unapproved", "--override-reason", "사용자 지시"],
+                capture_output=True, text=True, check=False, env=env,
+            )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("LEGAL_ORCHESTRATOR_ALLOW_UNAPPROVED", result.stderr)
+
+    def test_allow_unapproved_with_guardrails_logs_gate_override(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = self._revision_needed_case(directory)
+            result = run_finalize(
+                case_dir, "--allow-unapproved", "--override-reason", "사용자 명시 지시",
+                env={"LEGAL_ORCHESTRATOR_ALLOW_UNAPPROVED": "1"},
+            )
+            events = [
+                json.loads(line)
+                for line in (case_dir / "events.jsonl").read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        overrides = [e for e in events if e.get("type") == "gate_override"]
+        self.assertEqual(len(overrides), 1)
+        self.assertEqual(overrides[0]["data"]["reason_text"], "사용자 명시 지시")
+        final = [e for e in events if e.get("type") == "final_output"]
+        self.assertEqual(final[0]["data"]["status"], "not_approved")
+
     def test_approved_review_writes_final_output_with_sources(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             case_dir = Path(directory) / "case"

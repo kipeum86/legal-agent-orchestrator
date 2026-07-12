@@ -187,6 +187,30 @@ def validate_case(case_dir: Path) -> dict[str, list[str]]:
         errors.extend(meta_errors)
         warnings.extend(meta_warnings)
 
+    classification = read_json(case_dir / "classification.json")
+    if isinstance(classification, dict):
+        declared = {str(j) for j in classification.get("jurisdictions") or [] if str(j).strip()}
+        declared = {"US-CA" if j == "California" else j for j in declared}
+        if declared and not declared & {"multi", "other"}:
+            allowed = declared | {"international"}
+            for meta_path in sorted(case_dir.glob("*-meta.json")):
+                if is_review_meta_path(meta_path):
+                    continue
+                payload = read_json(meta_path)
+                sources = payload.get("sources") if isinstance(payload, dict) else None
+                if not isinstance(sources, list):
+                    continue
+                for index, source in enumerate(sources, start=1):
+                    if not isinstance(source, dict):
+                        continue
+                    jurisdiction = str(source.get("jurisdiction") or "").strip()
+                    jurisdiction = "US-CA" if jurisdiction == "California" else jurisdiction
+                    if jurisdiction and jurisdiction not in allowed:
+                        errors.append(
+                            f"{meta_path.name}: sources[{index}] jurisdiction_mismatch: "
+                            f"{jurisdiction} not in classification {sorted(allowed)}"
+                        )
+
     if not any(case_dir.glob("*-meta.json")):
         warnings.append("no *-meta.json files found")
     return {"errors": errors, "warnings": warnings}

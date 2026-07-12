@@ -61,12 +61,15 @@ meta.json 스키마:
       "title": "...",
       "grade": "A|B|C|D",
       "citation": "...",
+      "jurisdiction": "KR|EU|US|US-CA|JP|international|other",
       "pinpoint": "...",
       "url_or_access": "optional"
     }
   ],
   "error": null
 }
+
+sources 각 항목의 jurisdiction에 인용한 법령/판례의 관할을 기재하세요.
 
 오케스트레이터는 meta.json 존재 → summary/sources 파싱, 부재 → 반환 텍스트에서
 fallback 추출합니다. meta.json을 저장하지 않으면 fallback 경로로 진행되어 데이터 손실

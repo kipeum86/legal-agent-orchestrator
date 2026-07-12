@@ -50,7 +50,7 @@ def merge_sources(case_dir: Path) -> dict[str, Any]:
             "grade": grade,
             "citation": citation,
         }
-        for optional in ("pinpoint", "url_or_access", "relevance"):
+        for optional in ("pinpoint", "url_or_access", "relevance", "jurisdiction"):
             value = source.get(optional)
             if value:
                 entry[optional] = value

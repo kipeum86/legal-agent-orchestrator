@@ -308,7 +308,7 @@ When one or more agents in the N parallel calls fail (timeout, rate_limit, MCP e
 | 1 failure + (N-1) successes, rate_limit | Retry the failed agent once (matching the CLAUDE.md error policy). If retry also fails, take the "partial success" path below. |
 | Partial success (≥ 1 succeeded) | Pass `partial_results: true` plus the failed agent ID/reason to the writing agent. The opinion **must** disclose the omission ("{jurisdiction} analysis omitted for technical reasons; conservative assumptions applied for that segment."). |
 | All failed | Abort the pipeline. Log a `pipeline_aborted` event. Report to the user. |
-| Misclassification → wrong agent invoked → domain refusal | Log an `agent_out_of_scope` event and fall back to the legal-research-agent (mode=`fallback`) solo route. |
+| Misclassification → wrong agent invoked → domain refusal | Log an `agent_out_of_scope` event and fall back to the legal-research-agent (mode=`fallback`) solo route. 단, 에이전트의 거부 사유가 계약 검토/번역(`contract`/`translation`) 영역을 가리키면 fallback으로 재디스패치하지 말고 `out_of_scope` 응답으로 종료한다 — fallback 일반 리서치가 범위 밖 질문에 일반론으로 답하게 두지 않는다. |
 
 **Event logging:**
 ```bash

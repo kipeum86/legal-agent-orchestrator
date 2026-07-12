@@ -36,7 +36,8 @@
           "grade": { "enum": ["A", "B", "C", "D"] },
           "citation": { "type": "string" },
           "pinpoint": { "type": "string" },
-          "url_or_access": { "type": "string" }
+          "url_or_access": { "type": "string" },
+          "jurisdiction": { "enum": ["KR", "EU", "US", "US-CA", "JP", "international", "other"] }
         }
       }
     },

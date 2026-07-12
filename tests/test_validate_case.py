@@ -22,6 +22,35 @@ def run_validate(case_dir: Path, mode: str) -> subprocess.CompletedProcess[str]:
 
 
 class ValidateCaseTests(unittest.TestCase):
+    def _write_jurisdiction_case(
+        self, case_dir: Path, jurisdictions: list[str] | None, source_jurisdiction: str | None,
+    ) -> None:
+        (case_dir / "events.jsonl").write_text("", encoding="utf-8")
+        if jurisdictions is not None:
+            (case_dir / "classification.json").write_text(
+                json.dumps(
+                    {
+                        "jurisdictions": jurisdictions,
+                        "domains": ["general"],
+                        "tasks": ["research"],
+                        "complexity": "simple",
+                        "confidence": 0.9,
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+        source = {"title": "개인정보 보호법", "grade": "A", "citation": "제28조의2"}
+        if source_jurisdiction is not None:
+            source["jurisdiction"] = source_jurisdiction
+        (case_dir / "legal-research-agent-meta.json").write_text(
+            json.dumps(
+                {"summary": "s", "key_findings": [], "sources": [source], "error": None},
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+
     def test_strict_mode_accepts_public_fixtures(self) -> None:
         for fixture in ("pattern1-multi-agent", "pattern2-basic"):
             with self.subTest(fixture=fixture):
@@ -190,6 +219,29 @@ class ValidateCaseTests(unittest.TestCase):
             )
         self.assertEqual(result.returncode, 1)
         self.assertIn("invalid grade", result.stderr)
+
+    def test_source_jurisdiction_mismatch_is_error(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = Path(directory)
+            self._write_jurisdiction_case(case_dir, ["US"], "KR")
+            result = run_validate(case_dir, "strict")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("jurisdiction_mismatch", result.stderr)
+
+    def test_source_jurisdiction_matching_classification_passes(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = Path(directory)
+            self._write_jurisdiction_case(case_dir, ["KR", "EU"], "KR")
+            result = run_validate(case_dir, "strict")
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertNotIn("jurisdiction_mismatch", result.stderr)
+
+    def test_jurisdiction_check_skipped_without_classification_or_field(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = Path(directory)
+            self._write_jurisdiction_case(case_dir, None, None)
+            result = run_validate(case_dir, "strict")
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
 
 
 if __name__ == "__main__":

@@ -222,7 +222,7 @@ python3 "$PROJECT_ROOT/scripts/log-event.py" "$OUTPUT_DIR/events.jsonl" \
 ## Constraints
 
 - You never perform new legal research or drafting yourself. Always delegate to a specialist.
-- Exception: citation/verbatim verification of an already-produced claim — confirming whether it exists, the verbatim article text, or pinpoint match — is permitted. In that case do not produce new legal conclusions; record the result only as a `verbatim-verification.md` artifact or an `mcp_fallback_verification` event.
+- Exception: citation/verbatim verification of an already-produced claim — confirming whether it exists, the verbatim article text, or pinpoint match — is permitted. In that case do not produce new legal conclusions; record the result only as a `verbatim-verification.md` artifact or an `mcp_fallback_verification` event. When recording the result as an event, always include a boolean `passed` field — the release gate blocks on `passed: false`.
 - Never modify a subagent's `CLAUDE.md`. Use it 100% as-is.
 - Orchestrator work-products (events, audits, case-report, DOCX) are written to `$OUTPUT_DIR`. When the env var is not set, the legacy `output/{case-id}` path is used.
 - Every agent invocation is recorded in `events.jsonl`.

@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from scripts.lib.io_utils import read_json
+from scripts.lib.io_utils import parse_jsonl, read_json
 
 APPROVED_STATUSES = {"approved", "approved_with_revisions"}
 BLOCKING_STATUSES = {"revision_needed"}
@@ -55,6 +55,20 @@ def load_review_meta(case_dir: Path) -> tuple[dict[str, Any] | None, Path | None
     return None, None
 
 
+def _check_verbatim(case_dir: Path) -> tuple[str | None, dict[str, Any]]:
+    for event in reversed(parse_jsonl(case_dir / "events.jsonl")):
+        if event.get("type") != "verbatim_verified":
+            continue
+        data = event.get("data") if isinstance(event.get("data"), dict) else {}
+        passed = data.get("passed")
+        if passed is False:
+            return "verbatim_verification_failed", {"verbatim_event_id": event.get("id")}
+        if passed is True:
+            return None, {"verbatim": "passed"}
+        return None, {"verbatim": "legacy_event_without_passed"}
+    return None, {"verbatim": "not_run"}
+
+
 def evaluate_gate(case_dir: Path) -> GateResult:
     review_meta, review_path = load_review_meta(case_dir)
     if not isinstance(review_meta, dict):
@@ -67,4 +81,10 @@ def evaluate_gate(case_dir: Path) -> GateResult:
     if approval in BLOCKING_STATUSES:
         return GateResult(False, 3, "review_revision_needed", approval, review_meta, review_path)
 
-    return GateResult(True, 0, None, approval, review_meta, review_path)
+    detail: dict[str, Any] = {}
+    reason, verbatim_detail = _check_verbatim(case_dir)
+    detail.update(verbatim_detail)
+    if reason:
+        return GateResult(False, 3, reason, approval, review_meta, review_path, detail)
+
+    return GateResult(True, 0, None, approval, review_meta, review_path, detail)

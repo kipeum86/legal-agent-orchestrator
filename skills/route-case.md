@@ -441,7 +441,7 @@ Event types added or extended in v2. This is the central reference maintained fo
 | `trust_boundary_match` | **v2** | `agent_id`, `field` (`summary`\|`key_findings`\|...), `match_count`, `audit_path` | Logged when the sanitiser matches an injection pattern. Introduced in Task 6. |
 | `agent_preflight` | **v2** | `agent_id`, `action`, `path` | Pre-dispatch action (e.g., generating a config) — see FM4 |
 | `agent_out_of_scope` | **v2** | `agent_id`, `reason`, `fallback_to` | Misclassification or self-refusal by the agent |
-| `verbatim_verified` | P1 | `verifier`, `cycle`, `critical_pass`, ... | Pattern discovered in Session 4. Orchestrator meta-verification. |
+| `verbatim_verified` | P1 | `verifier`, **`passed` (bool, 필수)**, `cycle`, `critical_pass`, ... | 오케스트레이터 인용 원문 검증. 최신 이벤트의 `passed: false`는 finalize/DOCX 게이트를 차단한다. |
 | `docx_generated` | P1 | `tool`, `input`, `output`, `size_bytes`, ... | Result of `md-to-docx.py` |
 | `gate_override` | **v3** | `override`, `reason_text`, `approval`, `gate_reason` | finalize 게이트를 명시적 지시로 우회한 사실의 감사 기록 |
 | `final_output` | P1 | `case_id`, `primary_deliverable`, `deliverables[]`, `summary` | Pipeline complete |

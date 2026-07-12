@@ -29,6 +29,10 @@ import sys
 import tempfile
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from scripts.lib.review_gate import evaluate_gate  # noqa: E402
+
 from docx import Document
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
@@ -40,6 +44,8 @@ ASCII_FONT = "Times New Roman"
 CJK_FONT = "맑은 고딕"
 BODY_SIZE_PT = 11
 HEADING_SIZE = {1: 18, 2: 15, 3: 13, 4: 12, 5: 11.5}
+GATED_BASENAMES = {"opinion.md", "debate-opinion.md", "debate-transcript.md"}
+DRAFT_BANNER = "DRAFT — 미승인 검토본 · 시니어 리뷰 게이트 미통과 · 배포 금지"
 
 
 def _resolve_private_dir(project_root: Path) -> Path:
@@ -83,6 +89,28 @@ def _resolve_output_docx_path(raw_arg: str, project_root: Path, case_dir: Path) 
     if not _is_relative_to(resolved, case_root):
         raise ValueError(f"output_docx must stay inside the case directory: {raw_arg}")
     return resolved
+
+
+def enforce_release_gate(md_path: Path, *, force_draft: bool) -> tuple[int | None, bool]:
+    """Return (exit_code_or_None, render_draft_banner)."""
+    case_dir = md_path.parent
+    if md_path.name not in GATED_BASENAMES or not (case_dir / "events.jsonl").exists():
+        return None, False
+    gate = evaluate_gate(case_dir)
+    if gate.ok:
+        return None, False
+    if force_draft:
+        print(
+            f"md-to-docx: release gate blocked ({gate.reason}); rendering DRAFT watermark",
+            file=sys.stderr,
+        )
+        return None, True
+    print(
+        f"md-to-docx: release gate blocked ({gate.reason}); refusing to render {md_path.name}. "
+        "Fix the review state or pass --force-draft for a watermarked draft.",
+        file=sys.stderr,
+    )
+    return 3, False
 
 
 def set_run_font(run, size_pt: float = BODY_SIZE_PT, bold: bool = False, italic: bool = False, mono: bool = False) -> None:
@@ -276,7 +304,7 @@ def setup_document(doc: Document) -> None:
     rFonts.set(qn("w:cs"), ASCII_FONT)
 
 
-def convert(md_path: Path, docx_path: Path, *, preserve_escaped_text: bool = False) -> None:
+def convert(md_path: Path, docx_path: Path, *, preserve_escaped_text: bool = False, draft_banner: bool = False) -> None:
     text = _render_escape_tags(
         md_path.read_text(encoding="utf-8"),
         preserve_escaped_text=preserve_escaped_text,
@@ -285,6 +313,13 @@ def convert(md_path: Path, docx_path: Path, *, preserve_escaped_text: bool = Fal
 
     doc = Document()
     setup_document(doc)
+    if draft_banner:
+        p = doc.add_paragraph()
+        p.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        style_paragraph(p, space_after_pt=14, space_before_pt=0)
+        run = p.add_run(DRAFT_BANNER)
+        set_run_font(run, size_pt=14, bold=True)
+        run.font.color.rgb = RGBColor(0xC0, 0x00, 0x00)  # set_run_font 이후에 색을 덮어써야 함
 
     quote_buf: list[str] = []
     table_buf: list[str] = []
@@ -415,6 +450,11 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Preserve text inside <escape> tags instead of omitting it from the rendered DOCX.",
     )
+    parser.add_argument(
+        "--force-draft",
+        action="store_true",
+        help="Render even when the release gate is blocked, with a DRAFT watermark banner.",
+    )
     args = parser.parse_args(argv)
     project_root = Path.cwd().resolve()
     try:
@@ -426,7 +466,10 @@ def main(argv: list[str] | None = None) -> int:
     if not md.exists():
         print(f"Input not found: {md}", file=sys.stderr)
         return 1
-    convert(md, docx, preserve_escaped_text=args.preserve_escaped_text)
+    gate_exit, draft_banner = enforce_release_gate(md, force_draft=args.force_draft)
+    if gate_exit is not None:
+        return gate_exit
+    convert(md, docx, preserve_escaped_text=args.preserve_escaped_text, draft_banner=draft_banner)
     size = docx.stat().st_size
     print(f"Saved {docx} ({size:,} bytes)")
     return 0

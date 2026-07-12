@@ -174,6 +174,8 @@ for src in "$OUTPUT_DIR"/opinion.md \
 done
 ```
 
+`md-to-docx.py`는 변환 전에 릴리스 게이트(`scripts/lib/review_gate.py`)를 스스로 검사한다. 게이트가 닫혀 있으면 exit 3으로 거부한다 — 이 경우 Step 2로 돌아가 리뷰 상태를 해소하라. `--force-draft`는 내부 검토용 DRAFT 워터마크 사본이 필요할 때만 쓰고, 그 산출물을 클라이언트에 전달해서는 안 된다.
+
 `md-to-docx.py` honors `<escape>...</escape>` tags by default — text inside an escape is replaced with `[Sanitized instruction-like text omitted]` in the rendered DOCX. Use `--preserve-escaped-text` only when an audit DOCX must retain the original text (rare).
 
 If a DOCX file is needed in a non-default register (e.g., draft watermarking, alternative paper size), pass the appropriate flag to `md-to-docx.py`. The default invocation is sufficient for client delivery.

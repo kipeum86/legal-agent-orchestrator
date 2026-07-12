@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sys
 import subprocess
 import tempfile
@@ -10,6 +11,8 @@ from types import ModuleType
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
+MD_TO_DOCX_CLI = REPO_ROOT / "scripts" / "md-to-docx.py"
+BIND_CLI = REPO_ROOT / "scripts" / "bind-review.py"
 
 from docx import Document  # noqa: E402
 
@@ -27,6 +30,39 @@ def load_md_to_docx_module() -> ModuleType:
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def make_gated_case(root: Path, approval: str) -> Path:
+    case_dir = root / "case"
+    case_dir.mkdir()
+    (case_dir / "events.jsonl").write_text("", encoding="utf-8")
+    (case_dir / "opinion.md").write_text("# 의견서\n\n본문 문단.\n", encoding="utf-8")
+    (case_dir / "review-meta.json").write_text(
+        json.dumps(
+            {
+                "approval": approval,
+                "summary": "s",
+                "comments": [],
+                "citation_verification": [],
+                "error": None,
+            },
+            ensure_ascii=False, indent=2,
+        ) + "\n",
+        encoding="utf-8",
+    )
+    subprocess.run(
+        [sys.executable, str(BIND_CLI), str(case_dir), "--no-event"],
+        capture_output=True, text=True, check=True,
+    )
+    return case_dir
+
+
+def run_md_to_docx(case_dir: Path, *args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [sys.executable, str(MD_TO_DOCX_CLI), str(case_dir / "opinion.md"),
+         str(case_dir / "opinion.docx"), *args],
+        capture_output=True, text=True, check=False, cwd=REPO_ROOT,
+    )
 
 
 class MdToDocxEscapePolicyTests(unittest.TestCase):
@@ -112,6 +148,43 @@ class MdToDocxEscapePolicyTests(unittest.TestCase):
         )
 
         self.assertEqual(rows[1], ["A | B", "kept together"])
+
+
+class MdToDocxReleaseGateTests(unittest.TestCase):
+    def test_approved_case_converts(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = make_gated_case(Path(directory), "approved")
+            result = run_md_to_docx(case_dir)
+            self.assertEqual(result.returncode, 0, msg=result.stderr)
+            self.assertTrue((case_dir / "opinion.docx").exists())
+
+    def test_unapproved_case_refuses_conversion(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = make_gated_case(Path(directory), "revision_needed")
+            result = run_md_to_docx(case_dir)
+            self.assertEqual(result.returncode, 3)
+            self.assertFalse((case_dir / "opinion.docx").exists())
+            self.assertIn("review_revision_needed", result.stderr)
+
+    def test_force_draft_renders_watermark(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = make_gated_case(Path(directory), "revision_needed")
+            result = run_md_to_docx(case_dir, "--force-draft")
+            self.assertEqual(result.returncode, 0, msg=result.stderr)
+            text = docx_text(case_dir / "opinion.docx")
+        self.assertIn("DRAFT", text)
+        self.assertIn("배포 금지", text)
+
+    def test_non_case_markdown_is_not_gated(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            md = Path(directory) / "opinion.md"  # events.jsonl 없음 → 게이트 비적용
+            md.write_text("# free\n", encoding="utf-8")
+            out = Path(directory) / "opinion.docx"
+            result = subprocess.run(
+                [sys.executable, str(MD_TO_DOCX_CLI), str(md), str(out)],
+                capture_output=True, text=True, check=False, cwd=REPO_ROOT,
+            )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
 
 
 if __name__ == "__main__":

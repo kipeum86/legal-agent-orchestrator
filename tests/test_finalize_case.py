@@ -12,6 +12,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 FINALIZE_CLI = REPO_ROOT / "scripts" / "finalize-case.py"
 MERGE_CLI = REPO_ROOT / "scripts" / "merge-sources.py"
+BIND_CLI = REPO_ROOT / "scripts" / "bind-review.py"
 FIXTURE = REPO_ROOT / "tests" / "fixtures" / "cases" / "pattern2-basic"
 
 
@@ -36,6 +37,14 @@ def run_finalize(case_dir: Path, *args: str, env: dict[str, str] | None = None) 
     )
 
 
+def run_bind(case_dir: Path) -> None:
+    result = subprocess.run(
+        [sys.executable, str(BIND_CLI), str(case_dir), "--no-event"],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0, result.stderr
+
+
 class FinalizeCaseTests(unittest.TestCase):
     def _revision_needed_case(self, directory: str) -> Path:
         case_dir = Path(directory) / "case"
@@ -46,6 +55,7 @@ class FinalizeCaseTests(unittest.TestCase):
         (case_dir / "review-meta.json").write_text(
             json.dumps(review_meta, ensure_ascii=False, indent=2) + "\n", encoding="utf-8",
         )
+        run_bind(case_dir)
         return case_dir
 
     def test_allow_unapproved_requires_override_reason(self) -> None:
@@ -100,6 +110,7 @@ class FinalizeCaseTests(unittest.TestCase):
                 text=True,
                 check=True,
             )
+            run_bind(case_dir)
 
             result = run_finalize(case_dir, "--summary", "승인된 최종 요약")
 
@@ -129,6 +140,7 @@ class FinalizeCaseTests(unittest.TestCase):
                 json.dumps(review_meta, ensure_ascii=False, indent=2) + "\n",
                 encoding="utf-8",
             )
+            run_bind(case_dir)
 
             result = run_finalize(case_dir)
             events = [
@@ -148,6 +160,7 @@ class FinalizeCaseTests(unittest.TestCase):
             case_dir = Path(directory) / "case"
             shutil.copytree(FIXTURE, case_dir)
             strip_final_output(case_dir)
+            run_bind(case_dir)
 
             result = run_finalize(case_dir, "--check-only")
             events = [
@@ -172,6 +185,7 @@ class FinalizeCaseTests(unittest.TestCase):
                 json.dumps(review_meta, ensure_ascii=False, indent=2) + "\n",
                 encoding="utf-8",
             )
+            run_bind(case_dir)
 
             result = run_finalize(case_dir, "--check-only")
             events = [
@@ -192,6 +206,7 @@ class FinalizeCaseTests(unittest.TestCase):
             strip_final_output(case_dir)
             (case_dir / "opinion.docx").write_bytes(b"not-a-zip")
             (case_dir / "opinion.md").write_text("# Opinion\n", encoding="utf-8")
+            run_bind(case_dir)
 
             result = run_finalize(case_dir)
 
@@ -222,6 +237,7 @@ class FinalizeCaseTests(unittest.TestCase):
                 + "\n",
                 encoding="utf-8",
             )
+            run_bind(case_dir)
 
             result = run_finalize(case_dir)
 

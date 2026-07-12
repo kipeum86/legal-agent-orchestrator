@@ -409,6 +409,12 @@ debate-opinion.md의 "## 7. 시니어 리뷰 의견" 섹션 placeholder를 2-3�
    }
 ```
 
+second-review-agent 호출이 완료된 직후 아래를 실행해 `debate-opinion.md`와 `debate-transcript.md`를 리뷰 판정에 바인딩한다:
+
+```bash
+python3 "$PROJECT_ROOT/scripts/bind-review.py" "$OUTPUT_DIR"
+```
+
 Revision cycle:
 - On `approved_with_revisions`, forward the comments to the writing-agent and request revisions to `debate-opinion.md`.
 - Repeat at most **2 cycles**.

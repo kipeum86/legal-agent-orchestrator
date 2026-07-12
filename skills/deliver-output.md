@@ -23,6 +23,14 @@ ls -la "$OUTPUT_DIR/"
 
 ## Step 2: Senior-review approval gate
 
+**Binding precondition:** second-review-agent 호출이 완료된 직후(승인 여부와 무관하게) 반드시 아래를 실행해 리뷰 시점의 파일 내용을 고정했어야 한다:
+
+```bash
+python3 "$PROJECT_ROOT/scripts/bind-review.py" "$OUTPUT_DIR"
+```
+
+`finalization-check.json`이 `missing_review_binding`이면 **지금 bind를 소급 실행하지 말 것** — 리뷰 이후 파일이 바뀌었을 가능성이 있으므로 second-review-agent 재리뷰부터 다시 수행한다. `stale_review_binding`이면 리뷰 이후 파일이 변경된 것이므로 동일하게 재리뷰한다.
+
 Before finalizing, check the review state deterministically.
 
 ```bash
@@ -40,6 +48,7 @@ Outcomes:
 When the senior review returns `revision_needed`:
 - Forward the review comments to legal-writing-agent and request revisions.
 - After revision, send the revised draft back to second-review-agent.
+- 재리뷰가 끝날 때마다 `bind-review.py`를 다시 실행해 binding을 갱신한다.
 - After at most 2 revision cycles, if the work is still not approved, report the unapproved state to the user.
 
 ---

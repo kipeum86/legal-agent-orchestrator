@@ -21,6 +21,8 @@ from scripts.lib.io_utils import parse_jsonl, read_json
 APPROVED_STATUSES = {"approved", "approved_with_revisions"}
 BLOCKING_STATUSES = {"revision_needed"}
 VALID_STATUSES = APPROVED_STATUSES | BLOCKING_STATUSES
+BINDING_FILENAME = "review-binding.json"
+BINDABLE_DELIVERABLES = ("opinion.md", "debate-opinion.md", "debate-transcript.md")
 
 
 @dataclass
@@ -55,6 +57,21 @@ def load_review_meta(case_dir: Path) -> tuple[dict[str, Any] | None, Path | None
     return None, None
 
 
+def _check_binding(case_dir: Path, review_path: Path | None) -> tuple[str | None, dict[str, Any]]:
+    binding = read_json(case_dir / BINDING_FILENAME)
+    if not isinstance(binding, dict):
+        return "missing_review_binding", {}
+    reviewed = binding.get("reviewed")
+    if not isinstance(reviewed, dict) or not reviewed:
+        return "missing_review_binding", {"note": "binding has no reviewed files"}
+    if review_path is None or sha256_file(review_path) != binding.get("review_meta_sha256"):
+        return "stale_review_binding", {"mismatch": "review-meta"}
+    for name, digest in reviewed.items():
+        if sha256_file(case_dir / str(name)) != digest:
+            return "stale_review_binding", {"mismatch": str(name)}
+    return None, {"binding_files": sorted(str(name) for name in reviewed)}
+
+
 def _check_verbatim(case_dir: Path) -> tuple[str | None, dict[str, Any]]:
     for event in reversed(parse_jsonl(case_dir / "events.jsonl")):
         if event.get("type") != "verbatim_verified":
@@ -82,6 +99,11 @@ def evaluate_gate(case_dir: Path) -> GateResult:
         return GateResult(False, 3, "review_revision_needed", approval, review_meta, review_path)
 
     detail: dict[str, Any] = {}
+    reason, binding_detail = _check_binding(case_dir, review_path)
+    detail.update(binding_detail)
+    if reason:
+        return GateResult(False, 3, reason, approval, review_meta, review_path, detail)
+
     reason, verbatim_detail = _check_verbatim(case_dir)
     detail.update(verbatim_detail)
     if reason:

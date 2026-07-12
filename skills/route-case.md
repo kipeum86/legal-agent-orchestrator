@@ -444,6 +444,7 @@ Event types added or extended in v2. This is the central reference maintained fo
 | `verbatim_verified` | P1 | `verifier`, **`passed` (bool, 필수)**, `cycle`, `critical_pass`, ... | 오케스트레이터 인용 원문 검증. 최신 이벤트의 `passed: false`는 finalize/DOCX 게이트를 차단한다. |
 | `docx_generated` | P1 | `tool`, `input`, `output`, `size_bytes`, ... | Result of `md-to-docx.py` |
 | `gate_override` | **v3** | `override`, `reason_text`, `approval`, `gate_reason` | finalize 게이트를 명시적 지시로 우회한 사실의 감사 기록 |
+| `review_bound` | **v3** | `review_meta`, `approval`, `files[]` | 리뷰 판정과 산출물 해시의 바인딩 생성 |
 | `final_output` | P1 | `case_id`, `primary_deliverable`, `deliverables[]`, `summary` | Pipeline complete |
 | `pipeline_aborted` | **v2** | `reason`, `last_completed_step`, `recovery` | Unrecoverable abort |
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -12,9 +13,9 @@ sys.path.insert(0, str(REPO_ROOT))
 from scripts.lib.review_gate import evaluate_gate  # noqa: E402
 
 
-def write_review_meta(case_dir: Path, approval: str) -> None:
+def write_review_meta(case_dir: Path, approval: str, summary: str = "s") -> None:
     (case_dir / "review-meta.json").write_text(
-        json.dumps({"approval": approval, "summary": "s", "comments": [], "error": None},
+        json.dumps({"approval": approval, "summary": summary, "comments": [], "error": None},
                    ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
@@ -28,6 +29,14 @@ def append_event_line(case_dir: Path, event_type: str, data: dict) -> None:
     )
     with (case_dir / "events.jsonl").open("a", encoding="utf-8") as handle:
         handle.write(line + "\n")
+
+
+def bind(case_dir: Path) -> None:
+    result = subprocess.run(
+        [sys.executable, str(REPO_ROOT / "scripts" / "bind-review.py"), str(case_dir), "--no-event"],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 class EvaluateGateTests(unittest.TestCase):
@@ -65,6 +74,7 @@ class EvaluateGateTests(unittest.TestCase):
         holder, case_dir = self.make_case()
         with holder:
             write_review_meta(case_dir, "approved")
+            bind(case_dir)
             gate = evaluate_gate(case_dir)
         self.assertTrue(gate.ok)
         self.assertEqual(gate.exit_code, 0)
@@ -75,6 +85,7 @@ class EvaluateGateTests(unittest.TestCase):
         holder, case_dir = self.make_case()
         with holder:
             write_review_meta(case_dir, "approved")
+            bind(case_dir)
             append_event_line(case_dir, "verbatim_verified", {"verifier": "orchestrator", "passed": False})
             gate = evaluate_gate(case_dir)
         self.assertEqual((gate.ok, gate.exit_code, gate.reason), (False, 3, "verbatim_verification_failed"))
@@ -83,6 +94,7 @@ class EvaluateGateTests(unittest.TestCase):
         holder, case_dir = self.make_case()
         with holder:
             write_review_meta(case_dir, "approved")
+            bind(case_dir)
             append_event_line(case_dir, "verbatim_verified", {"verifier": "orchestrator", "passed": True})
             gate = evaluate_gate(case_dir)
         self.assertTrue(gate.ok)
@@ -91,6 +103,7 @@ class EvaluateGateTests(unittest.TestCase):
         holder, case_dir = self.make_case()
         with holder:
             write_review_meta(case_dir, "approved")
+            bind(case_dir)
             append_event_line(case_dir, "verbatim_verified", {"verifier": "orchestrator", "critical_pass": 2})
             gate = evaluate_gate(case_dir)
         self.assertTrue(gate.ok)
@@ -100,10 +113,37 @@ class EvaluateGateTests(unittest.TestCase):
         holder, case_dir = self.make_case()
         with holder:
             write_review_meta(case_dir, "approved")
+            bind(case_dir)
             append_event_line(case_dir, "verbatim_verified", {"passed": False})
             append_event_line(case_dir, "verbatim_verified", {"passed": True})
             gate = evaluate_gate(case_dir)
         self.assertTrue(gate.ok)
+
+    def test_missing_binding_blocks(self) -> None:
+        holder, case_dir = self.make_case()
+        with holder:
+            write_review_meta(case_dir, "approved")
+            gate = evaluate_gate(case_dir)
+        self.assertEqual((gate.ok, gate.exit_code, gate.reason), (False, 3, "missing_review_binding"))
+
+    def test_editing_opinion_after_bind_blocks(self) -> None:
+        holder, case_dir = self.make_case()
+        with holder:
+            write_review_meta(case_dir, "approved")
+            bind(case_dir)
+            (case_dir / "opinion.md").write_text("# 몰래 수정\n", encoding="utf-8")
+            gate = evaluate_gate(case_dir)
+        self.assertEqual((gate.ok, gate.reason), (False, "stale_review_binding"))
+        self.assertEqual(gate.detail["mismatch"], "opinion.md")
+
+    def test_editing_review_meta_after_bind_blocks(self) -> None:
+        holder, case_dir = self.make_case()
+        with holder:
+            write_review_meta(case_dir, "approved")
+            bind(case_dir)
+            write_review_meta(case_dir, "approved", summary="edited")
+            gate = evaluate_gate(case_dir)
+        self.assertEqual((gate.ok, gate.reason), (False, "stale_review_binding"))
 
 
 if __name__ == "__main__":

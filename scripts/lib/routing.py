@@ -8,7 +8,8 @@ TASKS = {"research", "drafting", "contract_review", "translation", "debate", "br
 COMPLEXITIES = {"simple", "compound", "multi_domain", "adversarial"}
 DATA_PROTECTION_AGENT = "data-protection-agent"
 LEGAL_RESEARCH_AGENT = "legal-research-agent"
-DATA_PROTECTION_JURISDICTIONS = {"KR", "EU", "US", "US-CA", "California"}
+DATA_PROTECTION_JURISDICTIONS = {"KR", "EU", "US", "US-CA"}
+JURISDICTION_ALIASES = {"California": "US-CA"}
 RETIRED_AGENT_IDS = frozenset({
     "contract-review-agent",
     "general-legal-research",
@@ -33,6 +34,21 @@ def derive_research_mode(domains: list[str]) -> str:
     if domain_set.issubset({"general"}) or "general" in domain_set:
         return "general"
     return "fallback"
+
+
+def normalize_jurisdiction(value: Any) -> str:
+    """Return the canonical jurisdiction token without collapsing legal scope."""
+    token = str(value or "").strip()
+    return JURISDICTION_ALIASES.get(token, token)
+
+
+def jurisdictions_compatible(declared: Any, source: Any) -> bool:
+    """Whether a cited source jurisdiction fits a declared case jurisdiction."""
+    declared_token = normalize_jurisdiction(declared)
+    source_token = normalize_jurisdiction(source)
+    if declared_token == source_token:
+        return True
+    return {declared_token, source_token} == {"US", "US-CA"}
 
 
 def _split_token(value: Any) -> list[str]:
@@ -62,7 +78,10 @@ def _dedupe(values: list[str]) -> list[str]:
 
 
 def normalize_classification(raw: dict[str, Any]) -> dict[str, Any]:
-    jurisdictions = _dedupe(_split_token(raw.get("jurisdictions", raw.get("jurisdiction"))))
+    jurisdictions = _dedupe([
+        normalize_jurisdiction(value)
+        for value in _split_token(raw.get("jurisdictions", raw.get("jurisdiction")))
+    ])
     domains = _dedupe(_split_token(raw.get("domains", raw.get("domain")))) or ["general"]
     tasks = _dedupe(_split_token(raw.get("tasks", raw.get("task")))) or ["research"]
 

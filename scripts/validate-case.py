@@ -15,6 +15,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from scripts.lib.io_utils import parse_jsonl_strict, read_json  # noqa: E402
+from scripts.lib.routing import jurisdictions_compatible, normalize_jurisdiction  # noqa: E402
 
 GRADES = {"A", "B", "C", "D"}
 REVIEW_APPROVALS = {"approved", "approved_with_revisions", "revision_needed"}
@@ -189,8 +190,11 @@ def validate_case(case_dir: Path) -> dict[str, list[str]]:
 
     classification = read_json(case_dir / "classification.json")
     if isinstance(classification, dict):
-        declared = {str(j) for j in classification.get("jurisdictions") or [] if str(j).strip()}
-        declared = {"US-CA" if j == "California" else j for j in declared}
+        declared = {
+            normalize_jurisdiction(j)
+            for j in classification.get("jurisdictions") or []
+            if normalize_jurisdiction(j)
+        }
         if declared and not declared & {"multi", "other"}:
             allowed = declared | {"international"}
             for meta_path in sorted(case_dir.glob("*-meta.json")):
@@ -203,10 +207,13 @@ def validate_case(case_dir: Path) -> dict[str, list[str]]:
                 for index, source in enumerate(sources, start=1):
                     if not isinstance(source, dict):
                         continue
-                    jurisdiction = str(source.get("jurisdiction") or "").strip()
-                    jurisdiction = "US-CA" if jurisdiction == "California" else jurisdiction
-                    if jurisdiction and jurisdiction not in allowed:
-                        errors.append(
+                    jurisdiction = normalize_jurisdiction(source.get("jurisdiction"))
+                    compatible = any(
+                        jurisdictions_compatible(declared_jurisdiction, jurisdiction)
+                        for declared_jurisdiction in allowed
+                    )
+                    if jurisdiction and not compatible:
+                        warnings.append(
                             f"{meta_path.name}: sources[{index}] jurisdiction_mismatch: "
                             f"{jurisdiction} not in classification {sorted(allowed)}"
                         )

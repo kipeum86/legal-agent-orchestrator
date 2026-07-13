@@ -30,7 +30,7 @@ EVENT_ALIASES = {
 
 STATUS_META = {
     "approved": "✓ 승인",
-    "approved_with_revisions": "✓ 수정 후 승인",
+    "approved_with_revisions": "⏸ 수정 후 재리뷰 대기",
     "revision_needed": "↻ 수정 필요",
     "partial": "◐ 부분 완료",
     "failed": "✕ 실패",
@@ -964,6 +964,7 @@ def generate_case_report(case_dir: Path) -> tuple[Path | None, list[str]]:
     writing_meta = meta_bundle.get("legal-writing-agent")
     review_meta = meta_bundle.get("second-review-agent")
     sources_json = read_json(case_dir / "sources.json")
+    validation_json = read_json(case_dir / "case-validation.json")
 
     final_output_event = next((event for event in reversed(events) if event.get("type") == "final_output"), None)
     final_output = final_output_event.get("data") if isinstance(final_output_event, dict) else None
@@ -1052,6 +1053,20 @@ def generate_case_report(case_dir: Path) -> tuple[Path | None, list[str]]:
             report_lines.append(f"{index}. {finding}")
     else:
         report_lines.append("1. 핵심 발견이 별도로 기록되지 않았습니다.")
+
+    raw_validation_warnings = (
+        validation_json.get("warnings")
+        if isinstance(validation_json, dict) and isinstance(validation_json.get("warnings"), list)
+        else []
+    )
+    validation_warnings = [
+        warning.strip()
+        for warning in raw_validation_warnings
+        if isinstance(warning, str) and warning.strip()
+    ]
+    if validation_warnings:
+        report_lines.extend(["", "## 검증 경고", ""])
+        report_lines.extend(f"- {warning}" for warning in validation_warnings)
 
     report_lines.extend(
         [

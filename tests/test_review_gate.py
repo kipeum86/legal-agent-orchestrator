@@ -133,6 +133,15 @@ class EvaluateGateTests(unittest.TestCase):
             gate = evaluate_gate(case_dir)
         self.assertTrue(gate.ok)
 
+    def test_mcp_fallback_verification_failed_blocks(self) -> None:
+        holder, case_dir = self.make_case()
+        with holder:
+            write_review_meta(case_dir, "approved")
+            bind(case_dir)
+            append_event_line(case_dir, "mcp_fallback_verification", {"passed": False})
+            gate = evaluate_gate(case_dir)
+        self.assertEqual((gate.ok, gate.exit_code, gate.reason), (False, 3, "verbatim_verification_failed"))
+
     def test_missing_binding_blocks(self) -> None:
         holder, case_dir = self.make_case()
         with holder:
@@ -149,6 +158,18 @@ class EvaluateGateTests(unittest.TestCase):
             gate = evaluate_gate(case_dir)
         self.assertEqual((gate.ok, gate.reason), (False, "stale_review_binding"))
         self.assertEqual(gate.detail["mismatch"], "opinion.md")
+
+    def test_adding_bindable_deliverable_after_bind_blocks(self) -> None:
+        holder, case_dir = self.make_case()
+        with holder:
+            write_review_meta(case_dir, "approved")
+            bind(case_dir)
+            (case_dir / "debate-opinion.md").write_text("# unreviewed addition\n", encoding="utf-8")
+            gate = evaluate_gate(case_dir)
+        self.assertEqual((gate.ok, gate.reason), (False, "stale_review_binding"))
+        self.assertEqual(gate.detail["mismatch"], "reviewed_files")
+        self.assertEqual(gate.detail["bound_files"], ["opinion.md"])
+        self.assertEqual(gate.detail["current_files"], ["debate-opinion.md", "opinion.md"])
 
     def test_editing_review_meta_after_bind_blocks(self) -> None:
         holder, case_dir = self.make_case()

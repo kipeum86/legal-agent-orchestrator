@@ -14,6 +14,8 @@ sys.path.insert(0, str(REPO_ROOT))
 from scripts.lib.routing import (  # noqa: E402
     RETIRED_AGENT_IDS,
     derive_research_mode,
+    jurisdictions_compatible,
+    normalize_jurisdiction,
     normalize_classification,
     select_route,
 )
@@ -77,6 +79,18 @@ class RoutingTests(unittest.TestCase):
         route = select_route(normalized)
         self.assertEqual(route["route_mode"], "multi_jurisdiction_data")
         self.assertIn("data-protection-agent", route["pipeline"])
+
+    def test_california_alias_normalizes_to_us_ca(self) -> None:
+        normalized = normalize_classification(
+            {"jurisdictions": ["California"], "domains": ["data_protection"], "tasks": ["research"]}
+        )
+        self.assertEqual(normalized["jurisdictions"], ["US-CA"])
+        self.assertEqual(normalize_jurisdiction("California"), "US-CA")
+
+    def test_us_and_us_ca_are_compatible_without_collapsing_values(self) -> None:
+        self.assertTrue(jurisdictions_compatible("US", "US-CA"))
+        self.assertTrue(jurisdictions_compatible("US-CA", "US"))
+        self.assertFalse(jurisdictions_compatible("KR", "JP"))
 
     def test_contract_domain_returns_out_of_scope(self) -> None:
         route = select_route(

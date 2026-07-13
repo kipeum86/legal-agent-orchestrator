@@ -99,10 +99,27 @@ def detect_deliverables(case_dir: Path) -> list[Path]:
     return deliverables
 
 
+PRIMARY_DELIVERABLE_BASENAMES = {
+    "opinion.docx",
+    "opinion.md",
+    "debate-opinion.docx",
+    "debate-opinion.md",
+}
+
+
 def choose_primary(case_dir: Path, explicit_path: str | None) -> Path | None:
     if explicit_path:
         path = Path(explicit_path).expanduser()
-        return path if path.is_absolute() else (case_dir / path)
+        path = path if path.is_absolute() else (case_dir / path)
+        resolved = path.resolve()
+        if (
+            resolved.parent != case_dir.resolve()
+            or resolved.name not in PRIMARY_DELIVERABLE_BASENAMES
+            or not resolved.exists()
+            or (resolved.suffix == ".docx" and not zipfile.is_zipfile(resolved))
+        ):
+            raise ValueError("invalid_primary_deliverable")
+        return resolved
     for path in detect_deliverables(case_dir):
         if path.name in {"sources.json", "case-report.md", "debate-transcript.md", "debate-transcript.docx"}:
             continue
@@ -179,7 +196,21 @@ def finalize_case(
                 report["approval"] = approval
             return gate.exit_code, report
 
-    primary = choose_primary(case_dir, primary_deliverable)
+    if primary_deliverable and Path(primary_deliverable).name.lower().endswith(".draft.docx"):
+        return 2, {
+            "status": "aborted",
+            "reason": "draft_primary_deliverable",
+            "approval": approval,
+        }
+
+    try:
+        primary = choose_primary(case_dir, primary_deliverable)
+    except ValueError:
+        return 2, {
+            "status": "aborted",
+            "reason": "invalid_primary_deliverable",
+            "approval": approval,
+        }
     final_data = build_final_data(
         case_dir,
         review_meta,
@@ -194,7 +225,11 @@ def finalize_case(
     if check_only:
         return 0, {"status": "ready", "approval": approval, "would_write": final_data}
 
-    if not gate.ok and allow_unapproved and not check_only:
+    existing = existing_final_output(case_dir)
+    if existing is not None:
+        return 0, {"status": "already_finalized", "approval": approval, "final_output": existing}
+
+    if not gate.ok and allow_unapproved:
         append_event(
             case_dir / "events.jsonl",
             agent="orchestrator",
@@ -206,10 +241,6 @@ def finalize_case(
                 "gate_reason": gate.reason,
             },
         )
-
-    existing = existing_final_output(case_dir)
-    if existing is not None:
-        return 0, {"status": "already_finalized", "approval": approval, "final_output": existing}
 
     event = append_event(
         case_dir / "events.jsonl",

@@ -253,6 +253,8 @@ def check_review_binding_gate() -> CheckResult:
             (exists("scripts/lib/review_gate.py"), "review_gate module exists"),
             (has("scripts/lib/review_gate.py", "stale_review_binding"), "gate detects stale bindings"),
             (has("skills/deliver-output.md", "bind-review.py"), "deliver-output requires binding"),
+            (has("skills/route-case.md", "소급 바인딩하지 않는다"), "Pattern 1 binds immediately after review"),
+            (has("CLAUDE.md", "Final Delivery까지 미루거나"), "Pattern 2 binds immediately after review"),
             (has("tests/test_review_gate.py", "test_editing_opinion_after_bind_blocks"), "stale binding is tested"),
         ],
     )
@@ -282,6 +284,8 @@ def check_reproducibility_and_override_audit() -> CheckResult:
             (has("scripts/finalize-case.py", "LEGAL_ORCHESTRATOR_ALLOW_UNAPPROVED"), "override needs env token"),
             (has("scripts/finalize-case.py", "gate_override"), "override logs gate_override event"),
             (has("scripts/md-to-docx.py", "enforce_release_gate"), "docx converter enforces the gate"),
+            (has("scripts/md-to-docx.py", "draft_rendered"), "draft override writes an audit event"),
+            (has("skills/deliver-output.md", "if ! python3"), "DOCX loop stops before logging on failure"),
         ],
     )
 

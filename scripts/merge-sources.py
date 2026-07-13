@@ -16,6 +16,12 @@ from scripts.lib.io_utils import parse_jsonl  # noqa: E402
 from scripts.lib.review_gate import CITATION_STATUSES, load_review_meta  # noqa: E402
 
 GRADES = ("A", "B", "C", "D")
+VERIFICATION_STATUS_PRIORITY = {
+    "verified": 0,
+    "not_checked": 1,
+    "unverified": 2,
+    "nonexistent": 3,
+}
 
 
 def read_existing_json(path: Path) -> tuple[Any | None, str | None]:
@@ -34,6 +40,17 @@ def normalize_grade(value: Any) -> str:
 
 def normalize_key(title: str, citation: str) -> tuple[str, str]:
     return (" ".join(title.split()).casefold(), " ".join(citation.split()).casefold())
+
+
+def worst_verification_status(*statuses: str | None) -> str | None:
+    valid = [status for status in statuses if status in VERIFICATION_STATUS_PRIORITY]
+    if not valid:
+        return None
+    return max(valid, key=VERIFICATION_STATUS_PRIORITY.__getitem__)
+
+
+def remember_worst(mapping: dict[Any, str], key: Any, status: str) -> None:
+    mapping[key] = worst_verification_status(mapping.get(key), status) or status
 
 
 def merge_sources(case_dir: Path) -> dict[str, Any]:
@@ -83,20 +100,25 @@ def merge_sources(case_dir: Path) -> dict[str, Any]:
         add_source(agent_id, data)
 
     review_meta, _ = load_review_meta(case_dir)
-    verification_by_id: dict[str, str] = {}
-    verification_by_citation: dict[str, str] = {}
+    verification_by_agent_id: dict[tuple[str, str], str] = {}
+    verification_by_agent_citation: dict[tuple[str, str], str] = {}
+    legacy_verification_by_citation: dict[str, str] = {}
     raw_entries = review_meta.get("citation_verification") if isinstance(review_meta, dict) else None
     entries = [entry for entry in raw_entries if isinstance(entry, dict)] if isinstance(raw_entries, list) else []
     for entry in entries:
         status = str(entry.get("status") or "").strip().lower()
         if status not in CITATION_STATUSES:
             continue
+        agent_id = str(entry.get("agent_id") or "").strip()
         source_id = str(entry.get("source_id") or "").strip()
         citation_key = " ".join(str(entry.get("citation") or "").split()).casefold()
-        if source_id:
-            verification_by_id.setdefault(source_id, status)
-        if citation_key:
-            verification_by_citation.setdefault(citation_key, status)
+        if agent_id:
+            if source_id:
+                remember_worst(verification_by_agent_id, (agent_id, source_id), status)
+            elif citation_key:
+                remember_worst(verification_by_agent_citation, (agent_id, citation_key), status)
+        elif citation_key:
+            remember_worst(legacy_verification_by_citation, citation_key, status)
 
     agents_payload = []
     grade_distribution = {grade: 0 for grade in GRADES}
@@ -114,11 +136,11 @@ def merge_sources(case_dir: Path) -> dict[str, Any]:
             grade_distribution[source["grade"]] += 1
             source_id = str(source.get("id") or "").strip()
             citation_key = " ".join(str(source.get("citation") or "").split()).casefold()
-            source["verification_status"] = (
-                verification_by_id.get(source_id)
-                or verification_by_citation.get(citation_key)
-                or "not_checked"
-            )
+            source["verification_status"] = worst_verification_status(
+                verification_by_agent_id.get((agent_id, source_id)) if source_id else None,
+                verification_by_agent_citation.get((agent_id, citation_key)) if citation_key else None,
+                legacy_verification_by_citation.get(citation_key) if citation_key else None,
+            ) or "not_checked"
         total_sources += len(sources)
         agents_payload.append(
             {

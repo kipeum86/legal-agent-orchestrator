@@ -389,6 +389,7 @@ Review prompt template:
 - 불확실하면 verified가 아니라 unverified로 기록하세요. nonexistent 또는 unverified가 1건이라도
   있으면 오케스트레이터 게이트가 배포를 차단하고 revision 사이클로 되돌립니다.
 - citation_verification 필드 자체가 없으면 배포가 차단됩니다. 인용이 없는 문서는 빈 배열 []을 기록하세요.
+- 각 항목에는 인용을 최초 제공한 agent_id를 반드시 기록하세요. 원본 meta에 source_id가 있으면 함께 기록하세요. source_id는 에이전트별 로컬 값이므로 agent_id 없이 사용하지 마세요.
 
 [시니어 리뷰 의견 삽입]
 debate-opinion.md의 "## 7. 시니어 리뷰 의견" 섹션 placeholder를 2-3문단의 시니어 리뷰 소견으로 교체하세요.
@@ -415,6 +416,7 @@ debate-opinion.md의 "## 7. 시니어 리뷰 의견" 섹션 placeholder를 2-3�
      ],
      "citation_verification": [
        {
+         "agent_id": "AGENT_ID",
          "source_id": "src_001",
          "citation": "개인정보 보호법 제28조의2",
          "status": "verified|nonexistent|unverified|not_checked",
@@ -478,8 +480,10 @@ MCP fallback verification event:
 python3 "$PROJECT_ROOT/scripts/log-event.py" "$OUTPUT_DIR/events.jsonl" \
   --agent orchestrator \
   --type mcp_fallback_verification \
-  --data-json '{"trigger":"rate_limit","agent_id":"AGENT_ID","verified_claims":["claim1","claim2"],"method":"orchestrator_direct_mcp_verification"}'
+  --data-json '{"trigger":"rate_limit","agent_id":"AGENT_ID","verified_claims":["claim1","claim2"],"method":"orchestrator_direct_mcp_verification","passed":true}'
 ```
+
+검증한 핵심 주장이 모두 원문과 일치할 때만 `passed: true`를 기록한다. 하나라도 실패하거나 확인하지 못하면 `passed: false`로 기록하며 release gate가 배포를 차단한다.
 
 Disclosure to inject into the verdict prompt on rate-limit fallback:
 ```text

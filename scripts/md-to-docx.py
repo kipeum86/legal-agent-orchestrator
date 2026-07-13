@@ -31,7 +31,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from scripts.lib.review_gate import evaluate_gate  # noqa: E402
+from scripts.lib.events import append_event  # noqa: E402
+from scripts.lib.review_gate import BINDABLE_DELIVERABLES, evaluate_gate  # noqa: E402
 
 from docx import Document
 from docx.enum.table import WD_TABLE_ALIGNMENT
@@ -44,7 +45,6 @@ ASCII_FONT = "Times New Roman"
 CJK_FONT = "맑은 고딕"
 BODY_SIZE_PT = 11
 HEADING_SIZE = {1: 18, 2: 15, 3: 13, 4: 12, 5: 11.5}
-GATED_BASENAMES = {"opinion.md", "debate-opinion.md", "debate-transcript.md"}
 DRAFT_BANNER = "DRAFT — 미승인 검토본 · 시니어 리뷰 게이트 미통과 · 배포 금지"
 
 
@@ -76,6 +76,13 @@ def _is_relative_to(path: Path, root: Path) -> bool:
         return False
 
 
+def _find_case_dir(md_path: Path) -> Path | None:
+    for directory in (md_path.parent, *md_path.parent.parents):
+        if (directory / "events.jsonl").exists():
+            return directory
+    return None
+
+
 def _resolve_output_docx_path(raw_arg: str, project_root: Path, case_dir: Path) -> Path:
     path = Path(raw_arg).expanduser()
     case_root = case_dir.resolve()
@@ -91,26 +98,37 @@ def _resolve_output_docx_path(raw_arg: str, project_root: Path, case_dir: Path) 
     return resolved
 
 
-def enforce_release_gate(md_path: Path, *, force_draft: bool) -> tuple[int | None, bool]:
-    """Return (exit_code_or_None, render_draft_banner)."""
-    case_dir = md_path.parent
-    if md_path.name not in GATED_BASENAMES or not (case_dir / "events.jsonl").exists():
-        return None, False
+def enforce_release_gate(md_path: Path, *, force_draft: bool) -> tuple[int | None, str | None]:
+    """Return (exit_code_or_None, draft_gate_reason_or_None)."""
+    case_dir = _find_case_dir(md_path)
+    if md_path.suffix.lower() != ".md" or case_dir is None:
+        return None, None
+    if md_path.parent != case_dir or md_path.name not in BINDABLE_DELIVERABLES:
+        print(
+            f"md-to-docx: unbound case markdown {md_path.name}; refusing to render. "
+            f"Use one of: {', '.join(BINDABLE_DELIVERABLES)}.",
+            file=sys.stderr,
+        )
+        return 3, None
     gate = evaluate_gate(case_dir)
     if gate.ok:
-        return None, False
-    if force_draft:
+        return None, None
+    if force_draft and gate.exit_code == 3:
         print(
             f"md-to-docx: release gate blocked ({gate.reason}); rendering DRAFT watermark",
             file=sys.stderr,
         )
-        return None, True
+        return None, gate.reason or "review_gate_blocked"
+    if gate.exit_code == 3:
+        recovery = "Fix the review state or pass --force-draft for a watermarked draft."
+    else:
+        recovery = "Repair the review metadata or binding before rendering."
     print(
         f"md-to-docx: release gate blocked ({gate.reason}); refusing to render {md_path.name}. "
-        "Fix the review state or pass --force-draft for a watermarked draft.",
+        f"{recovery}",
         file=sys.stderr,
     )
-    return 3, False
+    return gate.exit_code, None
 
 
 def set_run_font(run, size_pt: float = BODY_SIZE_PT, bold: bool = False, italic: bool = False, mono: bool = False) -> None:
@@ -453,7 +471,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--force-draft",
         action="store_true",
-        help="Render even when the release gate is blocked, with a DRAFT watermark banner.",
+        help="For exit-3 review blocks only: render a watermarked *.DRAFT.docx and log draft_rendered.",
     )
     args = parser.parse_args(argv)
     project_root = Path.cwd().resolve()
@@ -466,11 +484,30 @@ def main(argv: list[str] | None = None) -> int:
     if not md.exists():
         print(f"Input not found: {md}", file=sys.stderr)
         return 1
-    gate_exit, draft_banner = enforce_release_gate(md, force_draft=args.force_draft)
+    gate_exit, draft_reason = enforce_release_gate(md, force_draft=args.force_draft)
     if gate_exit is not None:
         return gate_exit
+    draft_banner = draft_reason is not None
+    if draft_banner:
+        docx = docx.with_name(f"{md.stem}.DRAFT.docx")
     convert(md, docx, preserve_escaped_text=args.preserve_escaped_text, draft_banner=draft_banner)
     size = docx.stat().st_size
+    if draft_reason is not None:
+        try:
+            append_event(
+                md.parent / "events.jsonl",
+                agent="orchestrator",
+                event_type="draft_rendered",
+                data={
+                    "input": md.name,
+                    "output": docx.relative_to(md.parent).as_posix(),
+                    "gate_reason": draft_reason,
+                    "size_bytes": size,
+                },
+            )
+        except Exception:
+            docx.unlink(missing_ok=True)
+            raise
     print(f"Saved {docx} ({size:,} bytes)")
     return 0
 

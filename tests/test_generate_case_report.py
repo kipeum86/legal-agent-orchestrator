@@ -85,6 +85,53 @@ class GenerateCaseReportTests(unittest.TestCase):
             self.assertEqual(report_result.returncode, 0, msg=report_result.stderr)
             self.assertTrue((case_dir / "case-report.md").exists())
 
+    def test_approved_with_revisions_is_rendered_as_pending_rereview(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = Path(directory) / "case"
+            shutil.copytree(FIXTURE, case_dir)
+            review_path = case_dir / "review-meta.json"
+            review_meta = json.loads(review_path.read_text(encoding="utf-8"))
+            review_meta["approval"] = "approved_with_revisions"
+            review_path.write_text(
+                json.dumps(review_meta, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
+            report_result = subprocess.run(
+                [sys.executable, str(REPORT_CLI), str(case_dir)],
+                capture_output=True, text=True, check=False,
+            )
+            self.assertEqual(report_result.returncode, 0, msg=report_result.stderr)
+            report = (case_dir / "case-report.md").read_text(encoding="utf-8")
+
+        self.assertIn("- 상태: ⏸ 수정 후 재리뷰 대기", report)
+        self.assertIn("- 판정: ⏸ 수정 후 재리뷰 대기", report)
+        self.assertNotIn("✓ 수정 후 승인", report)
+
+    def test_case_validation_warnings_are_rendered(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = Path(directory) / "case"
+            shutil.copytree(FIXTURE, case_dir)
+            warning = (
+                "legal-research-agent-meta.json: sources[1] jurisdiction_mismatch: "
+                "JP not in classification ['KR']"
+            )
+            (case_dir / "case-validation.json").write_text(
+                json.dumps({"errors": [], "warnings": [warning]}, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
+            report_result = subprocess.run(
+                [sys.executable, str(REPORT_CLI), str(case_dir)],
+                capture_output=True, text=True, check=False,
+            )
+            self.assertEqual(report_result.returncode, 0, msg=report_result.stderr)
+            report = (case_dir / "case-report.md").read_text(encoding="utf-8")
+
+        self.assertIn("## 검증 경고", report)
+        self.assertIn("jurisdiction_mismatch", report)
+        self.assertIn("JP not in classification", report)
+
     def test_meta_bundle_skips_debate_round_meta_files(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             case_dir = Path(directory) / "case"

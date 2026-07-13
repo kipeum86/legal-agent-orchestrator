@@ -30,6 +30,7 @@
 - 불확실하면 verified가 아니라 unverified로 기록하세요. nonexistent 또는 unverified가 1건이라도
   있으면 오케스트레이터 게이트가 배포를 차단하고 revision 사이클로 되돌립니다.
 - citation_verification 필드 자체가 없으면 배포가 차단됩니다. 인용이 없는 문서는 빈 배열 []을 기록하세요.
+- 각 항목에는 인용을 최초 제공한 agent_id를 반드시 기록하세요. 원본 meta에 source_id가 있으면 함께 기록하세요. source_id는 에이전트별 로컬 값이므로 agent_id 없이 사용하지 마세요.
 
 검토 완료:
 1. 검토 결과 → {OUTPUT_DIR}/review-result.md
@@ -49,6 +50,7 @@
      ],
      "citation_verification": [
        {
+         "agent_id": "legal-research-agent",
          "source_id": "src_001",
          "citation": "개인정보 보호법 제28조의2",
          "status": "verified|nonexistent|unverified|not_checked",

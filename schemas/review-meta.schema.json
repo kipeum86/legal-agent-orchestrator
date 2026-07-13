@@ -29,6 +29,7 @@
         "type": "object",
         "required": ["citation", "status"],
         "properties": {
+          "agent_id": { "type": "string" },
           "source_id": { "type": "string" },
           "citation": { "type": "string" },
           "status": { "enum": ["verified", "nonexistent", "unverified", "not_checked"] },

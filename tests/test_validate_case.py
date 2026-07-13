@@ -220,13 +220,14 @@ class ValidateCaseTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("invalid grade", result.stderr)
 
-    def test_source_jurisdiction_mismatch_is_error(self) -> None:
+    def test_source_jurisdiction_mismatch_is_warning(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             case_dir = Path(directory)
             self._write_jurisdiction_case(case_dir, ["US"], "KR")
             result = run_validate(case_dir, "strict")
-        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
         self.assertIn("jurisdiction_mismatch", result.stderr)
+        self.assertIn("[warn]", result.stderr)
 
     def test_source_jurisdiction_matching_classification_passes(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -242,6 +243,24 @@ class ValidateCaseTests(unittest.TestCase):
             self._write_jurisdiction_case(case_dir, None, None)
             result = run_validate(case_dir, "strict")
         self.assertEqual(result.returncode, 0, msg=result.stderr)
+
+    def test_us_and_us_ca_sources_are_compatible_both_directions(self) -> None:
+        for declared, source in ((["US"], "US-CA"), (["US-CA"], "US"), (["California"], "US")):
+            with self.subTest(declared=declared, source=source):
+                with tempfile.TemporaryDirectory() as directory:
+                    case_dir = Path(directory)
+                    self._write_jurisdiction_case(case_dir, declared, source)
+                    result = run_validate(case_dir, "strict")
+                self.assertEqual(result.returncode, 0, msg=result.stderr)
+                self.assertNotIn("jurisdiction_mismatch", result.stderr)
+
+    def test_international_source_is_allowed_for_specific_classification(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = Path(directory)
+            self._write_jurisdiction_case(case_dir, ["KR"], "international")
+            result = run_validate(case_dir, "strict")
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertNotIn("jurisdiction_mismatch", result.stderr)
 
 
 if __name__ == "__main__":

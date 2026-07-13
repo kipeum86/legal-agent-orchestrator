@@ -69,6 +69,18 @@ def _check_binding(case_dir: Path, review_path: Path | None) -> tuple[str | None
         return "missing_review_binding", {"note": "binding has no reviewed files"}
     if review_path is None or sha256_file(review_path) != binding.get("review_meta_sha256"):
         return "stale_review_binding", {"mismatch": "review-meta"}
+    bound_files = {str(name) for name in reviewed}
+    current_files = {
+        name
+        for name in BINDABLE_DELIVERABLES
+        if (case_dir / name).is_file()
+    }
+    if bound_files != current_files:
+        return "stale_review_binding", {
+            "mismatch": "reviewed_files",
+            "bound_files": sorted(bound_files),
+            "current_files": sorted(current_files),
+        }
     for name, digest in reviewed.items():
         if sha256_file(case_dir / str(name)) != digest:
             return "stale_review_binding", {"mismatch": str(name)}
@@ -77,7 +89,7 @@ def _check_binding(case_dir: Path, review_path: Path | None) -> tuple[str | None
 
 def _check_verbatim(case_dir: Path) -> tuple[str | None, dict[str, Any]]:
     for event in reversed(parse_jsonl(case_dir / "events.jsonl")):
-        if event.get("type") != "verbatim_verified":
+        if event.get("type") not in {"verbatim_verified", "mcp_fallback_verification"}:
             continue
         data = event.get("data") if isinstance(event.get("data"), dict) else {}
         passed = data.get("passed")

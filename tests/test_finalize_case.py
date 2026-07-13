@@ -99,6 +99,24 @@ class FinalizeCaseTests(unittest.TestCase):
         final = [e for e in events if e.get("type") == "final_output"]
         self.assertEqual(final[0]["data"]["status"], "not_approved")
 
+    def test_repeat_allow_unapproved_does_not_duplicate_gate_override(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = self._revision_needed_case(directory)
+            args = ("--allow-unapproved", "--override-reason", "사용자 명시 지시")
+            env = {"LEGAL_ORCHESTRATOR_ALLOW_UNAPPROVED": "1"}
+            first = run_finalize(case_dir, *args, env=env)
+            second = run_finalize(case_dir, *args, env=env)
+            events = [
+                json.loads(line)
+                for line in (case_dir / "events.jsonl").read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+
+        self.assertEqual(first.returncode, 0, msg=first.stderr)
+        self.assertEqual(second.returncode, 0, msg=second.stderr)
+        self.assertEqual(json.loads(second.stdout)["status"], "already_finalized")
+        self.assertEqual(sum(e.get("type") == "gate_override" for e in events), 1)
+
     def test_approved_review_writes_final_output_with_sources(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             case_dir = Path(directory) / "case"
@@ -215,6 +233,42 @@ class FinalizeCaseTests(unittest.TestCase):
         final_output = report["event"]["data"]
         self.assertTrue(final_output["primary_deliverable"].endswith("opinion.md"))
         self.assertFalse(any(path.endswith("opinion.docx") for path in final_output["deliverables"]))
+
+    def test_explicit_draft_docx_cannot_be_primary_deliverable(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = Path(directory) / "case"
+            shutil.copytree(FIXTURE, case_dir)
+            strip_final_output(case_dir)
+            (case_dir / "opinion.DRAFT.docx").write_bytes(b"draft")
+            run_bind(case_dir)
+
+            result = run_finalize(
+                case_dir,
+                "--primary-deliverable",
+                "opinion.DRAFT.docx",
+            )
+
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(json.loads(result.stdout)["reason"], "draft_primary_deliverable")
+
+    def test_nested_docx_cannot_be_explicit_primary_deliverable(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = Path(directory) / "case"
+            shutil.copytree(FIXTURE, case_dir)
+            strip_final_output(case_dir)
+            nested = case_dir / "internal" / "opinion.docx"
+            nested.parent.mkdir()
+            nested.write_bytes(b"not a canonical top-level deliverable")
+            run_bind(case_dir)
+
+            result = run_finalize(
+                case_dir,
+                "--primary-deliverable",
+                "internal/opinion.docx",
+            )
+
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(json.loads(result.stdout)["reason"], "invalid_primary_deliverable")
 
     def test_legal_writing_agent_meta_can_supply_summary_and_pattern(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

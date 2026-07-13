@@ -63,6 +63,7 @@ python3 "$PROJECT_ROOT/scripts/validate-case.py" "$OUTPUT_DIR" --mode strict \
 ```
 
 `case-validation.json`에 `errors`가 있으면 배송을 멈추고 구조 오류를 먼저 수정한다(오케스트레이터 자신의 산출물이므로 수리 가능해야 한다).
+`warnings`는 배송을 차단하지 않지만 Step 5의 `case-report.md`에 표시되므로 최종 전달 전 내용을 확인한다.
 
 ---
 
@@ -164,7 +165,10 @@ for src in "$OUTPUT_DIR"/opinion.md \
            "$OUTPUT_DIR"/debate-transcript.md; do
   [ -f "$src" ] || continue
   out="${src%.md}.docx"
-  python3 "$PROJECT_ROOT/scripts/md-to-docx.py" "$src" "$out"
+  if ! python3 "$PROJECT_ROOT/scripts/md-to-docx.py" "$src" "$out"; then
+    echo "release gate blocked for $src — Step 2로 복귀"
+    exit 3
+  fi
   python3 "$PROJECT_ROOT/scripts/log-event.py" "$OUTPUT_DIR/events.jsonl" \
     --agent orchestrator \
     --type docx_generated \
@@ -172,7 +176,7 @@ for src in "$OUTPUT_DIR"/opinion.md \
 done
 ```
 
-`md-to-docx.py`는 변환 전에 릴리스 게이트(`scripts/lib/review_gate.py`)를 스스로 검사한다. 게이트가 닫혀 있으면 exit 3으로 거부한다 — 이 경우 Step 2로 돌아가 리뷰 상태를 해소하라. `--force-draft`는 내부 검토용 DRAFT 워터마크 사본이 필요할 때만 쓰고, 그 산출물을 클라이언트에 전달해서는 안 된다.
+`md-to-docx.py`는 사건 디렉터리의 Markdown 변환 전에 릴리스 게이트(`scripts/lib/review_gate.py`)를 스스로 검사한다. 사건 루트 바로 아래의 리뷰 바인딩 대상(`opinion.md`, `debate-opinion.md`, `debate-transcript.md`)만 변환할 수 있고, 임의 파일명이나 하위 디렉터리의 Markdown은 exit 3으로 거부된다. 게이트가 닫혀 있으면 변환과 `docx_generated` 기록을 모두 중단한다 — 이 경우 Step 2로 돌아가 리뷰 상태를 해소하라. `--force-draft`는 exit 3인 리뷰 게이트 실패에서만 허용되며, 결과는 `*.DRAFT.docx`로 격리되고 `draft_rendered` 이벤트가 기록된다. 이 내부 검토본을 클라이언트에 전달하거나 `--primary-deliverable`로 지정해서는 안 된다.
 
 `md-to-docx.py` honors `<escape>...</escape>` tags by default — text inside an escape is replaced with `[Sanitized instruction-like text omitted]` in the rendered DOCX. Use `--preserve-escaped-text` only when an audit DOCX must retain the original text (rare).
 
@@ -198,6 +202,7 @@ python3 "$PROJECT_ROOT/scripts/finalize-case.py" "$OUTPUT_DIR" \
 <!-- END IF -->
 
 `finalize-case.py` re-checks `review-meta.json.approval`. When the state is `revision_needed`, it does **not** write `final_output` and instead records `pipeline_aborted`.
+`--primary-deliverable`을 명시하면 사건 루트의 정규 의견서 파일만 허용되며, DOCX는 실제 DOCX ZIP 형식이어야 한다.
 
 ---
 

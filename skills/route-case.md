@@ -297,7 +297,10 @@ All orchestrator bash examples in this skill assume `PRIVATE_DIR="${LEGAL_ORCHES
      --data-json "$(python3 -c 'import json, sys; print(json.dumps({"pattern":"pattern_1","participants":["AGENT_A","AGENT_B"],"total_sources":int(sys.argv[1])}, ensure_ascii=False))' "$TOTAL_SOURCES")"
    ```
 9. **Invoke legal-writing-agent** — the prompt must include **every participating agent's summary + key_findings + path to its result.md**. The writing agent produces a **comparative / integrated opinion** (per-jurisdiction analysis → commonalities/differences → unified recommendation).
-10. **second-review-agent review.**
+10. **second-review-agent review.** 리뷰 완료 직후(승인 여부와 무관하게) 반드시 아래 명령을 실행해 리뷰 시점 파일을 고정한다. deliver 단계에서 소급 바인딩하지 않는다.
+    ```bash
+    python3 "$PROJECT_ROOT/scripts/bind-review.py" "$OUTPUT_DIR"
+    ```
 
 ### Partial failure handling
 
@@ -434,7 +437,7 @@ Event types added or extended in v2. This is the central reference maintained fo
 | `debate_initiated` | **P3** | `topic`, `framing`, `participants[]`, `max_rounds`, `case_id` | Pattern 3 debate start |
 | `debate_round` | **P3** | `round`, `position`, `agent_id`, `summary`, `key_claims_count`, `sources_count` | Per-round agent statement summary |
 | `debate_round3_decision` | **P3** | `proceed`, `reason`, `conceded_ratio`, `contested_claims[]` | Orchestrator decision on whether to enter Round 3 |
-| `mcp_fallback_verification` | **P3** | `trigger`, `agent_id`, `verified_claims`, `method` | Direct MCP verification by the orchestrator on rate_limit |
+| `mcp_fallback_verification` | **P3** | `trigger`, `agent_id`, `verified_claims`, `method`, **`passed` (bool, 필수)** | Direct MCP verification by the orchestrator on rate_limit. 최신 이벤트의 `passed: false`는 release gate를 차단한다. |
 | `debate_concluded` | **P3** | `topic`, `participants[]`, `rounds_completed`, `verdict_summary`, `consensus_areas[]`, `disagreement_areas[]` | Pattern 3 debate end |
 | `user_prompt` | P1 | `question`, `options[]`, `context` | Orchestrator-issued clarification request |
 | `user_response` | P1 | `response` | Reply to the above `user_prompt` |
@@ -443,6 +446,7 @@ Event types added or extended in v2. This is the central reference maintained fo
 | `agent_out_of_scope` | **v2** | `agent_id`, `reason`, `fallback_to` | Misclassification or self-refusal by the agent |
 | `verbatim_verified` | P1 | `verifier`, **`passed` (bool, 필수)**, `cycle`, `critical_pass`, ... | 오케스트레이터 인용 원문 검증. 최신 이벤트의 `passed: false`는 finalize/DOCX 게이트를 차단한다. |
 | `docx_generated` | P1 | `tool`, `input`, `output`, `size_bytes`, ... | Result of `md-to-docx.py` |
+| `draft_rendered` | **v3** | `input`, `output`, `gate_reason`, `size_bytes` | 게이트가 닫힌 상태에서 생성한 내부 검토용 DRAFT DOCX의 감사 기록 |
 | `gate_override` | **v3** | `override`, `reason_text`, `approval`, `gate_reason` | finalize 게이트를 명시적 지시로 우회한 사실의 감사 기록 |
 | `review_bound` | **v3** | `review_meta`, `approval`, `files[]` | 리뷰 판정과 산출물 해시의 바인딩 생성 |
 | `final_output` | P1 | `case_id`, `primary_deliverable`, `deliverables[]`, `summary` | Pipeline complete |

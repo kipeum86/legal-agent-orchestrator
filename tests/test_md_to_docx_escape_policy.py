@@ -8,6 +8,7 @@ import unittest
 import importlib.util
 from pathlib import Path
 from types import ModuleType
+from unittest.mock import patch
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
@@ -171,9 +172,130 @@ class MdToDocxReleaseGateTests(unittest.TestCase):
             case_dir = make_gated_case(Path(directory), "revision_needed")
             result = run_md_to_docx(case_dir, "--force-draft")
             self.assertEqual(result.returncode, 0, msg=result.stderr)
-            text = docx_text(case_dir / "opinion.docx")
+            draft_path = case_dir / "opinion.DRAFT.docx"
+            text = docx_text(draft_path)
+            events = [
+                json.loads(line)
+                for line in (case_dir / "events.jsonl").read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+            canonical_exists = (case_dir / "opinion.docx").exists()
         self.assertIn("DRAFT", text)
         self.assertIn("배포 금지", text)
+        self.assertFalse(canonical_exists)
+        rendered = [event for event in events if event.get("type") == "draft_rendered"]
+        self.assertEqual(len(rendered), 1)
+        self.assertEqual(rendered[0]["data"]["output"], "opinion.DRAFT.docx")
+
+    def test_force_draft_does_not_override_structural_gate_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = make_gated_case(Path(directory), "approved")
+            (case_dir / "review-meta.json").unlink()
+            result = run_md_to_docx(case_dir, "--force-draft")
+            events = (case_dir / "events.jsonl").read_text(encoding="utf-8")
+            canonical_exists = (case_dir / "opinion.docx").exists()
+            draft_exists = (case_dir / "opinion.DRAFT.docx").exists()
+
+        self.assertEqual(result.returncode, 2)
+        self.assertFalse(canonical_exists)
+        self.assertFalse(draft_exists)
+        self.assertNotIn("draft_rendered", events)
+        self.assertNotIn("--force-draft", result.stderr)
+
+    def test_force_draft_removes_output_when_audit_event_fails(self) -> None:
+        module = load_md_to_docx_module()
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = make_gated_case(Path(directory), "revision_needed")
+            draft_path = case_dir / "opinion.DRAFT.docx"
+            with patch.object(module, "append_event", side_effect=OSError("event write failed")):
+                with self.assertRaisesRegex(OSError, "event write failed"):
+                    module.main(
+                        [
+                            str(case_dir / "opinion.md"),
+                            str(case_dir / "opinion.docx"),
+                            "--force-draft",
+                        ]
+                    )
+            draft_exists = draft_path.exists()
+
+        self.assertFalse(draft_exists)
+
+    def test_force_draft_event_records_case_relative_output_path(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = make_gated_case(Path(directory), "revision_needed")
+            nested_output = case_dir / "internal" / "requested.docx"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(MD_TO_DOCX_CLI),
+                    str(case_dir / "opinion.md"),
+                    str(nested_output),
+                    "--force-draft",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+                cwd=REPO_ROOT,
+            )
+            events = [
+                json.loads(line)
+                for line in (case_dir / "events.jsonl").read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        rendered = [event for event in events if event.get("type") == "draft_rendered"]
+        self.assertEqual(rendered[0]["data"]["output"], "internal/opinion.DRAFT.docx")
+
+    def test_case_markdown_cannot_bypass_closed_gate_by_renaming(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = make_gated_case(Path(directory), "revision_needed")
+            renamed = case_dir / "opinion-final.md"
+            (case_dir / "opinion.md").rename(renamed)
+            output = case_dir / "opinion-final.docx"
+            result = subprocess.run(
+                [sys.executable, str(MD_TO_DOCX_CLI), str(renamed), str(output)],
+                capture_output=True, text=True, check=False, cwd=REPO_ROOT,
+            )
+            output_exists = output.exists()
+
+        self.assertEqual(result.returncode, 3)
+        self.assertFalse(output_exists)
+        self.assertIn("unbound case markdown", result.stderr)
+
+    def test_approved_case_cannot_render_unbound_alternate_markdown(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = make_gated_case(Path(directory), "approved")
+            alternate = case_dir / "opinion-final.md"
+            alternate.write_text("# unreviewed alternate\n", encoding="utf-8")
+            output = case_dir / "opinion-final.docx"
+            result = subprocess.run(
+                [sys.executable, str(MD_TO_DOCX_CLI), str(alternate), str(output)],
+                capture_output=True, text=True, check=False, cwd=REPO_ROOT,
+            )
+            output_exists = output.exists()
+
+        self.assertEqual(result.returncode, 3)
+        self.assertFalse(output_exists)
+        self.assertIn("unbound case markdown", result.stderr)
+
+    def test_approved_case_cannot_render_markdown_from_nested_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            case_dir = make_gated_case(Path(directory), "approved")
+            nested_dir = case_dir / "internal"
+            nested_dir.mkdir()
+            nested = nested_dir / "opinion.md"
+            nested.write_text("# unreviewed nested alternate\n", encoding="utf-8")
+            output = nested_dir / "opinion.docx"
+            result = subprocess.run(
+                [sys.executable, str(MD_TO_DOCX_CLI), str(nested), str(output)],
+                capture_output=True, text=True, check=False, cwd=REPO_ROOT,
+            )
+            output_exists = output.exists()
+
+        self.assertEqual(result.returncode, 3)
+        self.assertFalse(output_exists)
+        self.assertIn("unbound case markdown", result.stderr)
 
     def test_non_case_markdown_is_not_gated(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -122,6 +122,57 @@ class PromptTemplateTests(unittest.TestCase):
         self.assertIsNotNone(writing_meta)
         self.assertIn('"key_findings"', writing_meta.group("body"))
 
+    def test_review_completion_is_bound_before_delivery_for_patterns_1_and_2(self) -> None:
+        route_text = ROUTE_CASE.read_text(encoding="utf-8")
+        pattern1_review = route_text.index("10. **second-review-agent review.")
+        partial_failure = route_text.index("### Partial failure handling", pattern1_review)
+        self.assertIn("bind-review.py", route_text[pattern1_review:partial_failure])
+        self.assertIn("소급", route_text[pattern1_review:partial_failure])
+
+        claude_text = CLAUDE.read_text(encoding="utf-8")
+        step4 = claude_text.index("### Step 4: Hand-off")
+        step5 = claude_text.index("### Step 5: Final Delivery", step4)
+        self.assertIn("second-review-agent", claude_text[step4:step5])
+        self.assertIn("bind-review.py", claude_text[step4:step5])
+
+    def test_docx_loop_stops_before_logging_when_conversion_fails(self) -> None:
+        text = (REPO_ROOT / "skills" / "deliver-output.md").read_text(encoding="utf-8")
+        step7 = text.index("## Step 7: Generate DOCX deliverables")
+        step8 = text.index("## Step 8: Finalize events.jsonl", step7)
+        block = text[step7:step8]
+        conversion = 'if ! python3 "$PROJECT_ROOT/scripts/md-to-docx.py"'
+        self.assertIn(conversion, block)
+        self.assertIn("exit 3", block)
+        conversion_pos = block.index(conversion)
+        log_pos = block.index("--type docx_generated")
+        self.assertLess(conversion_pos, block.index("exit 3", conversion_pos))
+        self.assertLess(block.index("  fi", conversion_pos), log_pos)
+
+    def test_mcp_fallback_verification_contract_requires_passed(self) -> None:
+        debate_text = MANAGE_DEBATE.read_text(encoding="utf-8")
+        fallback = debate_text.index("MCP fallback verification event:")
+        disclosure = debate_text.index("Disclosure to inject", fallback)
+        self.assertIn('"passed":true', debate_text[fallback:disclosure])
+        self.assertIn("`passed: false`", debate_text[fallback:disclosure])
+
+        route_text = ROUTE_CASE.read_text(encoding="utf-8")
+        row = next(line for line in route_text.splitlines() if "`mcp_fallback_verification`" in line)
+        self.assertIn("`passed`", row)
+
+    def test_citation_verification_contract_scopes_source_ids_by_agent(self) -> None:
+        schema = (REPO_ROOT / "schemas" / "review-meta.schema.json").read_text(encoding="utf-8")
+        self.assertIn('"agent_id"', schema)
+
+        second_review = (TEMPLATE_DIR / "second-review-agent.md").read_text(encoding="utf-8")
+        self.assertIn('"agent_id": "legal-research-agent"', second_review)
+        self.assertIn("agent_id를 반드시", second_review)
+        self.assertIn("원본 meta에 source_id가 있으면", second_review)
+
+        debate = MANAGE_DEBATE.read_text(encoding="utf-8")
+        self.assertIn('"agent_id": "AGENT_ID"', debate)
+        self.assertIn("agent_id를 반드시", debate)
+        self.assertIn("원본 meta에 source_id가 있으면", debate)
+
 
 if __name__ == "__main__":
     unittest.main()
